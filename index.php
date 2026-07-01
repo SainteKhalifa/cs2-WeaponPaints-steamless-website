@@ -10,10 +10,13 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 $presetTable = 'wp_presets';
 $skinSettingsTable = 'wp_skin_settings_cache';
 $availableLanguages = ['zh-CN' => '简体中文', 'en' => 'English'];
-$requestedLanguage = $_GET['lang'] ?? $_COOKIE['cs2_lang'] ?? (defined('DEFAULT_LANGUAGE') ? DEFAULT_LANGUAGE : 'zh-CN');
+$languageCookieName = 'cs2_wp_lang';
+$cookiePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+$cookiePath = $cookiePath === '' ? '/' : $cookiePath . '/';
+$requestedLanguage = $_GET['lang'] ?? $_COOKIE[$languageCookieName] ?? (defined('DEFAULT_LANGUAGE') ? DEFAULT_LANGUAGE : 'zh-CN');
 $currentLanguage = array_key_exists($requestedLanguage, $availableLanguages) ? $requestedLanguage : 'zh-CN';
 if (isset($_GET['lang']) && array_key_exists($_GET['lang'], $availableLanguages)) {
-	setcookie('cs2_lang', $currentLanguage, time() + 60 * 60 * 24 * 365, '/');
+	setcookie($languageCookieName, $currentLanguage, time() + 60 * 60 * 24 * 365, $cookiePath);
 }
 UtilsClass::setLanguage($currentLanguage);
 $teams = $currentLanguage === 'en' ? [1 => 'Global', 2 => 'T', 3 => 'CT'] : [1 => '全局', 2 => 'T 阵营', 3 => 'CT 阵营'];
@@ -23,21 +26,26 @@ $uiText = [
 		'app_title' => 'CS2 社区服皮肤管理器',
 		'home_subtitle' => '使用 Steam64 ID 管理饰品配置',
 		'language' => '语言',
-		'select_preset' => '选择预设',
-		'new_preset' => '新建预设',
+		'select_preset' => '选择配置',
+		'new_preset' => '新建配置',
 		'back_home' => '返回主页',
-		'back_list' => '返回预设列表',
+		'back_list' => '返回配置列表',
 		'nickname' => '备注用户名',
 		'nickname_placeholder' => '例如：小明',
 		'create' => '新建',
 		'edit' => '编辑',
+		'select' => '选择',
+		'choose_type' => '类别',
+		'choose_skin' => '皮肤',
+		'choose_type_title' => '选择类别',
+		'choose_skin_title' => '选择皮肤',
 		'delete' => '删除',
 		'save' => '保存',
 		'updated_notice' => '这个 Steam64 ID 已经存在，已为你更新它的备注用户名。',
-		'empty_presets' => '还没有预设，先新建一个 Steam64 ID。',
-		'delete_confirm' => '确定要删除这个预设吗？这会同时删除该 Steam64 ID 在 WeaponPaints 中的皮肤配置。',
-		'edit_preset' => '编辑预设',
-		'saved_notice' => '预设信息已保存。',
+		'empty_presets' => '还没有配置，先新建一个 Steam64 ID。',
+		'delete_confirm' => '确定要删除这个配置吗？这会同时删除该 Steam64 ID 在 WeaponPaints 中的皮肤配置。',
+		'edit_preset' => '编辑配置',
+		'saved_notice' => '配置信息已保存。',
 		'save_failed' => '保存失败，请检查 Steam64 ID。',
 		'knife_type' => '匕首',
 		'knife_model' => '刀型',
@@ -57,6 +65,7 @@ $uiText = [
 		'ct_agent' => 'CT 探员',
 		'agent' => '探员',
 		'default_agent' => '使用库存探员',
+		'choose_agent' => '选择探员',
 		'music_kit' => '音乐盒',
 		'default_music' => '使用库存音乐盒',
 		'name_tag' => '名称标签',
@@ -76,23 +85,28 @@ $uiText = [
 	],
 	'en' => [
 		'app_title' => 'CS2 Community Server Skin Manager',
-		'home_subtitle' => 'Manage cosmetic configurations with a Steam64 ID.',
+		'home_subtitle' => 'Manage your skins with Steam64 ID.',
 		'language' => 'Language',
-		'select_preset' => 'Select Preset',
-		'new_preset' => 'New Preset',
+		'select_preset' => 'Select Loadout',
+		'new_preset' => 'New Loadout',
 		'back_home' => 'Back Home',
-		'back_list' => 'Back to Presets',
+		'back_list' => 'Back to Loadouts',
 		'nickname' => 'Nickname',
 		'nickname_placeholder' => 'Example: Alex',
 		'create' => 'Create',
 		'edit' => 'Edit',
+		'select' => 'Select',
+		'choose_type' => 'Category',
+		'choose_skin' => 'Skin',
+		'choose_type_title' => 'Choose Category',
+		'choose_skin_title' => 'Choose Skin',
 		'delete' => 'Delete',
 		'save' => 'Save',
 		'updated_notice' => 'This Steam64 ID already exists, so its nickname has been updated.',
-		'empty_presets' => 'No presets yet. Add a Steam64 ID first.',
-		'delete_confirm' => 'Delete this preset? This will also delete this Steam64 ID\'s WeaponPaints skin settings.',
-		'edit_preset' => 'Edit Preset',
-		'saved_notice' => 'Preset info saved.',
+		'empty_presets' => 'No loadouts yet. Add a Steam64 ID first.',
+		'delete_confirm' => 'Delete this loadout? This will also delete this Steam64 ID\'s WeaponPaints skin settings.',
+		'edit_preset' => 'Edit Loadout',
+		'saved_notice' => 'Loadout info saved.',
 		'save_failed' => 'Save failed. Please check the Steam64 ID.',
 		'knife_type' => 'Knife Type',
 		'knife_model' => 'Knife Model',
@@ -112,6 +126,7 @@ $uiText = [
 		'ct_agent' => 'CT Agent',
 		'agent' => 'Agent',
 		'default_agent' => 'Use inventory agent',
+		'choose_agent' => 'Choose Agent',
 		'music_kit' => 'Music Kit',
 		'default_music' => 'Use inventory music kit',
 		'name_tag' => 'Name Tag',
@@ -349,6 +364,23 @@ function stickerDataFile()
 		$language = 'stickers_en';
 	}
 	return "data/{$language}.json";
+}
+
+function dataFileUrl($relativeFile)
+{
+	$path = __DIR__ . '/' . $relativeFile;
+	$version = is_file($path) ? filemtime($path) : time();
+	return $relativeFile . '?v=' . $version;
+}
+
+function stickerAliasDataFile()
+{
+	$current = stickerDataFile();
+	$english = 'data/stickers_en.json';
+	if ($current === $english || !is_file(__DIR__ . '/' . $english)) {
+		return '';
+	}
+	return $english;
 }
 
 function glovesFromJson()
@@ -628,7 +660,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		]);
 		$selectedSkins = UtilsClass::getSelectedSkins($selectedRows);
 
-		$ex = explode("-", (string)($_POST['forma'] ?? ''));
+		$ex = explode("-", (string)($_POST['skin_forma'] ?? $_POST['forma'] ?? ''));
 		if (($ex[0] ?? '') === 'knife' && isset($ex[1]) && array_key_exists((int)$ex[1], $knifes)) {
 			$knifeKey = (int)$ex[1];
 			$knifeDefindexes = knifeDefindexes($knifes);
@@ -1097,7 +1129,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 						</div>
 						<div class="preset-actions">
 							<a class="btn btn-outline-light" href="index.php?action=edit&id=<?= h($preset['steamid']) ?>&team=1"><?= h(t('edit')) ?></a>
-							<form method="post" onsubmit="return confirm('<?= h(t('delete_confirm')) ?>');">
+							<form method="post" onsubmit="return confirm(<?= h(json_encode(t('delete_confirm'), JSON_UNESCAPED_UNICODE)) ?>);">
 								<input type="hidden" name="action" value="delete_preset">
 								<input type="hidden" name="id" value="<?= h($preset['steamid']) ?>">
 								<button class="btn btn-outline-danger" type="submit"><?= h(t('delete')) ?></button>
@@ -1139,7 +1171,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 			</section>
 
 			<div class="card-grid">
-				<div class="skin-card featured">
+				<div class="skin-card featured loadout-card">
 					<?php
 					$actualKnife = $knifes[0];
 					$actualKnifeKey = 0;
@@ -1182,47 +1214,94 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 					<?php else : ?>
 						<img src="<?= h($currentKnifeSkin['image_url']) ?>" class="skin-image" alt="">
 					<?php endif; ?>
-					<form method="post">
-						<input type="hidden" name="action" value="save_skin">
-						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
-						<input type="hidden" name="team" value="<?= $team ?>">
-						<label class="select-label"><?= h(t('knife_model')) ?>
-						<select name="forma" class="form-select" onchange="rememberScrollPosition(); this.form.submit()">
-							<?php foreach ($knifes as $knifeKey => $knife) : ?>
-								<option value="knife-<?= (int)$knifeKey ?>" <?= $actualKnife['weapon_name'] === $knife['weapon_name'] ? 'selected' : '' ?>>
-									<?= h($knife['paint_name']) ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-						</label>
-					</form>
-					<form method="post">
-						<input type="hidden" name="action" value="save_skin">
-						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
-						<input type="hidden" name="team" value="<?= $team ?>">
-						<label class="select-label"><?= h(t('knife_skin')) ?>
-							<select name="forma" class="form-select" onchange="rememberScrollPosition(); this.form.submit()" <?= $actualKnifeKey === 0 ? 'disabled' : '' ?>>
-								<?php if ($actualKnifeKey === 0) : ?>
-									<option selected><?= h(t('choose_knife_first')) ?></option>
-								<?php else : ?>
-									<?php foreach ($knifeSkinOptions as $paintKey => $paint) : ?>
-										<option value="<?= (int)$actualKnifeKey ?>-<?= (int)$paintKey ?>" <?= $currentKnifePaintId === (int)$paintKey ? 'selected' : '' ?>>
-											<?= h($paint['paint_name']) ?>
-										</option>
-									<?php endforeach; ?>
-								<?php endif; ?>
-							</select>
-						</label>
-					</form>
 					<div class="skin-meta">
 						<span><?= h(t('wear_value')) ?> <?= h($currentKnifeWear) ?></span>
 						<span><?= h(t('pattern')) ?> <?= h($currentKnifeSeed) ?></span>
 					</div>
 					<div class="settings-row">
+						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#knifeTypeModal">
+							<?= h(t('choose_type')) ?>
+						</button>
+						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#knifeSkinModal" <?= $actualKnifeKey === 0 ? 'disabled' : '' ?>>
+							<?= h(t('choose_skin')) ?>
+						</button>
 						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#knifeModal" <?= $actualKnifeKey === 0 ? 'disabled' : '' ?>>
 							<?= h(t('edit')) ?>
 						</button>
 					</div>
+
+					<form method="post" class="modal-form">
+						<input type="hidden" name="action" value="save_skin">
+						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
+						<input type="hidden" name="team" value="<?= $team ?>">
+						<div class="modal fade skin-picker-modal" id="knifeTypeModal" tabindex="-1" aria-hidden="true">
+							<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title"><?= h(t('choose_type_title')) ?></h5>
+										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
+									</div>
+									<div class="modal-body">
+										<div class="skin-picker-grid">
+											<?php foreach ($knifes as $knifeKey => $knife) : ?>
+												<?php
+												$knifeTypePlaceholder = weaponPlaceholderImage($knife['weapon_name'] ?? '');
+												$knifeTypeImage = (string)($knife['image_url'] ?? '');
+												?>
+												<button type="submit" name="forma" value="knife-<?= (int)$knifeKey ?>" class="skin-result <?= $actualKnifeKey === (int)$knifeKey ? 'active' : '' ?>">
+													<?php if ($knifeTypePlaceholder !== '') : ?>
+														<img src="<?= h($knifeTypePlaceholder) ?>" data-picker-remote-src="<?= h($knifeTypeImage) ?>" alt="">
+													<?php elseif ($knifeTypeImage !== '') : ?>
+														<img src="<?= h($knifeTypeImage) ?>" alt="">
+													<?php else : ?>
+														<div class="empty-image"><?= h($knife['paint_name']) ?></div>
+													<?php endif; ?>
+													<span><?= h($knife['paint_name']) ?></span>
+												</button>
+											<?php endforeach; ?>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</form>
+
+					<form method="post" class="modal-form">
+						<input type="hidden" name="action" value="save_skin">
+						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
+						<input type="hidden" name="team" value="<?= $team ?>">
+						<div class="modal fade skin-picker-modal" id="knifeSkinModal" tabindex="-1" aria-hidden="true">
+							<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title"><?= h(t('choose_skin_title')) ?></h5>
+										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
+									</div>
+									<div class="modal-body">
+										<?php if ($actualKnifeKey === 0) : ?>
+											<p class="hint"><?= h(t('choose_knife_hint')) ?></p>
+										<?php else : ?>
+											<div class="skin-picker-grid">
+												<?php foreach ($knifeSkinOptions as $paintKey => $paint) : ?>
+													<?php $knifeSkinImage = (string)($paint['image_url'] ?? ''); ?>
+													<button type="submit" name="skin_forma" value="<?= (int)$actualKnifeKey ?>-<?= (int)$paintKey ?>" class="skin-result <?= $currentKnifePaintId === (int)$paintKey ? 'active' : '' ?>">
+														<?php if ($knifePlaceholder !== '') : ?>
+															<img src="<?= h($knifePlaceholder) ?>" data-picker-remote-src="<?= h($knifeSkinImage) ?>" alt="">
+														<?php elseif ($knifeSkinImage !== '') : ?>
+															<img src="<?= h($knifeSkinImage) ?>" alt="">
+														<?php else : ?>
+															<div class="empty-image"><?= h($paint['paint_name']) ?></div>
+														<?php endif; ?>
+														<span><?= h($paint['paint_name']) ?></span>
+													</button>
+												<?php endforeach; ?>
+											</div>
+										<?php endif; ?>
+									</div>
+								</div>
+							</div>
+						</div>
+					</form>
 
 					<form method="post">
 						<input type="hidden" name="action" value="save_skin">
@@ -1303,7 +1382,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 					}
 				}
 				?>
-				<div class="skin-card featured">
+				<div class="skin-card featured loadout-card">
 					<div class="card-title-wrap">
 						<span><?= h(t('glove_type')) ?></span>
 						<h2><?= h($currentGloveSkin['paint_name']) ?></h2>
@@ -1316,47 +1395,94 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 					<?php else : ?>
 						<div class="empty-image"><?= h(t('default_gloves')) ?></div>
 					<?php endif; ?>
-					<form method="post">
-						<input type="hidden" name="action" value="save_skin">
-						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
-						<input type="hidden" name="team" value="<?= $team ?>">
-						<label class="select-label"><?= h(t('glove_type')) ?>
-							<select name="forma" class="form-select" onchange="rememberScrollPosition(); this.form.submit()">
-								<?php foreach ($gloveTypes as $gloveDefindex => $gloveType) : ?>
-									<option value="glove-<?= (int)$gloveDefindex ?>" <?= $actualGloveDefindex === (int)$gloveDefindex ? 'selected' : '' ?>>
-										<?= h($gloveType['paint_name']) ?>
-									</option>
-								<?php endforeach; ?>
-							</select>
-						</label>
-					</form>
-					<form method="post">
-						<input type="hidden" name="action" value="save_skin">
-						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
-						<input type="hidden" name="team" value="<?= $team ?>">
-						<label class="select-label"><?= h(t('glove_skin')) ?>
-							<select name="forma" class="form-select" onchange="rememberScrollPosition(); this.form.submit()" <?= $actualGloveDefindex === 0 ? 'disabled' : '' ?>>
-								<?php if ($actualGloveDefindex === 0) : ?>
-									<option selected><?= h(t('choose_glove_first')) ?></option>
-								<?php else : ?>
-									<?php foreach ($gloveSkinOptions as $paintKey => $paint) : ?>
-										<option value="gloveskin-<?= (int)$actualGloveDefindex ?>-<?= (int)$paintKey ?>" <?= $currentGlovePaintId === (int)$paintKey ? 'selected' : '' ?>>
-											<?= h($paint['paint_name']) ?>
-										</option>
-									<?php endforeach; ?>
-								<?php endif; ?>
-							</select>
-						</label>
-					</form>
 					<div class="skin-meta">
 						<span><?= h(t('wear_value')) ?> <?= h($currentGloveWear) ?></span>
 						<span><?= h(t('pattern')) ?> <?= h($currentGloveSeed) ?></span>
 					</div>
 					<div class="settings-row">
+						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#gloveTypeModal">
+							<?= h(t('choose_type')) ?>
+						</button>
+						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#gloveSkinModal" <?= $actualGloveDefindex === 0 ? 'disabled' : '' ?>>
+							<?= h(t('choose_skin')) ?>
+						</button>
 						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#gloveModal" <?= ($actualGloveDefindex === 0 || $currentGlovePaintId === 0) ? 'disabled' : '' ?>>
 							<?= h(t('edit')) ?>
 						</button>
 					</div>
+
+					<form method="post" class="modal-form">
+						<input type="hidden" name="action" value="save_skin">
+						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
+						<input type="hidden" name="team" value="<?= $team ?>">
+						<div class="modal fade skin-picker-modal" id="gloveTypeModal" tabindex="-1" aria-hidden="true">
+							<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title"><?= h(t('choose_type_title')) ?></h5>
+										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
+									</div>
+									<div class="modal-body">
+										<div class="skin-picker-grid">
+											<?php foreach ($gloveTypes as $gloveDefindex => $gloveType) : ?>
+												<?php
+												$gloveTypePlaceholder = glovePlaceholderImage((int)$gloveDefindex);
+												$gloveTypeImage = (string)($gloveType['image_url'] ?? '');
+												?>
+												<button type="submit" name="forma" value="glove-<?= (int)$gloveDefindex ?>" class="skin-result <?= $actualGloveDefindex === (int)$gloveDefindex ? 'active' : '' ?>">
+													<?php if ($gloveTypePlaceholder !== '') : ?>
+														<img src="<?= h($gloveTypePlaceholder) ?>" alt="">
+													<?php elseif ($gloveTypeImage !== '') : ?>
+														<img src="<?= h($gloveTypeImage) ?>" alt="">
+													<?php else : ?>
+														<div class="empty-image"><?= h($gloveType['paint_name']) ?></div>
+													<?php endif; ?>
+													<span><?= h($gloveType['paint_name']) ?></span>
+												</button>
+											<?php endforeach; ?>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</form>
+
+					<form method="post" class="modal-form">
+						<input type="hidden" name="action" value="save_skin">
+						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
+						<input type="hidden" name="team" value="<?= $team ?>">
+						<div class="modal fade skin-picker-modal" id="gloveSkinModal" tabindex="-1" aria-hidden="true">
+							<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title"><?= h(t('choose_skin_title')) ?></h5>
+										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
+									</div>
+									<div class="modal-body">
+										<?php if ($actualGloveDefindex === 0) : ?>
+											<p class="hint"><?= h(t('choose_glove_hint')) ?></p>
+										<?php else : ?>
+											<div class="skin-picker-grid">
+												<?php foreach ($gloveSkinOptions as $paintKey => $paint) : ?>
+													<?php $gloveSkinImage = (string)($paint['image_url'] ?? ''); ?>
+													<button type="submit" name="skin_forma" value="gloveskin-<?= (int)$actualGloveDefindex ?>-<?= (int)$paintKey ?>" class="skin-result <?= $currentGlovePaintId === (int)$paintKey ? 'active' : '' ?>">
+														<?php if ($glovePlaceholder !== '') : ?>
+															<img src="<?= h($glovePlaceholder) ?>" data-picker-remote-src="<?= h($gloveSkinImage) ?>" alt="">
+														<?php elseif ($gloveSkinImage !== '') : ?>
+															<img src="<?= h($gloveSkinImage) ?>" alt="">
+														<?php else : ?>
+															<div class="empty-image"><?= h($paint['paint_name']) ?></div>
+														<?php endif; ?>
+														<span><?= h($paint['paint_name']) ?></span>
+													</button>
+												<?php endforeach; ?>
+											</div>
+										<?php endif; ?>
+									</div>
+								</div>
+							</div>
+						</div>
+					</form>
 
 					<form method="post">
 						<input type="hidden" name="action" value="save_skin">
@@ -1419,19 +1545,41 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 						<?php else : ?>
 							<img src="img/skins/agent.png" class="skin-image" alt="">
 						<?php endif; ?>
-						<form method="post">
+						<div class="settings-row">
+							<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#agentModal">
+								<?= h(t('select')) ?>
+							</button>
+						</div>
+
+						<form method="post" class="modal-form">
 							<input type="hidden" name="action" value="save_agent">
 							<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 							<input type="hidden" name="team" value="<?= $team ?>">
-							<label class="select-label"><?= h(t('agent')) ?>
-								<select name="agent_model" class="form-select" onchange="rememberScrollPosition(); this.form.submit()">
-									<?php foreach ($agentOptions as $agent) : ?>
-										<option value="<?= h($agent['model']) ?>" <?= ($currentAgent['model'] ?? '') === $agent['model'] ? 'selected' : '' ?>>
-											<?= h($agent['agent_name']) ?>
-										</option>
-									<?php endforeach; ?>
-								</select>
-							</label>
+							<div class="modal fade agent-picker-modal" id="agentModal" tabindex="-1" aria-hidden="true">
+								<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title"><?= h(t('choose_agent')) ?></h5>
+											<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
+										</div>
+										<div class="modal-body">
+											<div class="agent-picker-grid">
+												<?php foreach ($agentOptions as $agent) : ?>
+													<?php $agentImage = (string)($agent['image'] ?? ''); ?>
+													<button type="submit" name="agent_model" value="<?= h($agent['model']) ?>" class="agent-result <?= ($currentAgent['model'] ?? '') === $agent['model'] ? 'active' : '' ?>">
+														<?php if ($agentImage !== '') : ?>
+															<img src="img/skins/agent.png" data-remote-src="<?= h($agentImage) ?>" alt="">
+														<?php else : ?>
+															<img src="img/skins/agent.png" alt="">
+														<?php endif; ?>
+														<span><?= h($agent['agent_name']) ?></span>
+													</button>
+												<?php endforeach; ?>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
 						</form>
 					</div>
 				<?php endif; ?>
@@ -1452,19 +1600,40 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 					<?php else : ?>
 						<img src="img/skins/music_kit.png" class="skin-image" alt="">
 					<?php endif; ?>
-					<form method="post">
+					<form method="post" class="modal-form">
 						<input type="hidden" name="action" value="save_music">
 						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 						<input type="hidden" name="team" value="<?= $team ?>">
-						<label class="select-label"><?= h(t('music_kit')) ?>
-							<select name="music_id" class="form-select" onchange="rememberScrollPosition(); this.form.submit()">
-								<?php foreach ($music as $musicId => $musicKit) : ?>
-									<option value="<?= (int)$musicId ?>" <?= $currentMusicId === (int)$musicId ? 'selected' : '' ?>>
-										<?= h($musicKit['name']) ?>
-									</option>
-								<?php endforeach; ?>
-							</select>
-						</label>
+						<div class="settings-row">
+							<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#musicModal">
+								<?= h(t('select')) ?>
+							</button>
+						</div>
+						<div class="modal fade skin-picker-modal" id="musicModal" tabindex="-1" aria-hidden="true">
+							<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title"><?= h(t('select')) ?></h5>
+										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
+									</div>
+									<div class="modal-body">
+										<div class="skin-picker-grid">
+											<?php foreach ($music as $musicId => $musicKit) : ?>
+												<?php $musicImage = (string)($musicKit['image'] ?? ''); ?>
+												<button type="submit" name="music_id" value="<?= (int)$musicId ?>" class="skin-result <?= $currentMusicId === (int)$musicId ? 'active' : '' ?>">
+													<?php if ($musicImage !== '') : ?>
+														<img src="img/skins/music_kit.png" data-picker-remote-src="<?= h($musicImage) ?>" alt="">
+													<?php else : ?>
+														<img src="img/skins/music_kit.png" alt="">
+													<?php endif; ?>
+													<span><?= h($musicKit['name']) ?></span>
+												</button>
+											<?php endforeach; ?>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
 					</form>
 				</div>
 
@@ -1495,8 +1664,9 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 					$initialNameTagEnabled = $initialNameTagValue !== null && $initialNameTagValue !== '';
 					$initialStickerIds = array_map('stickerIdFromValue', $initialStickerValues);
 					$modalId = "weaponModal{$defindex}";
+					$skinPickerId = "skinPicker{$defindex}";
 					?>
-					<div class="skin-card">
+					<div class="skin-card weapon-card">
 						<?php if ($initialStatTrakValue) : ?><span class="stattrak-badge">StatTrak™</span><?php endif; ?>
 						<div class="card-title-wrap">
 							<span><?= h($default['weapon_name']) ?></span>
@@ -1512,6 +1682,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 							<input type="hidden" name="action" value="save_skin">
 							<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 							<input type="hidden" name="team" value="<?= $team ?>">
+							<input type="hidden" name="forma" value="<?= (int)$defindex ?>-<?= (int)$currentPaintId ?>">
 							<?php $cardStickerIds = array_values(array_filter(array_slice($initialStickerIds, 0, $stickerSlotTotal), static fn($stickerId) => (int)$stickerId > 0)); ?>
 							<?php if ($cardStickerIds) : ?>
 								<div class="card-stickers" aria-label="<?= h(t('stickers')) ?>">
@@ -1523,22 +1694,46 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 									<?php endforeach; ?>
 								</div>
 							<?php endif; ?>
-							<select name="forma" class="form-select" onchange="rememberScrollPosition(); this.form.submit()">
-								<?php foreach ($skins[$defindex] as $paintKey => $paint) : ?>
-									<option value="<?= (int)$defindex ?>-<?= (int)$paintKey ?>" <?= $currentPaintId === (int)$paintKey ? 'selected' : '' ?>>
-										<?= h($paint['paint_name']) ?>
-									</option>
-								<?php endforeach; ?>
-							</select>
 
 							<div class="skin-meta">
 								<span><?= h(t('wear_value')) ?> <?= h($initialWearValue) ?></span>
 								<span><?= h(t('pattern')) ?> <?= h($initialSeedValue) ?></span>
 							</div>
 							<div class="settings-row">
+								<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#<?= h($skinPickerId) ?>">
+									<?= h(t('choose_skin')) ?>
+								</button>
 								<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#<?= h($modalId) ?>" <?= $currentPaintId === 0 ? 'disabled' : '' ?>>
 									<?= h(t('edit')) ?>
 								</button>
+							</div>
+
+							<div class="modal fade skin-picker-modal" id="<?= h($skinPickerId) ?>" tabindex="-1" aria-hidden="true">
+								<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title"><?= h(t('choose_skin_title')) ?></h5>
+											<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
+										</div>
+										<div class="modal-body">
+											<div class="skin-picker-grid">
+												<?php foreach ($skins[$defindex] as $paintKey => $paint) : ?>
+													<?php $paintImage = (string)($paint['image_url'] ?? ''); ?>
+													<button type="submit" name="skin_forma" value="<?= (int)$defindex ?>-<?= (int)$paintKey ?>" class="skin-result <?= $currentPaintId === (int)$paintKey ? 'active' : '' ?>">
+														<?php if ($weaponPlaceholder !== '') : ?>
+															<img src="<?= h($weaponPlaceholder) ?>" data-picker-remote-src="<?= h($paintImage) ?>" alt="">
+														<?php elseif ($paintImage !== '') : ?>
+															<img src="<?= h($paintImage) ?>" alt="">
+														<?php else : ?>
+															<div class="empty-image"><?= h($paint['paint_name']) ?></div>
+														<?php endif; ?>
+														<span><?= h($paint['paint_name']) ?></span>
+													</button>
+												<?php endforeach; ?>
+											</div>
+										</div>
+									</div>
+								</div>
 							</div>
 
 							<div class="modal fade" id="<?= h($modalId) ?>" tabindex="-1" aria-hidden="true">
@@ -1654,7 +1849,8 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 		</nav>
 	</main>
 	<script>
-		window.cs2StickerDataUrl = <?= json_encode(stickerDataFile(), JSON_UNESCAPED_SLASHES) ?>;
+		window.cs2StickerDataUrl = <?= json_encode(dataFileUrl(stickerDataFile()), JSON_UNESCAPED_SLASHES) ?>;
+		window.cs2StickerAliasDataUrl = <?= json_encode(stickerAliasDataFile() !== '' ? dataFileUrl(stickerAliasDataFile()) : '', JSON_UNESCAPED_SLASHES) ?>;
 		(function () {
 			var loadRemoteImage = function (image) {
 				if (!image) return;
@@ -1668,6 +1864,15 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 			};
 
 			document.querySelectorAll('img[data-remote-src]').forEach(loadRemoteImage);
+			document.querySelectorAll('.skin-picker-modal').forEach(function (modal) {
+				modal.addEventListener('show.bs.modal', function () {
+					modal.querySelectorAll('img[data-picker-remote-src]').forEach(function (image) {
+						image.dataset.remoteSrc = image.dataset.pickerRemoteSrc || '';
+						image.removeAttribute('data-picker-remote-src');
+						loadRemoteImage(image);
+					});
+				});
+			});
 
 			var params = new URLSearchParams(location.search);
 			var key = 'cs2_wp_scroll_' + location.pathname + '_' + (params.get('action') || '') + '_' + (params.get('id') || '') + '_' + (params.get('team') || '');
@@ -1701,14 +1906,37 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 			var searchInput = pickerEl ? pickerEl.querySelector('.sticker-search') : null;
 			var resultsEl = pickerEl ? pickerEl.querySelector('[data-sticker-results]') : null;
 
+			var fetchJson = function (url) {
+				if (!url) return Promise.resolve([]);
+				return fetch(url, { cache: 'no-cache' })
+					.then(function (response) { return response.ok ? response.json() : []; });
+			};
+
 			var loadStickers = function () {
 				if (stickerData) return Promise.resolve(stickerData);
-				return fetch(window.cs2StickerDataUrl, { cache: 'force-cache' })
-					.then(function (response) { return response.json(); })
-					.then(function (items) {
+				return Promise.all([
+					fetchJson(window.cs2StickerDataUrl),
+					fetchJson(window.cs2StickerAliasDataUrl)
+				]).then(function (payloads) {
+						var items = payloads[0] || [];
+						var aliases = payloads[1] || [];
+						var aliasById = {};
+						var seen = {};
+						aliases.forEach(function (item) {
+							aliasById[parseInt(item.id, 10) || 0] = item.name || '';
+						});
 						stickerData = [{ id: 0, name: <?= json_encode(t('no_sticker'), JSON_UNESCAPED_UNICODE) ?>, image: '' }].concat(items.map(function (item) {
-							return { id: parseInt(item.id, 10) || 0, name: item.name || '', image: item.image || '' };
+							var id = parseInt(item.id, 10) || 0;
+							var name = item.name || '';
+							var alias = aliasById[id] || '';
+							seen[id] = true;
+							return { id: id, name: name, image: item.image || '', searchText: name + ' ' + alias };
 						}));
+						aliases.forEach(function (item) {
+							var id = parseInt(item.id, 10) || 0;
+							if (!id || seen[id]) return;
+							stickerData.push({ id: id, name: item.name || '', image: item.image || '', searchText: item.name || '' });
+						});
 						return stickerData;
 					});
 			};
@@ -1717,7 +1945,8 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 				if (!resultsEl || !stickerData) return;
 				var query = (searchInput ? searchInput.value : '').trim().toLowerCase();
 				var shown = stickerData.filter(function (item) {
-					return !query || item.name.toLowerCase().indexOf(query) !== -1 || String(item.id) === query;
+					var searchText = (item.searchText || item.name || '').toLowerCase();
+					return !query || searchText.indexOf(query) !== -1 || String(item.id) === query;
 				}).slice(0, 80);
 				resultsEl.innerHTML = '';
 				shown.forEach(function (item) {

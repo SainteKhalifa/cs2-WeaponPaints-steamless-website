@@ -7,9 +7,9 @@
     </a>
 </p>
 
-# CS2 WeaponPaints Preset Manager
+# CS2 WeaponPaints Loadout Manager
 
-> A WeaponPaints skin preset management panel for private CS2 community servers.
+> A WeaponPaints skin loadout management panel for private CS2 community servers.
 > No Steam login is required. Enter a Steam64 ID and write the corresponding settings to the database.
 
 ## Why This Exists
@@ -18,32 +18,32 @@ The original WeaponPaints website identifies players through Steam login, then w
 
 Logging into Steam can sometimes raise security concerns or create network access issues, so this project provides a website where players can enter their Steam64 ID manually.
 
-Because Steam login has been removed, this project is better suited for private CS2 community servers and small trusted player groups. Players can create or select presets directly by entering a Steam64 ID.
+Because Steam login has been removed, this project is better suited for private CS2 community servers and small trusted player groups. Players can create or select loadouts directly by entering a Steam64 ID.
 
-Compared with the original website, this project adds a preset system, website access password, name tags, StatTrak™, sticker editing, music kit selection, agent selection, image fallback loading, and a CS2 skin data updater.
+Compared with the original website, this project adds a loadout system, website access password, name tags, StatTrak™, sticker editing, music kit selection, agent selection, image fallback loading, and a CS2 skin data updater.
 
 **This project does not require Steam login.**
 
-This also means it is not an account security system for public websites. Anyone who can access the website can edit presets by entering a Steam64 ID. HTTPS and a website access password are recommended.
+This also means it is not an account security system for public websites. Anyone who can access the website can edit loadouts by entering a Steam64 ID. HTTPS and a website access password are recommended.
 
 ## Interface
 
 <p align="center">
-    <img src="./img/preview/1.png" width="45%">
-    <img src="./img/preview/2.png" width="45%">
+    <img src="./preview/img/1.png" width="45%">
+    <img src="./preview/img/2.png" width="45%">
 </p>
 
 <p align="center">
-    <img src="./img/preview/3.png" width="45%">
-    <img src="./img/preview/4.png" width="45%">
+    <img src="./preview/img/3.png" width="45%">
+    <img src="./preview/img/4.png" width="45%">
 </p>
 
 ## Features
 
-### Preset Management
+### Loadout Management
 
-* Manage presets by Steam64 ID without Steam login
-* Add optional nicknames to presets for easier player identification
+* Manage loadouts by Steam64 ID without Steam login
+* Add optional nicknames to loadouts for easier player identification
 * Global, T-side, and CT-side editing modes
 
 ### Skin Editing
@@ -63,7 +63,7 @@ This also means it is not an account security system for public websites. Anyone
 
 ## Credits
 
-This website is rewritten based on the database workflow and usage pattern of the original WeaponPaints web panel. It removes Steam login for private-server use and adds preset management, more cosmetic editing features, language switching, and data updating.
+This website is rewritten based on the database workflow and usage pattern of the original WeaponPaints web panel. It removes Steam login for private-server use and adds loadout management, more cosmetic editing features, language switching, and data updating.
 
 Thanks to:
 
@@ -118,7 +118,7 @@ The data source currently provides English and Simplified Chinese data. More lan
 
 4. If `SITE_ACCESS_PASSWORD` is set, enter the access password on first visit.
 
-5. Create a preset with a Steam64 ID and an optional nickname.
+5. Create a loadout with a Steam64 ID and an optional nickname.
 
 6. Select and edit skin settings as needed.
 
@@ -172,21 +172,10 @@ This project reads and writes the following WeaponPaints tables:
 
 In addition, the website automatically creates two helper tables for its own use. If the configured database user has the required permissions, they will be created when the website is visited:
 
-* `wp_presets`: stores the website preset list and nicknames
+* `wp_presets`: stores the website loadout list and nicknames
 * `wp_skin_settings_cache`: stores website-side per-skin settings such as wear, pattern template, StatTrak™, and name tags, so these settings can be remembered when switching skins
 
 The website reads `wp_presets` first, then reads and writes WeaponPaints data according to the selected Steam64 ID.
-
-## Skin Setting Modes
-
-- Global mode: applies to both T and CT
-- T-side mode: edits only T-side settings
-- CT-side mode: edits only CT-side settings
-
-## Saving
-
-- Dropdown selections are saved immediately
-- Detailed settings are saved only after clicking the Save button in the dialog, such as wear, StatTrak™, name tags, and stickers
 
 ## Notes
 

@@ -576,6 +576,85 @@ function buildSimpleIdRows(array $items, string $nameField): array
     return [$rows, $skipped];
 }
 
+function normalizeMusicKitName(string $name): string
+{
+    return trim(preg_replace('/^StatTrak™\s*/u', '', $name));
+}
+
+function simpleDedupKey(string $value): string
+{
+    $value = preg_replace('/\s+/u', ' ', trim($value));
+    return function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
+}
+
+function buildMusicRows(array $items): array
+{
+    $rowsById = [];
+    $metaById = [];
+    $rows = [];
+    $seenNames = [];
+    $skipped = [];
+
+    foreach ($items as $item) {
+        $id = numericIdFromItem($item);
+        $originalName = (string)($item['name'] ?? '');
+        $name = normalizeMusicKitName($originalName);
+        $image = (string)($item['image'] ?? '');
+
+        if ($id === null || $name === '' || $image === '') {
+            $skipped[] = $originalName !== '' ? $originalName : '(missing name)';
+            continue;
+        }
+
+        $isStatTrak = $originalName !== $name;
+        if (isset($rowsById[$id])) {
+            if (($metaById[$id]['is_stattrak'] ?? false) && !$isStatTrak) {
+                $rowsById[$id] = [
+                    'id' => $id,
+                    'name' => $name,
+                    'image' => $image,
+                ];
+                $metaById[$id]['is_stattrak'] = false;
+            }
+            continue;
+        }
+
+        $rowsById[$id] = [
+            'id' => $id,
+            'name' => $name,
+            'image' => $image,
+        ];
+        $metaById[$id] = [
+            'is_stattrak' => $isStatTrak,
+        ];
+    }
+
+    foreach ($rowsById as $id => $row) {
+        $key = simpleDedupKey((string)$row['name']);
+        $isStatTrak = $metaById[$id]['is_stattrak'] ?? false;
+        if (isset($seenNames[$key])) {
+            $existingIndex = $seenNames[$key]['index'];
+            if (($seenNames[$key]['is_stattrak'] ?? false) && !$isStatTrak) {
+                $rows[$existingIndex] = $row;
+                $seenNames[$key]['is_stattrak'] = false;
+            }
+            continue;
+        }
+
+        $seenNames[$key] = [
+            'index' => count($rows),
+            'is_stattrak' => $isStatTrak,
+        ];
+        $rows[] = $row;
+    }
+
+    usort($rows, static function (array $a, array $b): int {
+        return (int)$a['id'] <=> (int)$b['id'];
+    });
+
+    return [$rows, $skipped];
+}
+
 $dryRun = in_array('--dry-run', $argv ?? [], true);
 $only = null;
 foreach ($argv ?? [] as $arg) {
@@ -623,7 +702,7 @@ try {
 
             echo "Downloading {$language} music data...\n";
             $musicItems = fetchJson($urls['music']);
-            [$music, $musicSkipped] = buildSimpleIdRows($musicItems, 'name');
+            [$music, $musicSkipped] = buildMusicRows($musicItems);
             $musicSourceCount = count($musicItems);
             unset($musicItems);
 
