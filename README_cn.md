@@ -29,13 +29,13 @@
 ## 界面
 
 <p align="center">
-    <img src="./img/preview/1.png" width="30%">
-    <img src="./img/preview/2.png" width="30%">
+    <img src="./img/preview/1.png" width="45%">
+    <img src="./img/preview/2.png" width="45%">
 </p>
 
 <p align="center">
-    <img src="./img/preview/3.png" width="30%">
-    <img src="./img/preview/4.png" width="30%">
+    <img src="./img/preview/3.png" width="45%">
+    <img src="./img/preview/4.png" width="45%">
 </p>
 
 ## 功能
