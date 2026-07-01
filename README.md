@@ -3,7 +3,7 @@
         <img src="https://img.shields.io/badge/LANG-English-blue">
     </a>
     <a href="README_cn.md">
-        <img src="https://img.shields.io/badge/LANG-Simplified%20Chinese-red">
+        <img src="https://img.shields.io/badge/语言-简体中文-red">
     </a>
 </p>
 
@@ -28,10 +28,15 @@ This also means it is not an account security system for public websites. Anyone
 
 ## Interface
 
-![Preview 1](./img/preview/1.png)
-![Preview 2](./img/preview/2.png)
-![Preview 3](./img/preview/3.png)
-![Preview 4](./img/preview/4.png)
+<p align="center">
+    <img src="./img/preview/1.png" width="30%">
+    <img src="./img/preview/2.png" width="30%">
+</p>
+
+<p align="center">
+    <img src="./img/preview/3.png" width="30%">
+    <img src="./img/preview/4.png" width="30%">
+</p>
 
 ## Features
 
