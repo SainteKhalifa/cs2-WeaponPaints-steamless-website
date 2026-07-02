@@ -850,8 +850,20 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 			if ($submittedNameTag === false) {
 				go("index.php?action=edit&id={$id}&team={$team}&error=nametag");
 			}
+			$isKnifeSkin = in_array($defindex, knifeDefindexes($knifes), true);
 
 			foreach (writeTeams($team) as $targetTeam) {
+				if ($isKnifeSkin) {
+					$db->query("INSERT INTO `wp_player_knife` (`steamid`, `knife`, `weapon_team`)
+						VALUES(:steamid, :knife, :team)
+						ON DUPLICATE KEY UPDATE `knife` = :knife_update", [
+						"steamid" => $steamid,
+						"knife" => $knifes[$defindex]['weapon_name'],
+						"team" => $targetTeam,
+						"knife_update" => $knifes[$defindex]['weapon_name'],
+					]);
+				}
+
 				$existing = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4` FROM `wp_player_skins`
 					WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team LIMIT 1", [
 					"steamid" => $steamid,
@@ -1798,7 +1810,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 																	<span class="sticker-plus sticker-empty-icon" <?= $currentStickerId > 0 ? 'hidden' : '' ?>>+</span>
 																	<img src="img/skins/sticker.png" data-remote-src="<?= h($currentSticker['image'] ?? '') ?>" alt="" data-sticker-preview <?= $currentStickerId > 0 ? '' : 'hidden' ?>>
 																</button>
-																<div class="sticker-slot-name" data-sticker-name><?= h($currentStickerId > 0 ? ($currentSticker['name'] ?? '') : t('sticker_slot') . ' ' . ($slotIndex + 1)) ?></div>
+																<div class="sticker-slot-name" data-sticker-name><span data-sticker-name-text><?= h($currentStickerId > 0 ? ($currentSticker['name'] ?? '') : t('sticker_slot') . ' ' . ($slotIndex + 1)) ?></span></div>
 															</div>
 														<?php endfor; ?>
 													</div>
@@ -1901,10 +1913,36 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 
 			var stickerData = null;
 			var activeStickerSlot = null;
+			var activeStickerUnderlay = null;
 			var pickerEl = document.getElementById('stickerPickerModal');
 			var picker = pickerEl && window.bootstrap ? new bootstrap.Modal(pickerEl) : null;
 			var searchInput = pickerEl ? pickerEl.querySelector('.sticker-search') : null;
 			var resultsEl = pickerEl ? pickerEl.querySelector('[data-sticker-results]') : null;
+
+			var setStickerUnderlay = function (modal) {
+				if (activeStickerUnderlay && activeStickerUnderlay !== modal) {
+					activeStickerUnderlay.classList.remove('sticker-underlay-active');
+				}
+				activeStickerUnderlay = modal || null;
+				if (activeStickerUnderlay) {
+					activeStickerUnderlay.classList.add('sticker-underlay-active');
+				}
+			};
+
+			var markStickerBackdrop = function () {
+				var backdrops = document.querySelectorAll('.modal-backdrop');
+				var backdrop = backdrops.length ? backdrops[backdrops.length - 1] : null;
+				if (backdrop) {
+					backdrop.classList.add('sticker-picker-backdrop');
+				}
+			};
+
+			if (pickerEl) {
+				pickerEl.addEventListener('shown.bs.modal', markStickerBackdrop);
+				pickerEl.addEventListener('hidden.bs.modal', function () {
+					setStickerUnderlay(null);
+				});
+			}
 
 			var fetchJson = function (url) {
 				if (!url) return Promise.resolve([]);
@@ -1944,9 +1982,12 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 			var renderStickerResults = function () {
 				if (!resultsEl || !stickerData) return;
 				var query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+				var terms = query ? query.split(/\s+/).filter(Boolean) : [];
 				var shown = stickerData.filter(function (item) {
 					var searchText = (item.searchText || item.name || '').toLowerCase();
-					return !query || searchText.indexOf(query) !== -1 || String(item.id) === query;
+					return !query || String(item.id) === query || terms.every(function (term) {
+						return searchText.indexOf(term) !== -1;
+					});
 				}).slice(0, 80);
 				resultsEl.innerHTML = '';
 				shown.forEach(function (item) {
@@ -1986,6 +2027,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 				var preview = slot.querySelector('[data-sticker-preview]');
 				var plus = slot.querySelector('.sticker-plus');
 				var label = slot.querySelector('[data-sticker-name]');
+				var labelText = slot.querySelector('[data-sticker-name-text]');
 				id = String(id || '0');
 				image = image || '';
 				if (input) input.value = id;
@@ -1996,13 +2038,17 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 					loadRemoteImage(preview);
 				}
 				if (plus) plus.hidden = id !== '0' && !!image;
-				if (label) label.textContent = id === '0' ? (slot.dataset.emptyLabel || <?= json_encode(t('sticker_slot'), JSON_UNESCAPED_UNICODE) ?>) : name;
+				if (labelText) {
+					labelText.textContent = id === '0' ? (slot.dataset.emptyLabel || <?= json_encode(t('sticker_slot'), JSON_UNESCAPED_UNICODE) ?>) : name;
+				} else if (label) {
+					label.textContent = id === '0' ? (slot.dataset.emptyLabel || <?= json_encode(t('sticker_slot'), JSON_UNESCAPED_UNICODE) ?>) : name;
+				}
 			};
 
 			var stickerInfoFromSlot = function (slot) {
 				var input = slot ? slot.querySelector('[data-sticker-input]') : null;
 				var preview = slot ? slot.querySelector('[data-sticker-preview]') : null;
-				var label = slot ? slot.querySelector('[data-sticker-name]') : null;
+				var label = slot ? (slot.querySelector('[data-sticker-name-text]') || slot.querySelector('[data-sticker-name]')) : null;
 				return {
 					id: input ? String(input.value || '0') : '0',
 					name: label ? label.textContent : '',
@@ -2066,10 +2112,14 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 				var openButton = event.target.closest('[data-sticker-open]');
 				if (openButton) {
 					activeStickerSlot = openButton.closest('.sticker-slot');
+					setStickerUnderlay(openButton.closest('.modal'));
 					loadStickers().then(function () {
 						if (searchInput) searchInput.value = '';
 						renderStickerResults();
-						if (picker) picker.show();
+						if (picker) {
+							picker.show();
+							setTimeout(markStickerBackdrop, 0);
+						}
 						setTimeout(function () { if (searchInput) searchInput.focus(); }, 150);
 					});
 					return;

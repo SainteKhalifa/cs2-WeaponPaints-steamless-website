@@ -572,13 +572,18 @@ label {
 
 .sticker-slot {
 	display: grid;
+	grid-template-rows: auto 32px;
 	gap: 6px;
 	min-width: 0;
+	width: 100%;
+	justify-items: center;
+	align-content: start;
 }
 
 .sticker-slot-button {
 	width: 100%;
-	height: 88px;
+	height: auto;
+	aspect-ratio: 1 / 1;
 	display: grid;
 	place-items: center;
 	background: #0d1016;
@@ -600,10 +605,17 @@ label {
 	line-height: 1;
 }
 
-.sticker-slot-button img,
+.sticker-slot-button img {
+	width: 100%;
+	height: 100%;
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
+}
+
 .sticker-result img {
-	width: 54px;
-	height: 54px;
+	width: 64px;
+	height: 64px;
 	max-width: 100%;
 	max-height: 100%;
 	object-fit: contain;
@@ -613,9 +625,20 @@ label {
 	color: var(--muted);
 	font-size: 12px;
 	line-height: 1.25;
-	min-height: 30px;
-	overflow-wrap: anywhere;
+	height: 32px;
+	width: 100%;
+	overflow: hidden;
 	text-align: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.sticker-slot-name span {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
 }
 
 .sticker-picker-modal .modal-body {
@@ -737,6 +760,32 @@ label {
 .modal-content {
 	background: var(--panel);
 	border: 1px solid var(--line);
+}
+
+.sticker-picker-modal {
+	z-index: 1070;
+}
+
+.modal-backdrop.sticker-picker-backdrop {
+	opacity: 0 !important;
+}
+
+.modal.sticker-underlay-active > .modal-dialog > .modal-content {
+	position: relative;
+	box-shadow:
+		0 0 0 1px rgba(255, 255, 255, .05),
+		0 30px 90px rgba(0, 0, 0, .9),
+		inset 0 0 0 999px rgba(0, 0, 0, .34);
+}
+
+.modal.sticker-underlay-active > .modal-dialog > .modal-content::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 10;
+	pointer-events: none;
+	border-radius: inherit;
+	background: linear-gradient(180deg, rgba(0, 0, 0, .18), rgba(0, 0, 0, .34));
 }
 
 .btn-primary {
