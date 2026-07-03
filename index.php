@@ -574,7 +574,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 			if ($existingPreset) {
 				go('index.php?action=list&notice=updated_existing');
 			}
-			go('index.php');
+			go('index.php?action=list');
 		}
 	}
 
@@ -1060,7 +1060,7 @@ if ($action === 'edit') {
 	}
 }
 
-$presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY `id` DESC") : [];
+$presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY `created_time` ASC, `id` ASC") : [];
 ?>
 <!DOCTYPE html>
 <html lang="<?= h($currentLanguage) ?>" data-bs-theme="dark">
@@ -1071,12 +1071,12 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 	<link rel="icon" type="image/svg+xml" href="favicon.svg">
-	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="style.css?v=<?= filemtime(__DIR__ . '/style.css') ?>">
 	<title><?= h(t('app_title')) ?></title>
 </head>
 
 <body>
-	<main class="app-shell">
+	<main class="app-shell<?= $action === 'access' ? ' access-shell' : '' ?>">
 		<?php if ($action === 'access') : ?>
 			<section class="access-panel panel narrow">
 				<h1><?= h(t('access_title')) ?></h1>
@@ -1135,7 +1135,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 			<div class="preset-list">
 				<?php foreach ($presets as $preset) : ?>
 					<article class="preset-card">
-						<div>
+						<div class="preset-card-body">
 							<strong><?= h(presetLabel($preset)) ?></strong>
 							<span><?= h($preset['steamid']) ?></span>
 						</div>
@@ -1859,6 +1859,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 				</div>
 			</details>
 		</nav>
+		<footer class="site-footer">Copyright © 2026 wtf729 - All rights reserved</footer>
 	</main>
 	<script>
 		window.cs2StickerDataUrl = <?= json_encode(dataFileUrl(stickerDataFile()), JSON_UNESCAPED_SLASHES) ?>;
