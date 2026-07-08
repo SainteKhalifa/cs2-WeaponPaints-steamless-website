@@ -41,6 +41,8 @@ $uiText = [
 		'choose_skin_title' => '选择皮肤',
 		'delete' => '删除',
 		'save' => '保存',
+		'cancel' => '取消',
+		'reset' => '重置',
 		'updated_notice' => '这个 Steam64 ID 已经存在，已为你更新它的备注用户名。',
 		'empty_presets' => '还没有配置，先新建一个 Steam64 ID。',
 		'delete_confirm' => '确定要删除这个配置吗？这会同时删除该 Steam64 ID 在 WeaponPaints 中的皮肤配置。',
@@ -74,6 +76,14 @@ $uiText = [
 		'search_sticker' => '搜索贴纸',
 		'no_sticker' => '无贴纸',
 		'sticker_slot' => '贴纸槽位',
+		'sticker_slot_settings' => '贴纸槽位 {slot} 设置',
+		'sticker_settings' => '贴纸设置',
+		'sticker_wear' => 'Wear 磨损',
+		'sticker_x' => 'X 偏移',
+		'sticker_y' => 'Y 偏移',
+		'sticker_scale' => '缩放',
+		'sticker_rotation' => '旋转',
+		'sticker_save_failed' => '贴纸参数保存失败，请刷新后重试。',
 		'apply_sticker_to_all' => "\u{4E00}\u{952E}\u{8986}\u{76D6}\u{5168}\u{90E8}\u{8D34}\u{7EB8}\u{69FD}\u{4F4D}",
 		'clear_all_stickers' => "\u{4E00}\u{952E}\u{6E05}\u{9664}\u{5168}\u{90E8}\u{8D34}\u{7EB8}",
 		'access_title' => '访问密码',
@@ -82,6 +92,9 @@ $uiText = [
 		'access_unlock' => '进入网站',
 		'access_invalid' => '密码不正确，请重试',
 		'invalid_steamid' => '请输入正确的 Steam64 ID',
+		'validation_required' => '请填写此字段',
+		'validation_number_range' => '请输入 {min} 到 {max} 之间的数字',
+		'validation_integer_range' => '请输入 {min} 到 {max} 之间的整数',
 	],
 	'en' => [
 		'app_title' => 'CS2 Community Server Skin Manager',
@@ -102,6 +115,8 @@ $uiText = [
 		'choose_skin_title' => 'Choose Skin',
 		'delete' => 'Delete',
 		'save' => 'Save',
+		'cancel' => 'Cancel',
+		'reset' => 'Reset',
 		'updated_notice' => 'This Steam64 ID already exists, so its nickname has been updated.',
 		'empty_presets' => 'No loadouts yet. Add a Steam64 ID first.',
 		'delete_confirm' => 'Delete this loadout? This will also delete this Steam64 ID\'s WeaponPaints skin settings.',
@@ -135,6 +150,14 @@ $uiText = [
 		'search_sticker' => 'Search stickers',
 		'no_sticker' => 'No sticker',
 		'sticker_slot' => 'Sticker Slot',
+		'sticker_slot_settings' => 'Sticker Slot {slot} Settings',
+		'sticker_settings' => 'Sticker Settings',
+		'sticker_wear' => 'Wear',
+		'sticker_x' => 'X Offset',
+		'sticker_y' => 'Y Offset',
+		'sticker_scale' => 'Scale',
+		'sticker_rotation' => 'Rotation',
+		'sticker_save_failed' => 'Failed to save sticker settings. Please refresh and try again.',
 		'apply_sticker_to_all' => 'Apply sticker to all slots',
 		'clear_all_stickers' => 'Clear all stickers',
 		'access_title' => 'Access Password',
@@ -143,6 +166,9 @@ $uiText = [
 		'access_unlock' => 'Enter Site',
 		'access_invalid' => 'Incorrect password. Please try again.',
 		'invalid_steamid' => 'Please enter a valid Steam64 ID.',
+		'validation_required' => 'Please fill out this field.',
+		'validation_number_range' => 'Please enter a number from {min} to {max}.',
+		'validation_integer_range' => 'Please enter an integer from {min} to {max}.',
 	],
 ];
 
@@ -193,13 +219,17 @@ function ensureSkinSettingsTable($db, $skinSettingsTable)
 		`weapon_wear` FLOAT NOT NULL DEFAULT 0,
 		`weapon_seed` INT NOT NULL DEFAULT 0,
 		`weapon_stattrak` TINYINT(1) NOT NULL DEFAULT 0,
+		`weapon_stattrak_count` INT NOT NULL DEFAULT 0,
 		`weapon_nametag` VARCHAR(64) NULL,
 		`updated_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`),
 		UNIQUE KEY `uniq_skin_setting` (`steamid`, `weapon_team`, `weapon_defindex`, `weapon_paint_id`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+	if (!columnExists($db, $skinSettingsTable, 'weapon_stattrak_count')) {
+		$db->query("ALTER TABLE `{$skinSettingsTable}` ADD `weapon_stattrak_count` INT NOT NULL DEFAULT 0 AFTER `weapon_stattrak`");
+	}
 	if (!columnExists($db, $skinSettingsTable, 'weapon_nametag')) {
-		$db->query("ALTER TABLE `{$skinSettingsTable}` ADD `weapon_nametag` VARCHAR(64) NULL AFTER `weapon_stattrak`");
+		$db->query("ALTER TABLE `{$skinSettingsTable}` ADD `weapon_nametag` VARCHAR(64) NULL AFTER `weapon_stattrak_count`");
 	}
 }
 
@@ -308,10 +338,64 @@ function stickerSlotCount($defindex)
 	return in_array((int)$defindex, [11, 23, 60, 61, 64], true) ? 5 : 4;
 }
 
+function stickerNumber($value, $min, $max, $default, $scaleMustBePositive = false)
+{
+	if ($value === null || $value === '' || !is_numeric($value)) {
+		return $default;
+	}
+	$value = (float)$value;
+	if ($scaleMustBePositive && $value <= 0) {
+		return $default;
+	}
+	return max((float)$min, min((float)$max, $value));
+}
+
+function stickerValueParts($value)
+{
+	$parts = array_pad(explode(';', (string)$value), 7, '');
+	$id = max(0, (int)($parts[0] ?? 0));
+	$schema = max(0, (int)($parts[1] ?? 0));
+	if ($id > 0 && $schema === 0) {
+		$schema = $id;
+	}
+	return [
+		'id' => $id,
+		'schema' => $schema,
+		'x' => stickerNumber($parts[2] ?? null, -1, 1, 0),
+		'y' => stickerNumber($parts[3] ?? null, -1, 1, 0),
+		'wear' => stickerNumber($parts[4] ?? null, 0, 1, 0),
+		'scale' => stickerNumber($parts[5] ?? null, 0.2, 5, 1, true),
+		'rotation' => stickerNumber($parts[6] ?? null, 0, 360, 0),
+	];
+}
+
 function stickerIdFromValue($value)
 {
-	$parts = explode(';', (string)$value);
-	return max(0, (int)($parts[0] ?? 0));
+	$parts = stickerValueParts($value);
+	return $parts['id'];
+}
+
+function stickerFloatValue($value)
+{
+	return number_format((float)$value, 2, '.', '');
+}
+
+function buildStickerValueFromParts($id, $schema, $params)
+{
+	$id = max(0, (int)$id);
+	$schema = max(0, (int)$schema);
+	if ($id === 0) {
+		return defaultStickerValue();
+	}
+	if ($schema === 0) {
+		$schema = $id;
+	}
+	$x = stickerFloatValue(stickerNumber($params['x'] ?? 0, -1, 1, 0));
+	$y = stickerFloatValue(stickerNumber($params['y'] ?? 0, -1, 1, 0));
+	$wear = stickerFloatValue(stickerNumber($params['wear'] ?? 0, 0, 1, 0));
+	$scale = stickerFloatValue(stickerNumber($params['scale'] ?? 1, 0.2, 5, 1, true));
+	$rotation = (string)(int)round(stickerNumber($params['rotation'] ?? 0, 0, 360, 0));
+	return "{$id};{$schema};{$x};{$y};{$wear};{$scale};{$rotation}";
 }
 
 function buildStickerValue($stickerId)
@@ -320,9 +404,42 @@ function buildStickerValue($stickerId)
 	if ($stickerId === 0) {
 		return defaultStickerValue();
 	}
-	return "{$stickerId};{$stickerId};0;0;0;1;0";
+	return buildStickerValueFromParts($stickerId, $stickerId, [
+		'x' => 0,
+		'y' => 0,
+		'wear' => 0,
+		'scale' => 1,
+		'rotation' => 0,
+	]);
 }
 
+function readStickerAdvancedParamsFromPost()
+{
+	return [
+		'wear' => stickerNumber($_POST['sticker_wear'] ?? null, 0, 1, 0),
+		'x' => stickerNumber($_POST['sticker_x'] ?? null, -1, 1, 0),
+		'y' => stickerNumber($_POST['sticker_y'] ?? null, -1, 1, 0),
+		'scale' => stickerNumber($_POST['sticker_scale'] ?? null, 0.2, 5, 1, true),
+		'rotation' => stickerNumber($_POST['sticker_rotation'] ?? null, 0, 360, 0),
+	];
+}
+
+function wantsJsonResponse()
+{
+	$requestedWith = strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+	$accept = strtolower((string)($_SERVER['HTTP_ACCEPT'] ?? ''));
+	return ($_POST['ajax'] ?? '') === '1' || $requestedWith === 'fetch' || strpos($accept, 'application/json') !== false;
+}
+
+function stickerSlotResponse($ok, $payload, $fallbackUrl)
+{
+	if (wantsJsonResponse()) {
+		header('Content-Type: application/json; charset=utf-8');
+		echo json_encode(['ok' => $ok] + $payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		exit;
+	}
+	go($fallbackUrl);
+}
 function defaultStickerValues()
 {
 	return array_fill(0, 5, defaultStickerValue());
@@ -351,11 +468,16 @@ function readStickerValuesFromPost($slotCount, $stickers)
 		if (!array_key_exists($stickerId, $stickers)) {
 			$stickerId = 0;
 		}
-		$values[$i] = buildStickerValue($stickerId);
+		$postedValue = (string)($_POST["sticker_value_{$i}"] ?? '');
+		$postedParts = stickerValueParts($postedValue);
+		if ($stickerId > 0 && $postedParts['id'] === $stickerId) {
+			$values[$i] = buildStickerValueFromParts($postedParts['id'], $postedParts['schema'], $postedParts);
+		} else {
+			$values[$i] = buildStickerValue($stickerId);
+		}
 	}
 	return $values;
 }
-
 function stickerDataFile()
 {
 	$currentLanguage = UtilsClass::currentLanguage();
@@ -486,15 +608,17 @@ function readNameTagFromPost()
 	return $nameTag;
 }
 
-function saveSkinSettingCache($db, $skinSettingsTable, $steamid, $team, $defindex, $paint, $wear, $seed, $stattrak, $nameTag)
+function saveSkinSettingCache($db, $skinSettingsTable, $steamid, $team, $defindex, $paint, $wear, $seed, $stattrak, $stattrakCount, $nameTag)
 {
+	$stattrakCount = max(0, min(999999, (int)$stattrakCount));
 	$db->query("INSERT INTO `{$skinSettingsTable}`
-		(`steamid`, `weapon_team`, `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_nametag`)
-		VALUES (:steamid, :team, :defindex, :paint, :wear, :seed, :stattrak, :nametag)
+		(`steamid`, `weapon_team`, `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`)
+		VALUES (:steamid, :team, :defindex, :paint, :wear, :seed, :stattrak, :stattrak_count, :nametag)
 		ON DUPLICATE KEY UPDATE
 			`weapon_wear` = :wear_update,
 			`weapon_seed` = :seed_update,
 			`weapon_stattrak` = :stattrak_update,
+			`weapon_stattrak_count` = :stattrak_count_update,
 			`weapon_nametag` = :nametag_update", [
 		"steamid" => $steamid,
 		"team" => $team,
@@ -503,17 +627,19 @@ function saveSkinSettingCache($db, $skinSettingsTable, $steamid, $team, $definde
 		"wear" => $wear,
 		"seed" => $seed,
 		"stattrak" => $stattrak,
+		"stattrak_count" => $stattrakCount,
 		"nametag" => $nameTag,
 		"wear_update" => $wear,
 		"seed_update" => $seed,
 		"stattrak_update" => $stattrak,
+		"stattrak_count_update" => $stattrakCount,
 		"nametag_update" => $nameTag,
 	]);
 }
 
 function loadSkinSettingCache($db, $skinSettingsTable, $steamid, $team, $defindex, $paint)
 {
-	$rows = $db->select("SELECT `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_nametag`
+	$rows = $db->select("SELECT `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`
 		FROM `{$skinSettingsTable}`
 		WHERE `steamid` = :steamid AND `weapon_team` = :team AND `weapon_defindex` = :defindex AND `weapon_paint_id` = :paint
 		LIMIT 1", [
@@ -637,6 +763,106 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		go("index.php?action=edit&id={$steamid}&team={$team}&saved=1");
 	}
 
+	if ($postAction === 'save_sticker_choice') {
+		$id = cleanSteamId($_POST['id'] ?? '');
+		$team = selectedTeam();
+		$preset = findPreset($db, $presetTable, $id);
+		$defindex = (int)($_POST['weapon_defindex'] ?? 0);
+		$slot = (int)($_POST['sticker_slot'] ?? -1);
+		$stickerId = (int)($_POST['sticker_id'] ?? 0);
+		$stickers = stickersFromJson();
+		$fallbackUrl = "index.php?action=edit&id={$id}&team={$team}";
+		$slotCount = stickerSlotCount($defindex);
+		if (!$preset || $defindex <= 0 || $slot < 0 || $slot >= min(5, $slotCount) || !array_key_exists($stickerId, $stickers)) {
+			stickerSlotResponse(false, ['message' => t('sticker_save_failed')], $fallbackUrl);
+		}
+
+		$field = "weapon_sticker_{$slot}";
+		$newValue = buildStickerValue($stickerId);
+		$updated = false;
+		foreach (writeTeams($team) as $targetTeam) {
+			$rows = $db->select("SELECT `weapon_defindex` FROM `wp_player_skins`
+				WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team LIMIT 1", [
+				"steamid" => $preset['steamid'],
+				"weapon_defindex" => $defindex,
+				"team" => $targetTeam,
+			]);
+			if (!$rows) {
+				continue;
+			}
+			$db->query("UPDATE `wp_player_skins` SET `{$field}` = :sticker_value
+				WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team", [
+				"sticker_value" => $newValue,
+				"steamid" => $preset['steamid'],
+				"weapon_defindex" => $defindex,
+				"team" => $targetTeam,
+			]);
+			$updated = true;
+		}
+
+		if (!$updated) {
+			stickerSlotResponse(false, ['message' => t('sticker_save_failed')], $fallbackUrl);
+		}
+		stickerSlotResponse(true, [
+			'value' => $newValue,
+			'slot' => $slot,
+			'sticker_id' => $stickerId,
+			'params' => stickerValueParts($newValue),
+		], $fallbackUrl);
+	}
+	if ($postAction === 'save_sticker_slot') {
+		$id = cleanSteamId($_POST['id'] ?? '');
+		$team = selectedTeam();
+		$preset = findPreset($db, $presetTable, $id);
+		$defindex = (int)($_POST['weapon_defindex'] ?? 0);
+		$slot = (int)($_POST['sticker_slot'] ?? -1);
+		$fallbackUrl = "index.php?action=edit&id={$id}&team={$team}";
+		$slotCount = stickerSlotCount($defindex);
+		if (!$preset || $defindex <= 0 || $slot < 0 || $slot >= min(5, $slotCount)) {
+			stickerSlotResponse(false, ['message' => t('sticker_save_failed')], $fallbackUrl);
+		}
+
+		$field = "weapon_sticker_{$slot}";
+		$params = readStickerAdvancedParamsFromPost();
+		$responseValue = null;
+		$updated = false;
+		foreach (writeTeams($team) as $targetTeam) {
+			$rows = $db->select("SELECT `{$field}` AS sticker_value FROM `wp_player_skins`
+				WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team LIMIT 1", [
+				"steamid" => $preset['steamid'],
+				"weapon_defindex" => $defindex,
+				"team" => $targetTeam,
+			]);
+			if (!$rows) {
+				continue;
+			}
+			$parts = stickerValueParts($rows[0]['sticker_value'] ?? '');
+			if ($parts['id'] <= 0) {
+				continue;
+			}
+			$newValue = buildStickerValueFromParts($parts['id'], $parts['schema'], $params);
+			$db->query("UPDATE `wp_player_skins` SET `{$field}` = :sticker_value
+				WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team", [
+				"sticker_value" => $newValue,
+				"steamid" => $preset['steamid'],
+				"weapon_defindex" => $defindex,
+				"team" => $targetTeam,
+			]);
+			if ($responseValue === null) {
+				$responseValue = $newValue;
+			}
+			$updated = true;
+		}
+
+		if (!$updated) {
+			stickerSlotResponse(false, ['message' => t('sticker_save_failed')], $fallbackUrl);
+		}
+		stickerSlotResponse(true, [
+			'value' => $responseValue,
+			'slot' => $slot,
+			'params' => stickerValueParts($responseValue),
+		], $fallbackUrl);
+	}
 	if ($postAction === 'save_skin') {
 		$id = cleanSteamId($_POST['id'] ?? '');
 		$team = selectedTeam();
@@ -652,7 +878,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$knifes = UtilsClass::getKnifeTypes();
 		$gloves = glovesFromJson();
 		$stickers = stickersFromJson();
-		$selectedRows = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`
+		$selectedRows = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`
 			FROM `wp_player_skins`
 			WHERE `steamid` = :steamid AND `weapon_team` = :team", [
 			"steamid" => $steamid,
@@ -728,7 +954,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					]);
 
 					$paint = (int)array_key_first($gloves[$gloveDefindex]);
-					$existing = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4` FROM `wp_player_skins`
+					$existing = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4` FROM `wp_player_skins`
 						WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team LIMIT 1", [
 						"steamid" => $steamid,
 						"weapon_defindex" => $gloveDefindex,
@@ -736,7 +962,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					]);
 					if ($existing) {
 						$current = $existing[0];
-						saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $gloveDefindex, (int)$current['weapon_paint_id'], (float)$current['weapon_wear'], (int)$current['weapon_seed'], 0, null);
+						saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $gloveDefindex, (int)$current['weapon_paint_id'], (float)$current['weapon_wear'], (int)$current['weapon_seed'], 0, 0, null);
 					}
 
 					$cached = loadSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $gloveDefindex, $paint);
@@ -745,7 +971,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 					if ($existing) {
 						$db->query("UPDATE `wp_player_skins`
-							SET `weapon_paint_id` = :weapon_paint_id, `weapon_wear` = :weapon_wear, `weapon_seed` = :weapon_seed, `weapon_stattrak` = 0, `weapon_nametag` = NULL
+							SET `weapon_paint_id` = :weapon_paint_id, `weapon_wear` = :weapon_wear, `weapon_seed` = :weapon_seed, `weapon_stattrak` = 0, `weapon_stattrak_count` = 0, `weapon_nametag` = NULL
 							WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team", [
 							"steamid" => $steamid,
 							"weapon_defindex" => $gloveDefindex,
@@ -756,8 +982,8 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 						]);
 					} else {
 						$db->query("INSERT INTO `wp_player_skins`
-							(`steamid`, `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_team`)
-							VALUES (:steamid, :weapon_defindex, :weapon_paint_id, :weapon_wear, :weapon_seed, 0, NULL, '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', :team)", [
+							(`steamid`, `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_team`)
+							VALUES (:steamid, :weapon_defindex, :weapon_paint_id, :weapon_wear, :weapon_seed, 0, 0, NULL, '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', :team)", [
 							"steamid" => $steamid,
 							"weapon_defindex" => $gloveDefindex,
 							"weapon_paint_id" => $paint,
@@ -766,7 +992,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 							"team" => $targetTeam,
 						]);
 					}
-					saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $gloveDefindex, $paint, $wear, $seed, 0, null);
+					saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $gloveDefindex, $paint, $wear, $seed, 0, 0, null);
 				}
 			}
 		} elseif (($ex[0] ?? '') === 'gloveskin' && isset($ex[1], $ex[2]) && array_key_exists((int)$ex[1], $gloves) && array_key_exists((int)$ex[2], $gloves[(int)$ex[1]] ?? [])) {
@@ -790,7 +1016,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					]);
 				}
 
-				$existing = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4` FROM `wp_player_skins`
+				$existing = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4` FROM `wp_player_skins`
 					WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team LIMIT 1", [
 					"steamid" => $steamid,
 					"weapon_defindex" => $defindex,
@@ -798,7 +1024,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 				]);
 				if ($existing) {
 					$current = $existing[0];
-					saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, (int)$current['weapon_paint_id'], (float)$current['weapon_wear'], (int)$current['weapon_seed'], 0, null);
+					saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, (int)$current['weapon_paint_id'], (float)$current['weapon_wear'], (int)$current['weapon_seed'], 0, 0, null);
 				}
 
 				if ($hasExplicitSettings) {
@@ -812,7 +1038,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 				if ($existing) {
 					$db->query("UPDATE `wp_player_skins`
-						SET `weapon_paint_id` = :weapon_paint_id, `weapon_wear` = :weapon_wear, `weapon_seed` = :weapon_seed, `weapon_stattrak` = 0, `weapon_nametag` = NULL
+						SET `weapon_paint_id` = :weapon_paint_id, `weapon_wear` = :weapon_wear, `weapon_seed` = :weapon_seed, `weapon_stattrak` = 0, `weapon_stattrak_count` = 0, `weapon_nametag` = NULL
 						WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team", [
 						"steamid" => $steamid,
 						"weapon_defindex" => $defindex,
@@ -823,8 +1049,8 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					]);
 				} else {
 					$db->query("INSERT INTO `wp_player_skins`
-						(`steamid`, `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_team`)
-						VALUES (:steamid, :weapon_defindex, :weapon_paint_id, :weapon_wear, :weapon_seed, 0, NULL, '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', :team)", [
+						(`steamid`, `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_team`)
+						VALUES (:steamid, :weapon_defindex, :weapon_paint_id, :weapon_wear, :weapon_seed, 0, 0, NULL, '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', '0;0;0;0;0;0;0', :team)", [
 						"steamid" => $steamid,
 						"weapon_defindex" => $defindex,
 						"weapon_paint_id" => $paint,
@@ -833,7 +1059,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 						"team" => $targetTeam,
 					]);
 				}
-				saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, $paint, $wear, $seed, 0, null);
+				saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, $paint, $wear, $seed, 0, 0, null);
 			}
 
 		} elseif (isset($ex[0], $ex[1]) && array_key_exists((int)$ex[0], $weapons) && array_key_exists((int)$ex[1], $skins[(int)$ex[0]] ?? [])) {
@@ -846,6 +1072,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 			$submittedWear = $hasExplicitWear ? max(0.0, min(1.0, (float)$_POST['wear'])) : null;
 			$submittedSeed = $hasExplicitSeed ? max(0, min(1000, (int)$_POST['seed'])) : null;
 			$submittedStatTrak = array_key_exists('stattrak', $_POST) ? 1 : 0;
+			$submittedStatTrakCount = $submittedStatTrak ? max(0, min(999999, (int)($_POST['weapon_stattrak_count'] ?? 0))) : 0;
 			$submittedNameTag = readNameTagFromPost();
 			if ($submittedNameTag === false) {
 				go("index.php?action=edit&id={$id}&team={$team}&error=nametag");
@@ -864,7 +1091,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					]);
 				}
 
-				$existing = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4` FROM `wp_player_skins`
+				$existing = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4` FROM `wp_player_skins`
 					WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team LIMIT 1", [
 					"steamid" => $steamid,
 					"weapon_defindex" => $defindex,
@@ -872,13 +1099,14 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 				]);
 				if ($existing) {
 					$current = $existing[0];
-					saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, (int)$current['weapon_paint_id'], (float)$current['weapon_wear'], (int)$current['weapon_seed'], (int)$current['weapon_stattrak'], $current['weapon_nametag']);
+					saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, (int)$current['weapon_paint_id'], (float)$current['weapon_wear'], (int)$current['weapon_seed'], (int)$current['weapon_stattrak'], (int)($current['weapon_stattrak_count'] ?? 0), $current['weapon_nametag']);
 				}
 
 				if ($hasExplicitSettings) {
 					$wear = $submittedWear ?? ($existing[0]['weapon_wear'] ?? 0.0);
 					$seed = $submittedSeed ?? ($existing[0]['weapon_seed'] ?? 0);
 					$stattrak = $submittedStatTrak;
+					$stattrakCount = $stattrak ? $submittedStatTrakCount : 0;
 					$nameTag = array_key_exists('nametag_present', $_POST) ? $submittedNameTag : ($existing[0]['weapon_nametag'] ?? null);
 					$stickerValues = $submittedStickerValues ?? ($existing ? stickerValuesFromRow($existing[0]) : defaultStickerValues());
 				} else {
@@ -886,13 +1114,14 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					$wear = $cached ? (float)$cached['weapon_wear'] : 0.0;
 					$seed = $cached ? (int)$cached['weapon_seed'] : 0;
 					$stattrak = $cached ? (int)$cached['weapon_stattrak'] : 0;
+					$stattrakCount = $stattrak && $cached ? (int)($cached['weapon_stattrak_count'] ?? 0) : 0;
 					$nameTag = $cached ? $cached['weapon_nametag'] : null;
 					$stickerValues = $existing ? stickerValuesFromRow($existing[0]) : defaultStickerValues();
 				}
 
 				if ($existing) {
 					$db->query("UPDATE `wp_player_skins`
-						SET `weapon_paint_id` = :weapon_paint_id, `weapon_wear` = :weapon_wear, `weapon_seed` = :weapon_seed, `weapon_stattrak` = :weapon_stattrak, `weapon_nametag` = :weapon_nametag, `weapon_sticker_0` = :weapon_sticker_0, `weapon_sticker_1` = :weapon_sticker_1, `weapon_sticker_2` = :weapon_sticker_2, `weapon_sticker_3` = :weapon_sticker_3, `weapon_sticker_4` = :weapon_sticker_4
+						SET `weapon_paint_id` = :weapon_paint_id, `weapon_wear` = :weapon_wear, `weapon_seed` = :weapon_seed, `weapon_stattrak` = :weapon_stattrak, `weapon_stattrak_count` = :weapon_stattrak_count, `weapon_nametag` = :weapon_nametag, `weapon_sticker_0` = :weapon_sticker_0, `weapon_sticker_1` = :weapon_sticker_1, `weapon_sticker_2` = :weapon_sticker_2, `weapon_sticker_3` = :weapon_sticker_3, `weapon_sticker_4` = :weapon_sticker_4
 						WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team", [
 						"steamid" => $steamid,
 						"weapon_defindex" => $defindex,
@@ -900,6 +1129,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 						"weapon_wear" => $wear,
 						"weapon_seed" => $seed,
 						"weapon_stattrak" => $stattrak,
+						"weapon_stattrak_count" => $stattrakCount,
 						"weapon_nametag" => $nameTag,
 						"weapon_sticker_0" => $stickerValues[0],
 						"weapon_sticker_1" => $stickerValues[1],
@@ -910,14 +1140,15 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					]);
 				} else {
 					$db->query("INSERT INTO `wp_player_skins`
-						(`steamid`, `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_team`)
-						VALUES (:steamid, :weapon_defindex, :weapon_paint_id, :weapon_wear, :weapon_seed, :weapon_stattrak, :weapon_nametag, :weapon_sticker_0, :weapon_sticker_1, :weapon_sticker_2, :weapon_sticker_3, :weapon_sticker_4, :team)", [
+						(`steamid`, `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_team`)
+						VALUES (:steamid, :weapon_defindex, :weapon_paint_id, :weapon_wear, :weapon_seed, :weapon_stattrak, :weapon_stattrak_count, :weapon_nametag, :weapon_sticker_0, :weapon_sticker_1, :weapon_sticker_2, :weapon_sticker_3, :weapon_sticker_4, :team)", [
 						"steamid" => $steamid,
 						"weapon_defindex" => $defindex,
 						"weapon_paint_id" => $paint,
 						"weapon_wear" => $wear,
 						"weapon_seed" => $seed,
 						"weapon_stattrak" => $stattrak,
+						"weapon_stattrak_count" => $stattrakCount,
 						"weapon_nametag" => $nameTag,
 						"weapon_sticker_0" => $stickerValues[0],
 						"weapon_sticker_1" => $stickerValues[1],
@@ -927,7 +1158,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 						"team" => $targetTeam,
 					]);
 				}
-				saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, $paint, $wear, $seed, $stattrak, $nameTag);
+				saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, $paint, $wear, $seed, $stattrak, $stattrakCount, $nameTag);
 			}
 		}
 
@@ -1020,7 +1251,7 @@ if ($action === 'edit') {
 	$gloves = glovesFromJson();
 	$stickers = stickersFromJson();
 	$music = musicFromJson();
-	$selectedRows = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`
+	$selectedRows = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`
 		FROM `wp_player_skins`
 		WHERE `steamid` = :steamid AND `weapon_team` = :team", [
 		"steamid" => $steamid,
@@ -1203,6 +1434,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 					$currentKnifeWear = $selectedKnifeSkin['weapon_wear'] ?? 0.0;
 					$currentKnifeSeed = $selectedKnifeSkin['weapon_seed'] ?? 0;
 					$currentKnifeStatTrak = (int)($selectedKnifeSkin['weapon_stattrak'] ?? 0);
+					$currentKnifeStatTrakCount = $currentKnifeStatTrak ? (int)($selectedKnifeSkin['weapon_stattrak_count'] ?? 0) : 0;
 					$currentKnifeNameTag = $selectedKnifeSkin['weapon_nametag'] ?? null;
 					if ($actualKnifeKey > 0) {
 						$cachedKnifeSetting = loadSkinSettingCache($db, $skinSettingsTable, $currentPreset['steamid'], $displayTeam, $actualKnifeKey, $currentKnifePaintId);
@@ -1210,12 +1442,18 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 							$currentKnifeWear = $cachedKnifeSetting['weapon_wear'];
 							$currentKnifeSeed = $cachedKnifeSetting['weapon_seed'];
 							$currentKnifeStatTrak = (int)$cachedKnifeSetting['weapon_stattrak'];
+							$currentKnifeStatTrakCount = $currentKnifeStatTrak ? (int)($cachedKnifeSetting['weapon_stattrak_count'] ?? 0) : 0;
 							$currentKnifeNameTag = $cachedKnifeSetting['weapon_nametag'];
 						}
 					}
 					$currentKnifeNameTagEnabled = $currentKnifeNameTag !== null && $currentKnifeNameTag !== '';
 					?>
-					<?php if ($currentKnifeStatTrak) : ?><span class="stattrak-badge">StatTrak™</span><?php endif; ?>
+					<?php if ($currentKnifeNameTagEnabled || $currentKnifeStatTrak) : ?>
+						<div class="card-status-badges">
+							<?php if ($currentKnifeNameTagEnabled) : ?><span class="nametag-badge"><?= h(t('name_tag')) ?></span><?php endif; ?>
+							<?php if ($currentKnifeStatTrak) : ?><span class="stattrak-badge">StatTrak™</span><?php endif; ?>
+						</div>
+					<?php endif; ?>
 					<div class="card-title-wrap">
 						<span><?= h(t('knife_type')) ?></span>
 						<h2><?= h($currentKnifeSkin['paint_name']) ?></h2>
@@ -1350,17 +1588,18 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 													</label>
 													<input type="text" name="weapon_nametag" value="<?= h($currentKnifeNameTag ?? '') ?>" maxlength="20" class="form-control nametag-input" data-nametag-input <?= $currentKnifeNameTagEnabled ? '' : 'disabled hidden' ?>>
 												</div>
-												<div class="col-12">
-													<label class="check-line">
-														<input type="checkbox" name="stattrak" value="1" <?= $currentKnifeStatTrak ? 'checked' : '' ?>>
-														<span class="stattrak-label">StatTrak™</span>
-													</label>
-												</div>
+												<div class="col-12 stattrak-row">
+	<label class="check-line">
+		<input type="checkbox" name="stattrak" value="1" data-stattrak-toggle <?= $currentKnifeStatTrak ? 'checked' : '' ?>>
+		<span class="stattrak-label">StatTrak™</span>
+	</label>
+	<input type="number" name="weapon_stattrak_count" value="<?= h($currentKnifeStatTrakCount) ?>" min="0" max="999999" step="1" class="form-control stattrak-input" data-stattrak-input <?= $currentKnifeStatTrak ? '' : 'disabled hidden' ?>>
+</div>
 											</div>
 										<?php endif; ?>
 									</div>
 									<div class="modal-footer">
-										<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('close')) ?></button>
+										<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('cancel')) ?></button>
 										<?php if ($actualKnifeKey > 0) : ?><button type="submit" class="btn btn-primary"><?= h(t('save')) ?></button><?php endif; ?>
 									</div>
 								</div>
@@ -1527,7 +1766,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 										<?php endif; ?>
 									</div>
 									<div class="modal-footer">
-										<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('close')) ?></button>
+										<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('cancel')) ?></button>
 										<?php if ($actualGloveDefindex > 0 && $currentGlovePaintId > 0) : ?><button type="submit" class="btn btn-primary"><?= h(t('save')) ?></button><?php endif; ?>
 									</div>
 								</div>
@@ -1661,6 +1900,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 					$initialWearValue = $hasSkin ? $selectedSkins[$defindex]['weapon_wear'] : 0.0;
 					$initialSeedValue = $hasSkin ? $selectedSkins[$defindex]['weapon_seed'] : 0;
 					$initialStatTrakValue = $hasSkin ? (int)($selectedSkins[$defindex]['weapon_stattrak'] ?? 0) : 0;
+					$initialStatTrakCountValue = $initialStatTrakValue ? (int)($selectedSkins[$defindex]['weapon_stattrak_count'] ?? 0) : 0;
 					$initialNameTagValue = $hasSkin ? ($selectedSkins[$defindex]['weapon_nametag'] ?? null) : null;
 					$initialStickerValues = $hasSkin ? stickerValuesFromRow($selectedSkins[$defindex]) : defaultStickerValues();
 					$stickerSlotTotal = stickerSlotCount((int)$defindex);
@@ -1670,6 +1910,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 							$initialWearValue = $cachedSkinSetting['weapon_wear'];
 							$initialSeedValue = $cachedSkinSetting['weapon_seed'];
 							$initialStatTrakValue = (int)$cachedSkinSetting['weapon_stattrak'];
+							$initialStatTrakCountValue = $initialStatTrakValue ? (int)($cachedSkinSetting['weapon_stattrak_count'] ?? 0) : 0;
 							$initialNameTagValue = $cachedSkinSetting['weapon_nametag'];
 						}
 					}
@@ -1679,7 +1920,12 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 					$skinPickerId = "skinPicker{$defindex}";
 					?>
 					<div class="skin-card weapon-card">
-						<?php if ($initialStatTrakValue) : ?><span class="stattrak-badge">StatTrak™</span><?php endif; ?>
+						<?php if ($initialNameTagEnabled || $initialStatTrakValue) : ?>
+							<div class="card-status-badges">
+								<?php if ($initialNameTagEnabled) : ?><span class="nametag-badge"><?= h(t('name_tag')) ?></span><?php endif; ?>
+								<?php if ($initialStatTrakValue) : ?><span class="stattrak-badge">StatTrak™</span><?php endif; ?>
+							</div>
+						<?php endif; ?>
 						<div class="card-title-wrap">
 							<span><?= h($default['weapon_name']) ?></span>
 							<h2><?= h($currentSkin['paint_name']) ?></h2>
@@ -1775,12 +2021,13 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 													</label>
 													<input type="text" name="weapon_nametag" value="<?= h($initialNameTagValue ?? '') ?>" maxlength="20" class="form-control nametag-input" data-nametag-input <?= $initialNameTagEnabled ? '' : 'disabled hidden' ?>>
 												</div>
-												<div class="col-12">
-													<label class="check-line">
-														<input type="checkbox" name="stattrak" value="1" <?= $initialStatTrakValue ? 'checked' : '' ?>>
-														<span class="stattrak-label">StatTrak™</span>
-													</label>
-												</div>
+												<div class="col-12 stattrak-row">
+	<label class="check-line">
+		<input type="checkbox" name="stattrak" value="1" data-stattrak-toggle <?= $initialStatTrakValue ? 'checked' : '' ?>>
+		<span class="stattrak-label">StatTrak™</span>
+	</label>
+	<input type="number" name="weapon_stattrak_count" value="<?= h($initialStatTrakCountValue) ?>" min="0" max="999999" step="1" class="form-control stattrak-input" data-stattrak-input <?= $initialStatTrakValue ? '' : 'disabled hidden' ?>>
+</div>
 												<div class="col-12 sticker-section">
 													<input type="hidden" name="sticker_present" value="1">
 													<div class="sticker-section-heading">
@@ -1800,25 +2047,30 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 													</div>
 													<div class="sticker-grid">
 														<?php for ($slotIndex = 0; $slotIndex < $stickerSlotTotal; $slotIndex++) : ?>
-															<?php
-															$currentStickerId = $initialStickerIds[$slotIndex] ?? 0;
-															$currentSticker = $stickers[$currentStickerId] ?? $stickers[0];
-															?>
-															<div class="sticker-slot" data-empty-label="<?= h(t('sticker_slot') . ' ' . ($slotIndex + 1)) ?>">
-																<input type="hidden" name="sticker_<?= $slotIndex ?>" value="<?= (int)$currentStickerId ?>" data-sticker-input>
-																<button type="button" class="sticker-slot-button" data-sticker-open aria-label="<?= h(t('choose_sticker')) ?>">
-																	<span class="sticker-plus sticker-empty-icon" <?= $currentStickerId > 0 ? 'hidden' : '' ?>>+</span>
-																	<img src="img/skins/sticker.png" data-remote-src="<?= h($currentSticker['image'] ?? '') ?>" alt="" data-sticker-preview <?= $currentStickerId > 0 ? '' : 'hidden' ?>>
-																</button>
-																<div class="sticker-slot-name" data-sticker-name><span data-sticker-name-text><?= h($currentStickerId > 0 ? ($currentSticker['name'] ?? '') : t('sticker_slot') . ' ' . ($slotIndex + 1)) ?></span></div>
-															</div>
+													<?php
+													$currentStickerValue = $initialStickerValues[$slotIndex] ?? defaultStickerValue();
+													$currentStickerId = $initialStickerIds[$slotIndex] ?? 0;
+													$currentSticker = $stickers[$currentStickerId] ?? $stickers[0];
+													?>
+													<div class="sticker-slot" data-empty-label="<?= h(t('sticker_slot') . ' ' . ($slotIndex + 1)) ?>" data-slot-number="<?= $slotIndex + 1 ?>" data-sticker-slot-index="<?= $slotIndex ?>" data-weapon-defindex="<?= (int)$defindex ?>" data-saved-sticker-id="<?= (int)$currentStickerId ?>">
+														<input type="hidden" name="sticker_<?= $slotIndex ?>" value="<?= (int)$currentStickerId ?>" data-sticker-input>
+														<input type="hidden" name="sticker_value_<?= $slotIndex ?>" value="<?= h($currentStickerValue) ?>" data-sticker-value>
+														<div class="sticker-slot-preview">
+															<button type="button" class="sticker-slot-button" data-sticker-open aria-label="<?= h(t('choose_sticker')) ?>">
+																<span class="sticker-plus sticker-empty-icon" <?= $currentStickerId > 0 ? 'hidden' : '' ?>>+</span>
+																<img src="img/skins/sticker.png" data-remote-src="<?= h($currentSticker['image'] ?? '') ?>" alt="" data-sticker-preview <?= $currentStickerId > 0 ? '' : 'hidden' ?> >
+															</button>
+															<button type="button" class="sticker-slot-settings" data-sticker-settings title="<?= h(t('sticker_settings')) ?>" aria-label="<?= h(t('sticker_settings')) ?>" <?= $currentStickerId > 0 ? '' : 'hidden disabled' ?>>⚙</button>
+														</div>
+														<div class="sticker-slot-name" data-sticker-name><span data-sticker-name-text><?= h($currentStickerId > 0 ? ($currentSticker['name'] ?? '') : t('sticker_slot') . ' ' . ($slotIndex + 1)) ?></span></div>
+													</div>
 														<?php endfor; ?>
 													</div>
 												</div>
 											</div>
 										</div>
 										<div class="modal-footer">
-											<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('close')) ?></button>
+											<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('cancel')) ?></button>
 											<button type="submit" class="btn btn-primary"><?= h(t('save')) ?></button>
 										</div>
 									</div>
@@ -1841,6 +2093,47 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 					<div class="sticker-picker-grid" data-sticker-results></div>
 				</div>
 			</div>
+		</div>
+	</div>
+	<div class="modal fade sticker-advanced-modal" id="stickerAdvancedModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<form method="post" class="modal-content" data-sticker-advanced-form>
+				<input type="hidden" name="action" value="save_sticker_slot">
+				<input type="hidden" name="id" value="<?= h($currentPreset['steamid'] ?? '') ?>" data-sticker-advanced-id>
+				<input type="hidden" name="team" value="<?= h((string)($team ?? 1)) ?>" data-sticker-advanced-team>
+				<input type="hidden" name="weapon_defindex" value="" data-sticker-advanced-defindex>
+				<input type="hidden" name="sticker_slot" value="" data-sticker-advanced-slot>
+				<div class="modal-header">
+					<div>
+						<h5 class="modal-title" data-sticker-advanced-title><?= h(t('sticker_slot_settings')) ?></h5>
+						<div class="sticker-advanced-subtitle" data-sticker-advanced-name></div>
+					</div>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
+				</div>
+				<div class="modal-body sticker-advanced-body">
+					<?php $stickerParams = [
+						'wear' => [t('sticker_wear'), '0', '1', '0.01', '0.00'],
+						'x' => [t('sticker_x'), '-1', '1', '0.01', '0.00'],
+						'y' => [t('sticker_y'), '-1', '1', '0.01', '0.00'],
+						'scale' => [t('sticker_scale'), '0.2', '5', '0.01', '1.00'],
+						'rotation' => [t('sticker_rotation'), '0', '360', '1', '0'],
+					]; ?>
+					<?php foreach ($stickerParams as $paramKey => $paramConfig) : ?>
+						<div class="sticker-advanced-row" data-sticker-param="<?= h($paramKey) ?>">
+							<label><?= h($paramConfig[0]) ?></label>
+							<div class="sticker-advanced-controls">
+								<input type="range" min="<?= h($paramConfig[1]) ?>" max="<?= h($paramConfig[2]) ?>" step="<?= h($paramConfig[3]) ?>" value="<?= h($paramConfig[4]) ?>" data-sticker-param-range>
+								<input type="number" name="sticker_<?= h($paramKey) ?>" min="<?= h($paramConfig[1]) ?>" max="<?= h($paramConfig[2]) ?>" step="<?= h($paramConfig[3]) ?>" value="<?= h($paramConfig[4]) ?>" class="form-control" data-sticker-param-number>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-outline-light" data-sticker-advanced-reset><?= h(t('reset')) ?></button>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('cancel')) ?></button>
+					<button type="submit" class="btn btn-primary"><?= h(t('save')) ?></button>
+				</div>
+			</form>
 		</div>
 	</div>
 
@@ -1919,7 +2212,173 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 			var picker = pickerEl && window.bootstrap ? new bootstrap.Modal(pickerEl) : null;
 			var searchInput = pickerEl ? pickerEl.querySelector('.sticker-search') : null;
 			var resultsEl = pickerEl ? pickerEl.querySelector('[data-sticker-results]') : null;
+			var activeAdvancedSlot = null;
+			var advancedEl = document.getElementById('stickerAdvancedModal');
+			var advancedModal = advancedEl && window.bootstrap ? new bootstrap.Modal(advancedEl) : null;
+			var advancedForm = advancedEl ? advancedEl.querySelector('[data-sticker-advanced-form]') : null;
+			var advancedTitle = advancedEl ? advancedEl.querySelector('[data-sticker-advanced-title]') : null;
+			var advancedName = advancedEl ? advancedEl.querySelector('[data-sticker-advanced-name]') : null;
+			var advancedTitleTemplate = <?= json_encode(t('sticker_slot_settings'), JSON_UNESCAPED_UNICODE) ?>;
+			var stickerSaveFailedMessage = <?= json_encode(t('sticker_save_failed'), JSON_UNESCAPED_UNICODE) ?>;
+			var stickerDefaults = { wear: 0, x: 0, y: 0, scale: 1, rotation: 0 };
+			var stickerParamConfig = {
+				wear: { min: 0, max: 1, decimals: 2, defaultValue: 0 },
+				x: { min: -1, max: 1, decimals: 2, defaultValue: 0 },
+				y: { min: -1, max: 1, decimals: 2, defaultValue: 0 },
+				scale: { min: 0.2, max: 5, decimals: 2, defaultValue: 1 },
+				rotation: { min: 0, max: 360, decimals: 0, defaultValue: 0 }
+			};
 
+			var clampStickerParam = function (key, value, fallback) {
+				var config = stickerParamConfig[key];
+				var numeric = parseFloat(value);
+				if (!config || !isFinite(numeric)) {
+					return fallback !== undefined ? fallback : (config ? config.defaultValue : 0);
+				}
+				if (key === 'scale' && numeric <= 0) numeric = config.defaultValue;
+				return Math.min(config.max, Math.max(config.min, numeric));
+			};
+
+			var formatStickerParam = function (key, value) {
+				var config = stickerParamConfig[key];
+				var normalized = clampStickerParam(key, value, config ? config.defaultValue : 0);
+				return config && config.decimals > 0 ? normalized.toFixed(config.decimals) : String(Math.round(normalized));
+			};
+
+			var parseStickerValue = function (value) {
+				var parts = String(value || '').split(';');
+				while (parts.length < 7) parts.push('');
+				var id = parseInt(parts[0], 10) || 0;
+				var schema = parseInt(parts[1], 10) || 0;
+				if (id > 0 && schema === 0) schema = id;
+				return {
+					id: id,
+					schema: schema,
+					x: clampStickerParam('x', parts[2], 0),
+					y: clampStickerParam('y', parts[3], 0),
+					wear: clampStickerParam('wear', parts[4], 0),
+					scale: clampStickerParam('scale', parts[5], 1),
+					rotation: clampStickerParam('rotation', parts[6], 0)
+				};
+			};
+
+			var buildStickerValueForClient = function (id, schema, params) {
+				id = parseInt(id, 10) || 0;
+				schema = parseInt(schema, 10) || 0;
+				if (!id) return '0;0;0;0;0;0;0';
+				if (!schema) schema = id;
+				params = params || stickerDefaults;
+				return [
+					id,
+					schema,
+					formatStickerParam('x', params.x),
+					formatStickerParam('y', params.y),
+					formatStickerParam('wear', params.wear),
+					formatStickerParam('scale', params.scale),
+					formatStickerParam('rotation', params.rotation)
+				].join(';');
+			};
+
+			var defaultStickerValueForClient = function (id) {
+				return buildStickerValueForClient(id, id, stickerDefaults);
+			};
+
+			var syncStickerSettingsButton = function (slot) {
+				if (!slot) return;
+				var input = slot.querySelector('[data-sticker-input]');
+				var button = slot.querySelector('[data-sticker-settings]');
+				var id = input ? String(input.value || '0') : '0';
+				var savedId = String(slot.dataset.savedStickerId || '0');
+				var enabled = id !== '0' && id === savedId;
+				if (button) {
+					button.hidden = !enabled;
+					button.disabled = !enabled;
+				}
+			};
+
+			var setAdvancedControls = function (params) {
+				if (!advancedEl) return;
+				Object.keys(stickerParamConfig).forEach(function (key) {
+					var row = advancedEl.querySelector('[data-sticker-param="' + key + '"]');
+					if (!row) return;
+					var value = formatStickerParam(key, params[key]);
+					var range = row.querySelector('[data-sticker-param-range]');
+					var number = row.querySelector('[data-sticker-param-number]');
+					if (range) range.value = value;
+					if (number) number.value = value;
+				});
+			};
+
+			var readAdvancedControls = function () {
+				var params = {};
+				if (!advancedEl) return Object.assign({}, stickerDefaults);
+				Object.keys(stickerParamConfig).forEach(function (key) {
+					var row = advancedEl.querySelector('[data-sticker-param="' + key + '"]');
+					var number = row ? row.querySelector('[data-sticker-param-number]') : null;
+					params[key] = clampStickerParam(key, number ? number.value : stickerDefaults[key], stickerDefaults[key]);
+				});
+				return params;
+			};
+
+			var normalizeAdvancedRow = function (row, source) {
+				if (!row) return;
+				var key = row.dataset.stickerParam;
+				var range = row.querySelector('[data-sticker-param-range]');
+				var number = row.querySelector('[data-sticker-param-number]');
+				var previous = number && number.dataset.validValue !== undefined ? number.dataset.validValue : stickerDefaults[key];
+				var raw = source && source.value !== '' ? source.value : previous;
+				var value = formatStickerParam(key, raw);
+				if (range) range.value = value;
+				if (number) {
+					number.value = value;
+					number.dataset.validValue = value;
+				}
+			};
+
+			var openStickerAdvanced = function (slot) {
+				if (!slot || !advancedEl || !advancedModal) return;
+				var info = stickerInfoFromSlot(slot);
+				if (info.id === '0') return;
+				activeAdvancedSlot = slot;
+				var valueInput = slot.querySelector('[data-sticker-value]');
+				var parts = parseStickerValue(valueInput ? valueInput.value : defaultStickerValueForClient(info.id));
+				var titleSlot = slot.dataset.slotNumber || String((parseInt(slot.dataset.stickerSlotIndex, 10) || 0) + 1);
+				if (advancedTitle) advancedTitle.textContent = advancedTitleTemplate.replace('{slot}', titleSlot);
+				if (advancedName) advancedName.textContent = info.name || '';
+				var defindexInput = advancedEl.querySelector('[data-sticker-advanced-defindex]');
+				var slotInput = advancedEl.querySelector('[data-sticker-advanced-slot]');
+				if (defindexInput) defindexInput.value = slot.dataset.weaponDefindex || '';
+				if (slotInput) slotInput.value = slot.dataset.stickerSlotIndex || '0';
+				setAdvancedControls(parts);
+				setStickerUnderlay(slot.closest('.modal'));
+				advancedModal.show();
+				setTimeout(markStickerBackdrop, 0);
+			};
+
+			var saveStickerChoice = function (slot, id) {
+				if (!window.fetch || !slot) return Promise.resolve(null);
+				var form = slot.closest('form');
+				var formData = new FormData();
+				var idInput = form ? form.querySelector('input[name="id"]') : null;
+				var teamInput = form ? form.querySelector('input[name="team"]') : null;
+				formData.append('action', 'save_sticker_choice');
+				formData.append('id', idInput ? idInput.value : '');
+				formData.append('team', teamInput ? teamInput.value : '1');
+				formData.append('weapon_defindex', slot.dataset.weaponDefindex || '0');
+				formData.append('sticker_slot', slot.dataset.stickerSlotIndex || '0');
+				formData.append('sticker_id', String(id || '0'));
+				formData.append('ajax', '1');
+				return fetch(window.location.href, {
+					method: 'POST',
+					body: formData,
+					headers: { 'X-Requested-With': 'fetch', 'Accept': 'application/json' }
+				}).then(function (response) {
+					return response.ok ? response.json() : Promise.reject();
+				}).then(function (payload) {
+					if (!payload || !payload.ok) throw new Error(payload && payload.message ? payload.message : stickerSaveFailedMessage);
+					return payload;
+				});
+			};
 			var setStickerUnderlay = function (modal) {
 				if (activeStickerUnderlay && activeStickerUnderlay !== modal) {
 					activeStickerUnderlay.classList.remove('sticker-underlay-active');
@@ -1945,6 +2404,20 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 				});
 			}
 
+			document.addEventListener('keydown', function (event) {
+				if (event.key !== 'Escape') return;
+				if (advancedEl && advancedEl.classList.contains('show')) {
+					event.preventDefault();
+					event.stopPropagation();
+					if (advancedModal) advancedModal.hide();
+					return;
+				}
+				if (pickerEl && pickerEl.classList.contains('show')) {
+					event.preventDefault();
+					event.stopPropagation();
+					if (picker) picker.hide();
+				}
+			}, true);
 			var fetchJson = function (url) {
 				if (!url) return Promise.resolve([]);
 				return fetch(url, { cache: 'no-cache' })
@@ -2025,6 +2498,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 			var setStickerSlot = function (slot, id, name, image) {
 				if (!slot) return;
 				var input = slot.querySelector('[data-sticker-input]');
+				var valueInput = slot.querySelector('[data-sticker-value]');
 				var preview = slot.querySelector('[data-sticker-preview]');
 				var plus = slot.querySelector('.sticker-plus');
 				var label = slot.querySelector('[data-sticker-name]');
@@ -2032,6 +2506,7 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 				id = String(id || '0');
 				image = image || '';
 				if (input) input.value = id;
+				if (valueInput) valueInput.value = id === '0' ? '0;0;0;0;0;0;0' : defaultStickerValueForClient(id);
 				if (preview) {
 					preview.src = 'img/skins/sticker.png';
 					preview.dataset.remoteSrc = image;
@@ -2044,8 +2519,8 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 				} else if (label) {
 					label.textContent = id === '0' ? (slot.dataset.emptyLabel || <?= json_encode(t('sticker_slot'), JSON_UNESCAPED_UNICODE) ?>) : name;
 				}
+				syncStickerSettingsButton(slot);
 			};
-
 			var stickerInfoFromSlot = function (slot) {
 				var input = slot ? slot.querySelector('[data-sticker-input]') : null;
 				var preview = slot ? slot.querySelector('[data-sticker-preview]') : null;
@@ -2110,6 +2585,12 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 					return;
 				}
 
+				var settingsButton = event.target.closest('[data-sticker-settings]');
+				if (settingsButton) {
+					if (settingsButton.disabled) return;
+					openStickerAdvanced(settingsButton.closest('.sticker-slot'));
+					return;
+				}
 				var openButton = event.target.closest('[data-sticker-open]');
 				if (openButton) {
 					activeStickerSlot = openButton.closest('.sticker-slot');
@@ -2131,16 +2612,121 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 					var id = resultButton.dataset.stickerId || '0';
 					var name = resultButton.dataset.stickerName || <?= json_encode(t('no_sticker'), JSON_UNESCAPED_UNICODE) ?>;
 					var image = resultButton.dataset.stickerImage || '';
-					setStickerSlot(activeStickerSlot, id, name, image);
-					syncStickerToolButtons(activeStickerSlot.closest('.sticker-section'));
-					if (picker) picker.hide();
-				}
+					saveStickerChoice(activeStickerSlot, id).then(function (payload) {
+						setStickerSlot(activeStickerSlot, id, name, image);
+						var valueInput = activeStickerSlot.querySelector('[data-sticker-value]');
+						if (valueInput && payload && payload.value) valueInput.value = payload.value;
+						activeStickerSlot.dataset.savedStickerId = String(id || '0');
+						syncStickerSettingsButton(activeStickerSlot);
+						syncStickerToolButtons(activeStickerSlot.closest('.sticker-section'));
+						if (picker) picker.hide();
+					}).catch(function (error) {
+						alert(error && error.message ? error.message : stickerSaveFailedMessage);
+					});
+				}			});
+
+			document.querySelectorAll('[data-sticker-settings]').forEach(function (button) {
+				syncStickerSettingsButton(button.closest('.sticker-slot'));
 			});
 
+			if (advancedEl) {
+				advancedEl.addEventListener('shown.bs.modal', markStickerBackdrop);
+				advancedEl.addEventListener('hidden.bs.modal', function () {
+					setStickerUnderlay(null);
+				});
+				advancedEl.querySelectorAll('[data-sticker-param]').forEach(function (row) {
+					var range = row.querySelector('[data-sticker-param-range]');
+					var number = row.querySelector('[data-sticker-param-number]');
+					if (range) {
+						range.addEventListener('input', function () {
+							normalizeAdvancedRow(row, range);
+						});
+					}
+					if (number) {
+						number.addEventListener('input', function () {
+							var numeric = parseFloat(number.value);
+							if (isFinite(numeric) && range) range.value = numeric;
+						});
+						number.addEventListener('change', function () {
+							normalizeAdvancedRow(row, number);
+						});
+						normalizeAdvancedRow(row, number);
+					}
+				});
+				var resetButton = advancedEl.querySelector('[data-sticker-advanced-reset]');
+				if (resetButton) {
+					resetButton.addEventListener('click', function () {
+						setAdvancedControls(stickerDefaults);
+					});
+				}
+			}
+
+			if (advancedForm) {
+				advancedForm.addEventListener('submit', function (event) {
+					if (!window.fetch || !activeAdvancedSlot) return;
+					event.preventDefault();
+					setAdvancedControls(readAdvancedControls());
+					var formData = new FormData(advancedForm);
+					formData.append('ajax', '1');
+					fetch(window.location.href, {
+						method: 'POST',
+						body: formData,
+						headers: { 'X-Requested-With': 'fetch', 'Accept': 'application/json' }
+					}).then(function (response) {
+						return response.ok ? response.json() : Promise.reject();
+					}).then(function (payload) {
+						if (!payload || !payload.ok) throw new Error(payload && payload.message ? payload.message : stickerSaveFailedMessage);
+						var valueInput = activeAdvancedSlot.querySelector('[data-sticker-value]');
+						if (valueInput) valueInput.value = payload.value || valueInput.value;
+						var parts = parseStickerValue(payload.value || '');
+						activeAdvancedSlot.dataset.savedStickerId = String(parts.id || '0');
+						syncStickerSettingsButton(activeAdvancedSlot);
+						if (advancedModal) advancedModal.hide();
+					}).catch(function (error) {
+						alert(error && error.message ? error.message : stickerSaveFailedMessage);
+					});
+				});
+			}
 			if (searchInput) {
 				searchInput.addEventListener('input', renderStickerResults);
 			}
 
+			var validationMessages = {
+				required: <?= json_encode(t('validation_required'), JSON_UNESCAPED_UNICODE) ?>,
+				numberRange: <?= json_encode(t('validation_number_range'), JSON_UNESCAPED_UNICODE) ?>,
+				integerRange: <?= json_encode(t('validation_integer_range'), JSON_UNESCAPED_UNICODE) ?>
+			};
+
+			var fillValidationMessage = function (template, input) {
+				return template
+					.replace('{min}', input.min || '0')
+					.replace('{max}', input.max || '');
+			};
+
+			var validateLocalizedInput = function (input) {
+				input.setCustomValidity('');
+				if (input.validity.valueMissing) {
+					input.setCustomValidity(validationMessages.required);
+					return;
+				}
+				if (input.type === 'number' && (input.validity.rangeUnderflow || input.validity.rangeOverflow || input.validity.stepMismatch)) {
+					var template = input.step && input.step !== 'any' ? validationMessages.integerRange : validationMessages.numberRange;
+					input.setCustomValidity(fillValidationMessage(template, input));
+				}
+			};
+
+			document.querySelectorAll('input[required], input[type="number"][min], input[type="number"][max], [data-nametag-input], [data-stattrak-input]').forEach(function (input) {
+				input.addEventListener('invalid', function () {
+					validateLocalizedInput(input);
+				});
+				input.addEventListener('input', function () {
+					validateLocalizedInput(input);
+				});
+				input.addEventListener('change', function () {
+					validateLocalizedInput(input);
+				});
+				validateLocalizedInput(input);
+			});
 			document.querySelectorAll('[data-nametag-toggle]').forEach(function (toggle) {
 				var row = toggle.closest('.nametag-row');
 				var input = row ? row.querySelector('[data-nametag-input]') : null;
@@ -2149,6 +2735,20 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 					input.hidden = !toggle.checked;
 					input.disabled = !toggle.checked;
 					input.required = toggle.checked;
+					validateLocalizedInput(input);
+				};
+				toggle.addEventListener('change', sync);
+				sync();
+			});
+			document.querySelectorAll('[data-stattrak-toggle]').forEach(function (toggle) {
+				var row = toggle.closest('.stattrak-row');
+				var input = row ? row.querySelector('[data-stattrak-input]') : null;
+				var sync = function () {
+					if (!input) return;
+					input.hidden = !toggle.checked;
+					input.disabled = !toggle.checked;
+					input.required = toggle.checked;
+					validateLocalizedInput(input);
 				};
 				toggle.addEventListener('change', sync);
 				sync();
@@ -2158,3 +2758,16 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 </body>
 
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+

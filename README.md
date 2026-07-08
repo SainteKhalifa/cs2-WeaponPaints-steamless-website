@@ -63,12 +63,12 @@ This also means it is not an account security system for public websites. Anyone
 
 ## Credits
 
-This website is rewritten based on the database workflow and usage pattern of the original WeaponPaints web panel. It removes Steam login for private-server use and adds loadout management, more cosmetic editing features, language switching, and data updating.
+This website is rewritten based on the database workflow and usage pattern of the original WeaponPaints web panel. It removes Steam login for private-server use and adds loadout management, more skin editing features, language switching, and data updating.
 
 Thanks to:
 
 * [Nereziel/cs2-WeaponPaints](https://github.com/Nereziel/cs2-WeaponPaints): for the CS2 WeaponPaints plugin and original web workflow.
-* [ByMykel/CSGO-API](https://github.com/ByMykel/CSGO-API): for the CS2 cosmetic data used by this project's updater.
+* [ByMykel/CSGO-API](https://github.com/ByMykel/CSGO-API): for the CS2 skin data used by this project's updater.
 
 ## Supported Languages
 
@@ -77,7 +77,7 @@ The website currently supports:
 * English (`en`)
 * Simplified Chinese (`zh-CN`)
 
-Both the UI and cosmetic item data support language switching. Item names and related CS2 data come from [ByMykel/CSGO-API](https://github.com/ByMykel/CSGO-API).
+Both the UI and skin data support language switching. Item names and related CS2 data come from [ByMykel/CSGO-API](https://github.com/ByMykel/CSGO-API).
 
 The data source currently provides English and Simplified Chinese data. More languages can be added later if the data source or this project adds support for them.
 
@@ -181,7 +181,7 @@ The website reads `wp_presets` first, then reads and writes WeaponPaints data ac
 
 * Sticker editing applies only to weapon skins. Most weapons have 4 default sticker slots, while weapons with 5 default sticker slots will show 5 slots.
 * The website displays local placeholder images first, then automatically replaces them after remote images load successfully.
-* Cosmetic data is stored in the `data/` directory and maintained through `tools/update_cs2_data.php`.
+* Skin data is stored in the `data/` directory and maintained through `tools/update_cs2_data.php`.
 * Keychains and collectibles data are already prepared for future feature expansion.
 
 ## Security Notes
