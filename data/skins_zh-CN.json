@@ -480,6 +480,22 @@
         "legacy_model": false
     },
     {
+        "weapon_defindex": 7,
+        "weapon_name": "weapon_ak47",
+        "paint": "1449",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_ak47_ak47_autoexec_camo_light_png.png",
+        "paint_name": "AK-47 | AUTOEXEC",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 7,
+        "weapon_name": "weapon_ak47",
+        "paint": "1466",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_ak47_ak47_jinn_consequence_light_png.png",
+        "paint_name": "AK-47 | 精灵之噬",
+        "legacy_model": false
+    },
+    {
         "weapon_defindex": 16,
         "weapon_name": "weapon_m4a1",
         "paint": 0,
@@ -888,6 +904,22 @@
         "legacy_model": false
     },
     {
+        "weapon_defindex": 16,
+        "weapon_name": "weapon_m4a1",
+        "paint": "1446",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_m4a1_m4a4_black_side_matte_light_png.png",
+        "paint_name": "M4A4 | 暗影特工",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 16,
+        "weapon_name": "weapon_m4a1",
+        "paint": "1463",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_m4a1_m4a4_falak_light_png.png",
+        "paint_name": "M4A4 | 吞天巨蛇",
+        "legacy_model": false
+    },
+    {
         "weapon_defindex": 60,
         "weapon_name": "weapon_m4a1_silencer",
         "paint": 0,
@@ -1253,6 +1285,14 @@
         "paint": "1433",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL8ypexwjFS4_ega6F_H_3HDzaD_ut6teJ9XTy-qhEutDWR1Iz4cnjCag51DZQlEOIMtEa7k9TiNbmw51OP3tlBxCr8iCsY6C5t6uwcEf1y--utkZE",
         "paint_name": "M4A1消音版 | 翠珀金",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 60,
+        "weapon_name": "weapon_m4a1_silencer",
+        "paint": "1476",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_m4a1_silencer_hye_spyglitch_green_m4a1s_light_png.png",
+        "paint_name": "M4A1消音版 | 致命故障",
         "legacy_model": false
     },
     {
@@ -1661,6 +1701,22 @@
         "paint": "1422",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLwiYbf_DVL0OO7baFjM8-UD2qSyPpJvOhuRz39kUpw42zWntiteSiVaQYhCJJzEeIOukSwl4XmPrmw4VHXjtpExC_33zQJsHjNnJgjQA",
         "paint_name": "AWP | 后翼弃兵",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 9,
+        "weapon_name": "weapon_awp",
+        "paint": "1465",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_awp_awp_sovereign_flame_light_png.png",
+        "paint_name": "AWP | 无上之焰",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 9,
+        "weapon_name": "weapon_awp",
+        "paint": "1467",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_awp_awp_black_box_light_png.png",
+        "paint_name": "AWP | 黑匣子",
         "legacy_model": false
     },
     {
@@ -2128,6 +2184,22 @@
         "legacy_model": false
     },
     {
+        "weapon_defindex": 4,
+        "weapon_name": "weapon_glock",
+        "paint": "1450",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_glock_glock_ghost_protocol_red_light_png.png",
+        "paint_name": "格洛克18型 | 幽灵协议",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 4,
+        "weapon_name": "weapon_glock",
+        "paint": "1460",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_glock_glock_ifrit_lattice_light_png.png",
+        "paint_name": "格洛克18型 | 火灵纹阵",
+        "legacy_model": false
+    },
+    {
         "weapon_defindex": 61,
         "weapon_name": "weapon_usp_silencer",
         "paint": 0,
@@ -2488,6 +2560,14 @@
         "legacy_model": false
     },
     {
+        "weapon_defindex": 61,
+        "weapon_name": "weapon_usp_silencer",
+        "paint": "1451",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_usp_silencer_usps_spiral_glitch_iridescent_light_png.png",
+        "paint_name": "USP消音版 | 眩流",
+        "legacy_model": false
+    },
+    {
         "weapon_defindex": 1,
         "weapon_name": "weapon_deagle",
         "paint": 0,
@@ -2845,6 +2925,14 @@
         "paint": "1430",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL1m5fn8Sdk6_evb6hoH_aaHGKS0-t3pOlgQS6MmRQguynLn9ircSiTPFUgCJAkQbELsxXtktDkMurk4lTZ39hEyn_-3HsbvXxj4fFCD_RcNNN-xQ",
         "paint_name": "沙漠之鹰 | 霜寒之焰",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 1,
+        "weapon_name": "weapon_deagle",
+        "paint": "1458",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_deagle_deagle_eastern_enigma_blue_light_png.png",
+        "paint_name": "沙漠之鹰 | 东方之谜",
         "legacy_model": false
     },
     {
@@ -3213,6 +3301,22 @@
         "paint": "1423",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL8js_f8DIC0Oe8aqVjH-OcGGKCxOdxvt5lRi67gVMi4m6DmY2hcXLFPAMiA8NxQ-9cshK_m9yyYem04ACLg9hAzH6q239I8G81tD9Ib4M_",
         "paint_name": "MP9 | 都市霸王",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 34,
+        "weapon_name": "weapon_mp9",
+        "paint": "1469",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_mp9_mp9_prototype_extended_light_png.png",
+        "paint_name": "MP9 | 特工原型",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 34,
+        "weapon_name": "weapon_mp9",
+        "paint": "1473",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_mp9_mp9_dune_asp_light_png.png",
+        "paint_name": "MP9 | 沙蝰",
         "legacy_model": false
     },
     {
@@ -3661,6 +3765,22 @@
         "paint": "1367",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL8n5WxrR1T9veRa6V_H-eBD3fE_uJ_t-l9ASrklhkk4Wrdm9msIy3DblVyA5cmQLMDtxS_ltPmYe_msgbeiY5EziTgznQeYbrm-7Y",
         "paint_name": "MAC-10 | 雪溅",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 17,
+        "weapon_name": "weapon_mac10",
+        "paint": "1448",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_mac10_mac10_video_cam_light_png.png",
+        "paint_name": "MAC-10 | 射向头",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 17,
+        "weapon_name": "weapon_mac10",
+        "paint": "1454",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_mac10_mac10_arabesque_gold_light_png.png",
+        "paint_name": "MAC-10 | 阿拉伯式马赛克",
         "legacy_model": false
     },
     {
@@ -4368,6 +4488,22 @@
         "legacy_model": false
     },
     {
+        "weapon_defindex": 10,
+        "weapon_name": "weapon_famas",
+        "paint": "1461",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_famas_famas_snake_song_light_png.png",
+        "paint_name": "法玛斯 | 蛇吟",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 10,
+        "weapon_name": "weapon_famas",
+        "paint": "1477",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_famas_famas_corp_defense_light_png.png",
+        "paint_name": "法玛斯 | 精英护卫",
+        "legacy_model": false
+    },
+    {
         "weapon_defindex": 36,
         "weapon_name": "weapon_p250",
         "paint": 0,
@@ -4832,6 +4968,14 @@
         "legacy_model": false
     },
     {
+        "weapon_defindex": 36,
+        "weapon_name": "weapon_p250",
+        "paint": "1455",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_p250_p250_lotus_imprint_glitter_purple_light_png.png",
+        "paint_name": "P250 | 莲花印",
+        "legacy_model": false
+    },
+    {
         "weapon_defindex": 30,
         "weapon_name": "weapon_tec9",
         "paint": 0,
@@ -5208,6 +5352,22 @@
         "legacy_model": false
     },
     {
+        "weapon_defindex": 30,
+        "weapon_name": "weapon_tec9",
+        "paint": "1447",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_tec9_tec9_perimeter_urban_light_png.png",
+        "paint_name": "Tec-9 | 边界",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 30,
+        "weapon_name": "weapon_tec9",
+        "paint": "1462",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_tec9_tec9_sultan_light_png.png",
+        "paint_name": "Tec-9 | 苏丹",
+        "legacy_model": false
+    },
+    {
         "weapon_defindex": 3,
         "weapon_name": "weapon_fiveseven",
         "paint": 0,
@@ -5541,6 +5701,14 @@
         "paint": "1429",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL3l4Dl7idN6vyRbq17JeOWGGKe_v55vPhkSjuMkRw1uAKJk4jxNWWVaw9yAsF3R-cItkTqx9HiY-23tFeN3oNFyS_9jn4a5i5o5b0AB6B35OSJ2MsRWanJ",
         "paint_name": "FN57 | 暗夜聚合",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 3,
+        "weapon_name": "weapon_fiveseven",
+        "paint": "1457",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_fiveseven_fiveseven_desert_seal_light_png.png",
+        "paint_name": "FN57 | 沙漠封印",
         "legacy_model": false
     },
     {
@@ -6920,6 +7088,14 @@
         "legacy_model": false
     },
     {
+        "weapon_defindex": 25,
+        "weapon_name": "weapon_xm1014",
+        "paint": "1471",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_xm1014_xm1014_black_site_light_png.png",
+        "paint_name": "XM1014 | 暗域",
+        "legacy_model": false
+    },
+    {
         "weapon_defindex": 8,
         "weapon_name": "weapon_aug",
         "paint": 0,
@@ -7277,6 +7453,22 @@
         "paint": "1362",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLwi5Hf7i1e0PO7b5tuMvWWHlicyOl-pK9oSnnnkRl34WqBwtavcH6TagRxWZR2E7FYuhm9wIblZr60slHXjYtM02yg2RFs1ez8",
         "paint_name": "AUG | 蔓延",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 8,
+        "weapon_name": "weapon_aug",
+        "paint": "1452",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_aug_aug_ghost_signal_light_png.png",
+        "paint_name": "AUG | 侦测仪",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 8,
+        "weapon_name": "weapon_aug",
+        "paint": "1464",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_aug_aug_lapis_lazuli_light_png.png",
+        "paint_name": "AUG | 星点天青",
         "legacy_model": false
     },
     {
@@ -8112,6 +8304,14 @@
         "legacy_model": false
     },
     {
+        "weapon_defindex": 33,
+        "weapon_name": "weapon_mp7",
+        "paint": "1468",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_mp7_mp7_binary_green_light_png.png",
+        "paint_name": "MP7 | 二进制",
+        "legacy_model": false
+    },
+    {
         "weapon_defindex": 63,
         "weapon_name": "weapon_cz75a",
         "paint": 0,
@@ -8405,6 +8605,14 @@
         "paint": "1390",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLyhMG1_B1T9veReKVkM_yWF1iUxP13pN5lRi67gVN2tW3Sntuvd3OROFUoXsB2Q-9Zs0Hqlta0Pujr7waIiYJAxS-sjy0c8G81tBzzAWSY",
         "paint_name": "CZ75自动型 | 蜜金佩斯利",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 63,
+        "weapon_name": "weapon_cz75a",
+        "paint": "1443",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_cz75a_cz75_hydraulics_light_png.png",
+        "paint_name": "CZ75自动型 | 液压",
         "legacy_model": false
     },
     {
@@ -9504,6 +9712,22 @@
         "legacy_model": false
     },
     {
+        "weapon_defindex": 35,
+        "weapon_name": "weapon_nova",
+        "paint": "1442",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_nova_nova_smart_light_png.png",
+        "paint_name": "新星 | 枪工智能",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 35,
+        "weapon_name": "weapon_nova",
+        "paint": "1474",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_nova_nova_morning_sun_light_png.png",
+        "paint_name": "新星 | 晨谕",
+        "legacy_model": false
+    },
+    {
         "weapon_defindex": 2,
         "weapon_name": "weapon_elite",
         "paint": 0,
@@ -9845,6 +10069,14 @@
         "paint": "1373",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL0kp_0-B1I4PeRaad_OfyaDViWzeFh495lRi67gVN3tmnTn4yreXvFZgYjD8QlE-QK4EGxkda0Ze20tQbZ2Y9CyS_5iC1K8G81tJXDIHOE",
         "paint_name": "双持贝瑞塔 | 银流",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 2,
+        "weapon_name": "weapon_elite",
+        "paint": "1459",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_elite_dualies_mystic_conjunction_v3_light_png.png",
+        "paint_name": "双持贝瑞塔 | 流金契目",
         "legacy_model": false
     },
     {
@@ -10200,6 +10432,14 @@
         "legacy_model": false
     },
     {
+        "weapon_defindex": 29,
+        "weapon_name": "weapon_sawedoff",
+        "paint": "1475",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_sawedoff_sawedoff_lunar_wyrm_light_png.png",
+        "paint_name": "截短霰弹枪 | 月虬",
+        "legacy_model": false
+    },
+    {
         "weapon_defindex": 26,
         "weapon_name": "weapon_bizon",
         "paint": 0,
@@ -10512,6 +10752,14 @@
         "legacy_model": false
     },
     {
+        "weapon_defindex": 26,
+        "weapon_name": "weapon_bizon",
+        "paint": "1472",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_bizon_bizon_traitor_light_png.png",
+        "paint_name": "PP-野牛 | 叛徒",
+        "legacy_model": false
+    },
+    {
         "weapon_defindex": 38,
         "weapon_name": "weapon_scar20",
         "paint": 0,
@@ -10765,6 +11013,22 @@
         "paint": "1371",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLinZfyr3Jk5-urV6dlMv-eC1iCyP5mvORWQyC0nQlpsD7Qydr6dSjEO1MnD5RzRuUIskPpl9zmN-7i5FbYj49NmXj4jXhP6TErvbhHIJnnmg",
         "paint_name": "SCAR-20 | 锌元素",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 38,
+        "weapon_name": "weapon_scar20",
+        "paint": "1453",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_scar20_scar_sirocco_light_png.png",
+        "paint_name": "SCAR-20 | 风蚀铭沙",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 38,
+        "weapon_name": "weapon_scar20",
+        "paint": "1470",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_scar20_scar_arctic_camo_panels_light_png.png",
+        "paint_name": "SCAR-20 | 冰原迷彩",
         "legacy_model": false
     },
     {
@@ -11653,6 +11917,14 @@
         "paint": "1389",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLjm4Dv8TRe_c29Z6dlH_OcHneV09F3s-JsQT2MhxgxvDGTn53GLSLANkI-C5d5Q7EK4xLpxtDhY-vksleP3d1DzXn52itKvCxstewGVKosqPDTiRaBb-Oa78uGvw",
         "paint_name": "R8左轮手枪 | 淡紫旁白",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 64,
+        "weapon_name": "weapon_revolver",
+        "paint": "1445",
+        "image": "https://raw.githubusercontent.com/ByMykel/counter-strike-image-tracker/main/static/panorama/images/econ/default_generated/weapon_revolver_r8_monarch_extended_light_png.png",
+        "paint_name": "R8左轮手枪 | 帝王蝶",
         "legacy_model": false
     },
     {

@@ -142,6 +142,14 @@ Update only skins and gloves:
 php tools/update_cs2_data.php --only=skins
 ```
 
+Remote source JSON files are cached in:
+
+```text
+data/.source_cache/
+```
+
+If a cached source file exists and contains valid JSON, the updater uses it before requesting GitHub raw again. Delete the matching cache file when you want to force a fresh download from the upstream source.
+
 The updater creates backups in:
 
 ```text

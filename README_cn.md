@@ -142,6 +142,14 @@ php tools/update_cs2_data.php --dry-run
 php tools/update_cs2_data.php --only=skins
 ```
 
+远程源 JSON 文件会缓存在：
+
+```text
+data/.source_cache/
+```
+
+如果缓存文件存在且内容是有效 JSON，更新工具会优先使用缓存，避免重复请求 GitHub raw。如果你想强制从上游数据源重新下载，请删除对应的缓存文件。
+
 更新工具会在以下目录创建备份：
 
 ```text

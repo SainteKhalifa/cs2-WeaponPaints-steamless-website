@@ -32,6 +32,7 @@ ini_set('memory_limit', '1024M');
 $rootDir = dirname(__DIR__);
 $dataDir = $rootDir . DIRECTORY_SEPARATOR . 'data';
 $backupDir = $dataDir . DIRECTORY_SEPARATOR . 'backups';
+$sourceCacheDir = $dataDir . DIRECTORY_SEPARATOR . '.source_cache';
 
 $sources = [
     'zh-CN' => [
@@ -79,8 +80,180 @@ $targets = [
     ],
 ];
 
-function fetchJson(string $url): array
+class GithubRawRateLimitException extends RuntimeException
 {
+}
+
+function githubRawRateLimitMessage(string $url): string
+{
+    return "GitHub raw requests are too frequent (HTTP 429). Please retry later. URL: {$url}";
+}
+
+function decodeJsonString(string $raw, string $source): array
+{
+    $json = json_decode($raw, true);
+    if (!is_array($json)) {
+        throw new RuntimeException("Invalid JSON from {$source}: " . json_last_error_msg());
+    }
+    return $json;
+}
+
+function readJsonCache(string $cachePath): ?array
+{
+    if (!is_file($cachePath)) {
+        return null;
+    }
+
+    $raw = file_get_contents($cachePath);
+    if (!is_string($raw) || $raw === '') {
+        return null;
+    }
+
+    $json = json_decode($raw, true);
+    return is_array($json) ? $json : null;
+}
+
+function writeJsonCache(string $cachePath, string $raw): void
+{
+    $dir = dirname($cachePath);
+    if (!is_dir($dir) && !mkdir($dir, 0777, true) && !is_dir($dir)) {
+        throw new RuntimeException("Failed to create source cache directory: {$dir}");
+    }
+
+    if (file_put_contents($cachePath, $raw) === false) {
+        throw new RuntimeException("Failed to write source cache: {$cachePath}");
+    }
+}
+
+function sourceCachePath(string $cacheDir, string $language, string $kind): string
+{
+    $safeLanguage = preg_replace('/[^A-Za-z0-9_-]/', '_', $language);
+    $safeKind = preg_replace('/[^A-Za-z0-9_-]/', '_', $kind);
+    return $cacheDir . DIRECTORY_SEPARATOR . "{$safeLanguage}_{$safeKind}.json";
+}
+
+function throttleGithubRawRequest(string $url): void
+{
+    static $lastRequestAt = null;
+    if (!str_contains($url, 'raw.githubusercontent.com')) {
+        return;
+    }
+
+    if ($lastRequestAt !== null) {
+        $elapsed = microtime(true) - $lastRequestAt;
+        // GitHub raw can rate-limit short bursts aggressively, especially on shared networks.
+        $delay = random_int(1500000, 3000000) / 1000000;
+        if ($elapsed < $delay) {
+            usleep((int)(($delay - $elapsed) * 1000000));
+        }
+    }
+    $lastRequestAt = microtime(true);
+}
+
+function parseHttpStatusFromHeaders(array $headers): int
+{
+    $status = 0;
+    foreach ($headers as $header) {
+        if (preg_match('/^HTTP\/\S+\s+(\d{3})\b/i', (string)$header, $matches)) {
+            $status = (int)$matches[1];
+        }
+    }
+    return $status;
+}
+
+function parseCommandHttpResponse(string $output): array
+{
+    $marker = '__HTTP_STATUS__:';
+    $pos = strrpos($output, $marker);
+    if ($pos === false) {
+        return [$output, 0, trim($output)];
+    }
+
+    $body = substr($output, 0, $pos);
+    $statusText = trim(substr($output, $pos + strlen($marker)));
+    $status = (int)preg_replace('/\D.*/', '', $statusText);
+    return [$body, $status, trim($output)];
+}
+
+function runCommand(array $command): array
+{
+    $descriptorSpec = [
+        1 => ['pipe', 'w'],
+        2 => ['pipe', 'w'],
+    ];
+    $process = proc_open($command, $descriptorSpec, $pipes);
+    if (!is_resource($process)) {
+        return [false, 'Failed to start command: ' . implode(' ', $command)];
+    }
+
+    $stdout = stream_get_contents($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    $exitCode = proc_close($process);
+
+    $error = trim((string)$stderr . ($exitCode !== 0 ? "\nExit code: {$exitCode}" : ''));
+    return [(string)$stdout, $error];
+}
+
+function runCurlExeDownload(string $url, bool $sslNoRevoke = false): array
+{
+    $command = [
+        'curl.exe',
+        '-L',
+        '--silent',
+        '--show-error',
+        '--max-time',
+        '90',
+        '-A',
+        'CS2-WeaponPaints-Updater/1.0',
+        '--write-out',
+        "\n__HTTP_STATUS__:%{http_code}",
+    ];
+    if ($sslNoRevoke) {
+        // Windows curl.exe uses Schannel. --ssl-no-revoke is a fallback for CRYPT_E_REVOCATION_OFFLINE.
+        $command[] = '--ssl-no-revoke';
+    }
+    $command[] = $url;
+
+    [$output, $error] = runCommand($command);
+    if ($output === false) {
+        return [false, 0, $error];
+    }
+
+    [$body, $status, $fullOutput] = parseCommandHttpResponse($output);
+    $message = trim($fullOutput . ($error !== '' ? "\n{$error}" : ''));
+    return [$body, $status, $message];
+}
+
+function runPowerShellDownload(string $url): array
+{
+    $psUrl = str_replace("'", "''", $url);
+    $script = "[Console]::OutputEncoding=[Text.UTF8Encoding]::new(); "
+        . "try { \$r = Invoke-WebRequest -Uri '{$psUrl}' -UseBasicParsing -TimeoutSec 90; "
+        . "Write-Output \$r.Content; Write-Output '__HTTP_STATUS__:'\$r.StatusCode } "
+        . "catch { if (\$_.Exception.Response) { Write-Output '__HTTP_STATUS__:'([int]\$_.Exception.Response.StatusCode) }; Write-Error \$_.Exception.Message }";
+    $command = 'powershell -NoProfile -ExecutionPolicy Bypass -Command ' . escapeshellarg($script) . ' 2>&1';
+    $output = shell_exec($command);
+    if (!is_string($output)) {
+        return [false, 0, 'PowerShell did not return output'];
+    }
+
+    [$body, $status, $fullOutput] = parseCommandHttpResponse($output);
+    return [$body, $status, $fullOutput];
+}
+
+function fetchJson(string $url, ?string $cachePath = null, bool $writeCache = true): array
+{
+    if ($cachePath !== null) {
+        $cached = readJsonCache($cachePath);
+        if ($cached !== null) {
+            echo "Using cached source: {$cachePath}\n";
+            return $cached;
+        }
+    }
+
+    throttleGithubRawRequest($url);
     $raw = false;
     $errors = [];
 
@@ -95,13 +268,17 @@ function fetchJson(string $url): array
         ]);
         $raw = curl_exec($ch);
         $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+        if ($status === 429) {
+            throw new GithubRawRateLimitException(githubRawRateLimitMessage($url));
+        }
         if ($raw === false || $status >= 400) {
-            $errors[] = 'cURL: HTTP ' . $status . ' ' . curl_error($ch);
+            $errors[] = "URL {$url} - cURL: HTTP {$status}" . ($curlError !== '' ? " {$curlError}" : '');
             $raw = false;
         }
-        curl_close($ch);
     } else {
-        $errors[] = 'cURL extension is not available';
+        $errors[] = "URL {$url} - cURL: PHP cURL extension is not available";
     }
 
     if ($raw === false) {
@@ -109,6 +286,7 @@ function fetchJson(string $url): array
             'http' => [
                 'method' => 'GET',
                 'timeout' => 90,
+                'ignore_errors' => true,
                 'header' => "User-Agent: CS2-WeaponPaints-Updater/1.0\r\n",
             ],
             'ssl' => [
@@ -118,47 +296,66 @@ function fetchJson(string $url): array
         ]);
 
         $previousError = error_get_last();
-        $raw = @file_get_contents($url, false, $context);
+        $streamRaw = @file_get_contents($url, false, $context);
         $currentError = error_get_last();
-        if ($raw === false) {
+        $headers = function_exists('http_get_last_response_headers') ? (http_get_last_response_headers() ?: []) : [];
+        $status = parseHttpStatusFromHeaders($headers);
+        if ($status === 429) {
+            throw new GithubRawRateLimitException(githubRawRateLimitMessage($url));
+        }
+        if ($streamRaw !== false && ($status === 0 || $status < 400)) {
+            $raw = $streamRaw;
+        } else {
             $message = ($currentError !== $previousError && isset($currentError['message'])) ? $currentError['message'] : 'unknown stream error';
-            $errors[] = 'stream: ' . $message;
+            $errors[] = "URL {$url} - file_get_contents: HTTP {$status} {$message}";
         }
     }
 
     if ($raw === false && function_exists('shell_exec')) {
-        $curlCommand = 'curl.exe -L --fail --silent --show-error --max-time 90 -A ' . escapeshellarg('CS2-WeaponPaints-Updater/1.0') . ' ' . escapeshellarg($url) . ' 2>&1';
-        $commandOutput = shell_exec($curlCommand);
-        if (is_string($commandOutput) && str_starts_with(ltrim($commandOutput), '[')) {
-            $raw = $commandOutput;
+        [$body, $status, $output] = runCurlExeDownload($url, false);
+        if ($status === 429) {
+            throw new GithubRawRateLimitException(githubRawRateLimitMessage($url));
+        }
+        if (is_string($body) && $body !== '' && $status >= 200 && $status < 400) {
+            $raw = $body;
         } else {
-            $errors[] = 'curl.exe: ' . trim((string)$commandOutput);
+            $errors[] = "URL {$url} - curl.exe: HTTP {$status} {$output}";
+
+            [$body, $status, $output] = runCurlExeDownload($url, true);
+            if ($status === 429) {
+                throw new GithubRawRateLimitException(githubRawRateLimitMessage($url));
+            }
+            if (is_string($body) && $body !== '' && $status >= 200 && $status < 400) {
+                $raw = $body;
+            } else {
+                $errors[] = "URL {$url} - curl.exe --ssl-no-revoke: HTTP {$status} {$output}";
+            }
         }
     }
 
     if ($raw === false && function_exists('shell_exec')) {
-        $psUrl = str_replace("'", "''", $url);
-        $psCommand = 'powershell -NoProfile -ExecutionPolicy Bypass -Command ' . escapeshellarg("[Console]::OutputEncoding=[Text.UTF8Encoding]::new(); (Invoke-WebRequest -Uri '{$psUrl}' -UseBasicParsing -TimeoutSec 90).Content");
-        $commandOutput = shell_exec($psCommand);
-        if (is_string($commandOutput) && str_starts_with(ltrim($commandOutput), '[')) {
-            $raw = $commandOutput;
+        [$body, $status, $output] = runPowerShellDownload($url);
+        if ($status === 429) {
+            throw new GithubRawRateLimitException(githubRawRateLimitMessage($url));
+        }
+        if (is_string($body) && $body !== '' && $status >= 200 && $status < 400) {
+            $raw = $body;
         } else {
-            $errors[] = 'PowerShell: ' . trim((string)$commandOutput);
+            $errors[] = "URL {$url} - PowerShell Invoke-WebRequest: HTTP {$status} {$output}";
         }
     }
 
     if ($raw === false) {
-        throw new RuntimeException("Failed to download: {$url}\n" . implode("\n", $errors));
+        throw new RuntimeException("Failed to download remote JSON.\n" . implode("\n", $errors));
     }
 
-    $json = json_decode($raw, true);
-    if (!is_array($json)) {
-        throw new RuntimeException("Invalid JSON from: {$url}");
+    $json = decodeJsonString($raw, $url);
+    if ($cachePath !== null && $writeCache) {
+        writeJsonCache($cachePath, $raw);
     }
 
     return $json;
 }
-
 function readJsonFile(string $path): array
 {
     if (!is_file($path)) {
@@ -673,7 +870,7 @@ try {
         $target = $targets[$language];
 
         echo "Downloading {$language} skins/gloves data...\n";
-        $skinItems = fetchJson($urls['skins']);
+        $skinItems = fetchJson($urls['skins'], sourceCachePath($sourceCacheDir, $language, 'skins'), !$dryRun);
         [$skins, $gloves, $skinSkipped, $skinWarnings] = buildSkinAndGloveRows(
             $skinItems,
             existingDefaultSkinRows($target['skins'], $target['inventory_prefix']),
@@ -692,7 +889,7 @@ try {
 
         if ($only !== 'skins') {
             echo "Downloading {$language} agents data...\n";
-            $agentItems = fetchJson($urls['agents']);
+            $agentItems = fetchJson($urls['agents'], sourceCachePath($sourceCacheDir, $language, 'agents'), !$dryRun);
             [$agents, $agentSkipped] = buildAgentRows(
                 $agentItems,
                 defaultAgentRows($target['agents'], $target['default_agent_name'])
@@ -701,25 +898,25 @@ try {
             unset($agentItems);
 
             echo "Downloading {$language} music data...\n";
-            $musicItems = fetchJson($urls['music']);
+            $musicItems = fetchJson($urls['music'], sourceCachePath($sourceCacheDir, $language, 'music'), !$dryRun);
             [$music, $musicSkipped] = buildMusicRows($musicItems);
             $musicSourceCount = count($musicItems);
             unset($musicItems);
 
             echo "Downloading {$language} stickers data...\n";
-            $stickerItems = fetchJson($urls['stickers']);
+            $stickerItems = fetchJson($urls['stickers'], sourceCachePath($sourceCacheDir, $language, 'stickers'), !$dryRun);
             [$stickers, $stickerSkipped] = buildSimpleIdRows($stickerItems, 'name');
             $stickerSourceCount = count($stickerItems);
             unset($stickerItems);
 
             echo "Downloading {$language} keychains data...\n";
-            $keychainItems = fetchJson($urls['keychains']);
+            $keychainItems = fetchJson($urls['keychains'], sourceCachePath($sourceCacheDir, $language, 'keychains'), !$dryRun);
             [$keychains, $keychainSkipped] = buildSimpleIdRows($keychainItems, 'name');
             $keychainSourceCount = count($keychainItems);
             unset($keychainItems);
 
             echo "Downloading {$language} collectibles data...\n";
-            $collectibleItems = fetchJson($urls['collectibles']);
+            $collectibleItems = fetchJson($urls['collectibles'], sourceCachePath($sourceCacheDir, $language, 'collectibles'), !$dryRun);
             [$collectibles, $collectibleSkipped] = buildSimpleIdRows($collectibleItems, 'name');
             $collectiblesSourceCount = count($collectibleItems);
             unset($collectibleItems);
