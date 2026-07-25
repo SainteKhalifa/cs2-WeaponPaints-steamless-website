@@ -85,6 +85,50 @@ body::after {
 	margin: 0;
 }
 
+.admin-button {
+	position: fixed;
+	top: 16px;
+	right: 62px;
+	z-index: 1050;
+	width: 38px;
+	height: 38px;
+	display: grid;
+	place-items: center;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--panel);
+	color: var(--text);
+}
+
+.admin-button:hover,
+.admin-button.active {
+	border-color: var(--primary);
+	color: var(--primary);
+}
+
+.admin-button.active::after {
+	content: "";
+	position: absolute;
+	top: 5px;
+	right: 5px;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: #49c97a;
+	box-shadow: 0 0 0 2px var(--panel);
+}
+
+.admin-button svg {
+	width: 19px;
+	height: 19px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
 .language-menu {
 	position: relative;
 }
@@ -139,6 +183,11 @@ body::after {
 	.language-switch {
 		top: 10px;
 		right: 10px;
+	}
+
+	.admin-button {
+		top: 10px;
+		right: 56px;
 	}
 }
 
@@ -482,6 +531,30 @@ label {
 	white-space: nowrap;
 }
 
+.preset-pin-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	margin-top: 10px;
+	padding: 4px 7px;
+	border: 1px solid rgba(79, 140, 255, .35);
+	border-radius: 6px;
+	background: rgba(79, 140, 255, .1);
+	color: #b8d0ff;
+	font-size: 11px;
+	line-height: 1;
+}
+
+.preset-pin-badge svg {
+	width: 13px;
+	height: 13px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
 .preset-actions {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
@@ -516,10 +589,161 @@ label {
 	background: var(--primary);
 }
 
+.loadout-info-panel {
+	position: relative;
+	padding: 22px;
+	border-color: rgba(79, 140, 255, .28);
+	background:
+		radial-gradient(circle at 92% 8%, rgba(79, 140, 255, .12), transparent 32%),
+		linear-gradient(180deg, rgba(255, 255, 255, .025), transparent 48%),
+		var(--panel);
+	overflow: hidden;
+}
+
+.create-loadout-panel {
+	width: min(780px, 100%);
+	margin-inline: auto;
+}
+
+.identity-panel-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 20px;
+}
+
+.identity-panel-head h1,
+.identity-panel-head h2 {
+	margin: 0;
+	color: var(--text);
+	font-size: 22px;
+	line-height: 1.25;
+}
+
+.identity-panel-head h1 {
+	font-size: 28px;
+}
+
+.identity-panel-head p {
+	margin: 5px 0 0;
+	color: var(--muted);
+	font-size: 13px;
+}
+
+.identity-status {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	min-height: 28px;
+	padding: 4px 9px;
+	border: 1px solid var(--line);
+	border-radius: 7px;
+	background: rgba(255, 255, 255, .035);
+	color: var(--muted);
+	font-size: 11px;
+}
+
+.identity-status.active {
+	border-color: rgba(79, 140, 255, .42);
+	background: rgba(79, 140, 255, .12);
+	color: #c4d8ff;
+}
+
 .identity-form {
 	display: grid;
-	grid-template-columns: 1fr 1fr auto;
-	align-items: end;
+	gap: 18px;
+}
+
+.identity-main-fields {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+}
+
+.loadout-info-form .form-control {
+	min-height: 44px;
+	border-radius: 7px;
+}
+
+.identity-pin-settings {
+	display: grid;
+	grid-template-columns: minmax(180px, 1fr) auto minmax(240px, .9fr);
+	align-items: center;
+	gap: 16px;
+	padding: 16px;
+	border: 1px solid rgba(255, 255, 255, .075);
+	border-radius: 8px;
+	background: rgba(8, 11, 16, .38);
+}
+
+.pin-setting-copy {
+	display: grid;
+	gap: 4px;
+}
+
+.pin-setting-copy strong {
+	color: var(--text);
+	font-size: 14px;
+}
+
+.pin-setting-copy small {
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.45;
+}
+
+.pin-toggle {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: max-content;
+	min-height: 24px;
+	margin: 0;
+	padding-left: 0;
+	color: var(--text);
+	cursor: pointer;
+}
+
+.pin-toggle .form-check-input {
+	float: none;
+	margin: 0;
+	margin-left: 0;
+	flex: 0 0 auto;
+}
+
+.pin-input-wrap {
+	margin: 0;
+}
+
+.pin-input-wrap small,
+.modal-subtitle {
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.identity-form-actions {
+	display: flex;
+	justify-content: flex-end;
+	padding-top: 2px;
+}
+
+.identity-form-actions .btn {
+	min-width: 112px;
+}
+
+@media (max-width: 900px) {
+	.identity-pin-settings {
+		grid-template-columns: minmax(0, 1fr) auto;
+	}
+
+	.pin-input-wrap {
+		grid-column: 1 / -1;
+	}
+}
+
+#adminModal .modal-footer form {
+	margin: 0;
 }
 
 .card-grid {
@@ -1064,6 +1288,43 @@ label {
 	.nametag-row,
 	.stattrak-row {
 		grid-template-columns: 1fr;
+	}
+
+	.loadout-info-panel {
+		padding: 17px;
+	}
+
+	.identity-panel-head {
+		align-items: center;
+		margin-bottom: 16px;
+	}
+
+	.identity-panel-head h1 {
+		font-size: 24px;
+	}
+
+	.identity-main-fields,
+	.identity-pin-settings {
+		grid-template-columns: 1fr;
+	}
+
+	.pin-toggle,
+	.pin-input-wrap {
+		grid-column: auto;
+	}
+
+	.identity-form-actions .btn {
+		width: 100%;
+	}
+
+	.modal-footer {
+		flex-wrap: wrap;
+	}
+
+	.modal-footer .btn,
+	.modal-footer form,
+	.modal-footer form .btn {
+		width: 100%;
 	}
 }
 

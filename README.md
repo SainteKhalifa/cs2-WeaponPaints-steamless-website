@@ -20,11 +20,11 @@ Logging into Steam can sometimes raise security concerns or create network acces
 
 Because Steam login has been removed, this project is better suited for private CS2 community servers and small trusted player groups. Players can create or select loadouts directly by entering a Steam64 ID.
 
-Compared with the original website, this project adds a loadout system, website access password, name tags, StatTrak™, sticker editing, music kit selection, agent selection, image fallback loading, and a CS2 skin data updater.
+Compared with the original website, this project adds a loadout system, website access password, per-loadout edit PINs, administrator mode, name tags, StatTrak™, sticker editing, music kit selection, agent selection, image fallback loading, and a CS2 skin data updater.
 
 **This project does not require Steam login.**
 
-This also means it is not an account security system for public websites. Anyone who can access the website can edit loadouts by entering a Steam64 ID. HTTPS and a website access password are recommended.
+This is still not a full account system for public websites. Without an edit PIN, anyone who can access the website can edit a loadout by entering its Steam64 ID. HTTPS, a website access password, and per-loadout PINs are recommended.
 
 ## Interface
 
@@ -44,6 +44,8 @@ This also means it is not an account security system for public websites. Anyone
 
 * Manage loadouts by Steam64 ID without Steam login
 * Add optional nicknames to loadouts for easier player identification
+* Protect individual loadouts with optional hashed edit PINs
+* Administrator mode can manage every loadout and reset its PIN
 * Global, T-side, and CT-side editing modes
 
 ### Skin Editing
@@ -103,6 +105,7 @@ The data source currently provides English and Simplified Chinese data. More lan
    <?php
    define('DEFAULT_LANGUAGE', 'en'); // Available values: en, zh-CN
    define('SITE_ACCESS_PASSWORD', ''); // Set a password to enable access protection
+   define('ADMIN_PASSWORD', ''); // Leave empty to disable administrator mode
    define('DB_HOST', '127.0.0.1');
    define('DB_PORT', '3306');
    define('DB_NAME', 'your_db_name');
@@ -116,11 +119,32 @@ The data source currently provides English and Simplified Chinese data. More lan
    http://your-server/your-folder/
    ```
 
-4. If `SITE_ACCESS_PASSWORD` is set, enter the access password on first visit.
+4. If `SITE_ACCESS_PASSWORD` is set, enter the access password on first visit. Set `ADMIN_PASSWORD` to enable the administrator button; leave it empty to keep administrator mode disabled.
 
-5. Create a loadout with a Steam64 ID and an optional nickname.
+5. Create a loadout with a Steam64 ID, an optional nickname, and an optional edit PIN.
 
 6. Select and edit skin settings as needed.
+
+## Loadout PINs and Administrator Mode
+
+This feature is not a user registration system. A PIN protects one loadout from casual edits while keeping the Steamless workflow.
+
+### Loadout PINs
+
+* A PIN can be enabled while creating a loadout or later from the Basic Information section of its edit page.
+* Protected loadouts display a lock and `PIN` badge on the loadout list.
+* Opening a protected loadout requires its PIN. After successful verification, that loadout remains unlocked for the current PHP browser session.
+* Entering a new PIN in Basic Information replaces the existing PIN. Leaving the field empty keeps the current PIN unchanged.
+* Turn off **Enable PIN** and save Basic Information to remove the PIN.
+* Loadouts without a PIN continue to open and save normally.
+
+### Administrator Mode
+
+Set `ADMIN_PASSWORD` in `class/config.php` to enable administrator mode. The administrator button appears next to the language button. Leave `ADMIN_PASSWORD` empty to keep this feature disabled.
+
+After signing in, an administrator can open every loadout without its PIN, edit Steam64 IDs and nicknames, and set, replace, or remove any loadout PIN. Administrator access lasts for the current PHP session and can be ended from the same administrator dialog.
+
+The website access password remains the first protection layer. Loadout PINs and administrator mode do not replace `SITE_ACCESS_PASSWORD`.
 
 ## Updating CS2 Data
 
@@ -180,10 +204,16 @@ This project reads and writes the following WeaponPaints tables:
 
 In addition, the website automatically creates two helper tables for its own use. If the configured database user has the required permissions, they will be created when the website is visited:
 
-* `wp_presets`: stores the website loadout list and nicknames
+* `wp_presets`: stores the website loadout list, nicknames, and optional password-hashed edit PINs
 * `wp_skin_settings_cache`: stores website-side per-skin settings such as wear, pattern template, StatTrak™, and name tags, so these settings can be remembered when switching skins
 
 The website reads `wp_presets` first, then reads and writes WeaponPaints data according to the selected Steam64 ID.
+
+The website automatically adds `edit_pin_hash VARCHAR(255) NULL` to an existing `wp_presets` table. No manual SQL is required when the configured database user has `ALTER` permission. Otherwise, run:
+
+```sql
+ALTER TABLE `wp_presets` ADD `edit_pin_hash` VARCHAR(255) NULL AFTER `nickname`;
+```
 
 ## Notes
 
@@ -195,3 +225,5 @@ The website reads `wp_presets` first, then reads and writes WeaponPaints data ac
 ## Security Notes
 
 This project is intended for private or trusted server environments.
+
+Loadout PINs are stored with PHP `password_hash()` and verified with `password_verify()`; the original PIN cannot be read back from the database. The administrator password remains a server-side `class/config.php` setting and is never included in rendered page data. HTTPS is strongly recommended whenever website passwords, PINs, or administrator mode are enabled.

@@ -91,6 +91,27 @@ $uiText = [
 		'access_password' => '密码',
 		'access_unlock' => '进入网站',
 		'access_invalid' => '密码不正确，请重试',
+		'admin' => '管理员',
+		'admin_enabled' => '管理员已启用',
+		'admin_login' => '管理员登录',
+		'admin_password' => '管理员密码',
+		'admin_disabled' => '管理员功能未启用',
+		'admin_enter' => '确认',
+		'admin_exit' => '退出',
+		'admin_invalid' => '管理员密码错误',
+		'enable_pin' => '启用 PIN',
+		'enter_pin' => '输入 PIN',
+		'pin_prompt' => '此配置已启用 PIN，请验证后继续。',
+		'pin_incorrect' => 'PIN 错误，请重试。',
+		'pin_set_placeholder' => '输入要设置的 PIN',
+		'pin_change_placeholder' => '输入要修改的 PIN，留空则保持不变。',
+		'pin_enabled' => '已启用 PIN',
+		'pin_disabled' => '未启用 PIN',
+		'pin_badge' => 'PIN',
+		'pin_required' => '请先输入 PIN。',
+		'basic_info' => '基础信息',
+		'pin_protection' => 'PIN 保护',
+		'pin_optional_hint' => '启用后，进入和修改此配置需要验证 PIN。',
 		'invalid_steamid' => '请输入正确的 Steam64 ID',
 		'validation_required' => '请填写此字段',
 		'validation_number_range' => '请输入 {min} 到 {max} 之间的数字',
@@ -165,6 +186,27 @@ $uiText = [
 		'access_password' => 'Password',
 		'access_unlock' => 'Enter Site',
 		'access_invalid' => 'Incorrect password. Please try again.',
+		'admin' => 'Administrator',
+		'admin_enabled' => 'Administrator enabled',
+		'admin_login' => 'Administrator Login',
+		'admin_password' => 'Administrator Password',
+		'admin_disabled' => 'Administrator mode is not enabled.',
+		'admin_enter' => 'Confirm',
+		'admin_exit' => 'Exit',
+		'admin_invalid' => 'Incorrect administrator password.',
+		'enable_pin' => 'Enable PIN',
+		'enter_pin' => 'Enter PIN',
+		'pin_prompt' => 'This loadout is protected by a PIN. Verify it to continue.',
+		'pin_incorrect' => 'Incorrect PIN. Please try again.',
+		'pin_set_placeholder' => 'Enter a PIN to set',
+		'pin_change_placeholder' => 'Enter a new PIN. Leave blank to keep current.',
+		'pin_enabled' => 'PIN enabled',
+		'pin_disabled' => 'PIN disabled',
+		'pin_badge' => 'PIN',
+		'pin_required' => 'Please enter a PIN first.',
+		'basic_info' => 'Basic Information',
+		'pin_protection' => 'PIN Protection',
+		'pin_optional_hint' => 'When enabled, opening and modifying this loadout requires PIN verification.',
 		'invalid_steamid' => 'Please enter a valid Steam64 ID.',
 		'validation_required' => 'Please fill out this field.',
 		'validation_number_range' => 'Please enter a number from {min} to {max}.',
@@ -202,10 +244,14 @@ function ensurePresetTable($db, $presetTable)
 		`id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
 		`steamid` VARCHAR(32) NOT NULL,
 		`nickname` VARCHAR(100) NULL,
+		`edit_pin_hash` VARCHAR(255) NULL,
 		`created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`),
 		UNIQUE KEY `uniq_steamid` (`steamid`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+	if (!columnExists($db, $presetTable, 'edit_pin_hash')) {
+		$db->query("ALTER TABLE `{$presetTable}` ADD `edit_pin_hash` VARCHAR(255) NULL AFTER `nickname`");
+	}
 }
 
 function ensureSkinSettingsTable($db, $skinSettingsTable)
@@ -252,6 +298,66 @@ function findPreset($db, $presetTable, $steamid)
 function presetLabel($preset)
 {
 	return $preset['nickname'] !== null && $preset['nickname'] !== '' ? $preset['nickname'] : $preset['steamid'];
+}
+
+function presetHasPin($preset)
+{
+	return !empty($preset['edit_pin_hash']);
+}
+
+function adminPassword()
+{
+	return defined('ADMIN_PASSWORD') ? (string)ADMIN_PASSWORD : '';
+}
+
+function isAdmin()
+{
+	$password = adminPassword();
+	return $password !== ''
+		&& !empty($_SESSION['is_admin'])
+		&& hash_equals(hash('sha256', $password), (string)($_SESSION['cs2_admin_key'] ?? ''));
+}
+
+function presetVerificationToken($preset)
+{
+	return presetHasPin($preset) ? hash('sha256', (string)$preset['edit_pin_hash']) : '';
+}
+
+function isPresetVerified($preset)
+{
+	$presetId = (string)($preset['id'] ?? '');
+	$verified = $_SESSION['cs2_verified_loadouts'][$presetId] ?? '';
+	return $presetId !== '' && presetHasPin($preset) && hash_equals(presetVerificationToken($preset), (string)$verified);
+}
+
+function markPresetVerified($preset)
+{
+	$_SESSION['cs2_verified_loadouts'][(string)$preset['id']] = presetVerificationToken($preset);
+}
+
+function clearPresetVerification($preset)
+{
+	unset($_SESSION['cs2_verified_loadouts'][(string)($preset['id'] ?? '')]);
+}
+
+function canEditPreset($preset)
+{
+	return $preset && (isAdmin() || !presetHasPin($preset) || isPresetVerified($preset));
+}
+
+function editUrl($preset, $team = 1)
+{
+	return 'index.php?' . http_build_query([
+		'action' => 'edit',
+		'id' => $preset['steamid'],
+		'team' => $team,
+	]);
+}
+
+function safeReturnUrl($value, $fallback = 'index.php')
+{
+	$value = trim((string)$value);
+	return preg_match('/^index\.php(?:\?[A-Za-z0-9_=&%+.-]*)?$/', $value) ? $value : $fallback;
 }
 
 function selectedTeam()
@@ -654,6 +760,7 @@ function loadSkinSettingCache($db, $skinSettingsTable, $steamid, $team, $definde
 $message = '';
 $error = '';
 $accessError = false;
+$adminError = false;
 $action = $_GET['action'] ?? 'home';
 $accessPassword = defined('SITE_ACCESS_PASSWORD') ? (string)SITE_ACCESS_PASSWORD : '';
 $accessRequired = $accessPassword !== '';
@@ -681,24 +788,86 @@ if ($accessGranted) {
 	ensureSkinSettingsTable($db, $skinSettingsTable);
 }
 
+if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'admin_login') {
+	$returnTo = safeReturnUrl($_POST['return_to'] ?? 'index.php');
+	$submittedPassword = (string)($_POST['admin_password'] ?? '');
+	if (adminPassword() !== '' && hash_equals(adminPassword(), $submittedPassword)) {
+		$_SESSION['is_admin'] = true;
+		$_SESSION['cs2_admin_key'] = hash('sha256', adminPassword());
+		session_regenerate_id(true);
+		go($returnTo);
+	}
+	$_SESSION['cs2_admin_error'] = true;
+	go($returnTo);
+}
+
+if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'admin_logout') {
+	unset($_SESSION['is_admin'], $_SESSION['cs2_admin_key']);
+	session_regenerate_id(true);
+	go(safeReturnUrl($_POST['return_to'] ?? 'index.php'));
+}
+
+if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'verify_preset_pin') {
+	$id = cleanSteamId($_POST['id'] ?? '');
+	$team = selectedTeam();
+	$preset = findPreset($db, $presetTable, $id);
+	$pin = (string)($_POST['edit_pin'] ?? '');
+	if ($preset && (isAdmin() || !presetHasPin($preset) || password_verify($pin, (string)$preset['edit_pin_hash']))) {
+		if (presetHasPin($preset) && !isAdmin()) {
+			markPresetVerified($preset);
+		}
+		session_regenerate_id(true);
+		go(editUrl($preset, $team));
+	}
+	go('index.php?action=list&pin_error=' . rawurlencode($id) . '&pin_team=' . $team);
+}
+
+$adminError = !empty($_SESSION['cs2_admin_error']);
+unset($_SESSION['cs2_admin_error']);
+
 if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 	$postAction = $_POST['action'] ?? '';
 
 	if ($postAction === 'create_preset') {
 		$steamid = cleanSteamId($_POST['steamid'] ?? '');
 		$nickname = trim((string)($_POST['nickname'] ?? ''));
+		$enablePin = isset($_POST['enable_pin']);
+		$newPin = (string)($_POST['edit_pin'] ?? '');
 		if (!preg_match('/^\d{5,32}$/', $steamid)) {
 			$error = t('invalid_steamid');
 			$action = 'new';
+		} elseif ($enablePin && $newPin === '') {
+			$error = t('pin_required');
+			$action = 'new';
 		} else {
 			$existingPreset = findPreset($db, $presetTable, $steamid);
-			$db->query("INSERT INTO `{$presetTable}` (`steamid`, `nickname`) VALUES (:steamid, :nickname)
-				ON DUPLICATE KEY UPDATE `nickname` = VALUES(`nickname`)", [
+			if ($existingPreset) {
+				if (!canEditPreset($existingPreset)) {
+					go('index.php?action=list&pin_required=' . rawurlencode($steamid));
+				}
+				$pinHash = $enablePin ? password_hash($newPin, PASSWORD_DEFAULT) : $existingPreset['edit_pin_hash'];
+				$db->query("UPDATE `{$presetTable}` SET `nickname` = :nickname, `edit_pin_hash` = :edit_pin_hash WHERE `steamid` = :steamid", [
+					"steamid" => $steamid,
+					"nickname" => $nickname !== '' ? $nickname : null,
+					"edit_pin_hash" => $pinHash,
+				]);
+				if ($enablePin && !isAdmin()) {
+					$existingPreset['edit_pin_hash'] = $pinHash;
+					markPresetVerified($existingPreset);
+				}
+				go('index.php?action=list&notice=updated_existing');
+			}
+			$pinHash = $enablePin ? password_hash($newPin, PASSWORD_DEFAULT) : null;
+			$db->query("INSERT INTO `{$presetTable}` (`steamid`, `nickname`, `edit_pin_hash`) VALUES (:steamid, :nickname, :edit_pin_hash)", [
 				"steamid" => $steamid,
 				"nickname" => $nickname !== '' ? $nickname : null,
+				"edit_pin_hash" => $pinHash,
 			]);
-			if ($existingPreset) {
-				go('index.php?action=list&notice=updated_existing');
+			if ($enablePin && !isAdmin()) {
+				$createdPreset = findPreset($db, $presetTable, $steamid);
+				if ($createdPreset) {
+					markPresetVerified($createdPreset);
+				}
 			}
 			go('index.php?action=list');
 		}
@@ -707,7 +876,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 	if ($postAction === 'delete_preset') {
 		$id = cleanSteamId($_POST['id'] ?? '');
 		$preset = findPreset($db, $presetTable, $id);
-		if ($preset) {
+		if ($preset && canEditPreset($preset)) {
 			$steamid = $preset['steamid'];
 			foreach (['wp_player_skins', 'wp_player_knife', 'wp_player_agents', 'wp_player_gloves', 'wp_player_music'] as $table) {
 				if (tableExists($db, $table)) {
@@ -726,9 +895,22 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$preset = findPreset($db, $presetTable, $id);
 		$steamid = cleanSteamId($_POST['steamid'] ?? '');
 		$nickname = trim((string)($_POST['nickname'] ?? ''));
+		$enablePin = isset($_POST['enable_pin']);
+		$newPin = (string)($_POST['edit_pin'] ?? '');
 
-		if (!$preset || !preg_match('/^\d{5,32}$/', $steamid)) {
+		if (!$preset || !canEditPreset($preset) || !preg_match('/^\d{5,32}$/', $steamid)) {
 			go("index.php?action=edit&id={$id}&team={$team}&error=identity");
+		}
+
+		$pinHash = null;
+		if ($enablePin) {
+			if ($newPin !== '') {
+				$pinHash = password_hash($newPin, PASSWORD_DEFAULT);
+			} elseif (presetHasPin($preset)) {
+				$pinHash = $preset['edit_pin_hash'];
+			} else {
+				go("index.php?action=edit&id={$id}&team={$team}&error=pin");
+			}
 		}
 
 		$duplicate = $db->select("SELECT `id` FROM `{$presetTable}` WHERE `steamid` = :steamid AND `id` <> :id LIMIT 1", [
@@ -740,11 +922,20 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 		$oldSteamid = $preset['steamid'];
-		$db->query("UPDATE `{$presetTable}` SET `steamid` = :steamid, `nickname` = :nickname WHERE `steamid` = :old_steamid", [
+		$db->query("UPDATE `{$presetTable}` SET `steamid` = :steamid, `nickname` = :nickname, `edit_pin_hash` = :edit_pin_hash WHERE `steamid` = :old_steamid", [
 			"steamid" => $steamid,
 			"nickname" => $nickname !== '' ? $nickname : null,
+			"edit_pin_hash" => $pinHash,
 			"old_steamid" => $oldSteamid,
 		]);
+		$updatedPreset = $preset;
+		$updatedPreset['steamid'] = $steamid;
+		$updatedPreset['edit_pin_hash'] = $pinHash;
+		if ($enablePin && !isAdmin()) {
+			markPresetVerified($updatedPreset);
+		} else {
+			clearPresetVerification($preset);
+		}
 
 		if ($oldSteamid !== $steamid) {
 			foreach (['wp_player_skins', 'wp_player_knife', 'wp_player_agents', 'wp_player_gloves', 'wp_player_music'] as $table) {
@@ -773,7 +964,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$stickers = stickersFromJson();
 		$fallbackUrl = "index.php?action=edit&id={$id}&team={$team}";
 		$slotCount = stickerSlotCount($defindex);
-		if (!$preset || $defindex <= 0 || $slot < 0 || $slot >= min(5, $slotCount) || !array_key_exists($stickerId, $stickers)) {
+		if (!$preset || !canEditPreset($preset) || $defindex <= 0 || $slot < 0 || $slot >= min(5, $slotCount) || !array_key_exists($stickerId, $stickers)) {
 			stickerSlotResponse(false, ['message' => t('sticker_save_failed')], $fallbackUrl);
 		}
 
@@ -818,7 +1009,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$slot = (int)($_POST['sticker_slot'] ?? -1);
 		$fallbackUrl = "index.php?action=edit&id={$id}&team={$team}";
 		$slotCount = stickerSlotCount($defindex);
-		if (!$preset || $defindex <= 0 || $slot < 0 || $slot >= min(5, $slotCount)) {
+		if (!$preset || !canEditPreset($preset) || $defindex <= 0 || $slot < 0 || $slot >= min(5, $slotCount)) {
 			stickerSlotResponse(false, ['message' => t('sticker_save_failed')], $fallbackUrl);
 		}
 
@@ -868,7 +1059,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$team = selectedTeam();
 		$displayTeam = readTeam($team);
 		$preset = findPreset($db, $presetTable, $id);
-		if (!$preset) {
+		if (!$preset || !canEditPreset($preset)) {
 			go('index.php?action=list');
 		}
 
@@ -1171,7 +1362,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$preset = findPreset($db, $presetTable, $id);
 		$music = musicFromJson();
 		$musicId = (int)($_POST['music_id'] ?? 0);
-		if (!$preset || $team !== 1 || !tableExists($db, 'wp_player_music') || !array_key_exists($musicId, $music)) {
+		if (!$preset || !canEditPreset($preset) || $team !== 1 || !tableExists($db, 'wp_player_music') || !array_key_exists($musicId, $music)) {
 			go("index.php?action=edit&id={$id}&team={$team}");
 		}
 
@@ -1200,7 +1391,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$id = cleanSteamId($_POST['id'] ?? '');
 		$team = selectedTeam();
 		$preset = findPreset($db, $presetTable, $id);
-		if (!$preset || !in_array($team, [2, 3], true) || !tableExists($db, 'wp_player_agents')) {
+		if (!$preset || !canEditPreset($preset) || !in_array($team, [2, 3], true) || !tableExists($db, 'wp_player_agents')) {
 			go("index.php?action=edit&id={$id}&team={$team}");
 		}
 
@@ -1243,6 +1434,9 @@ if ($action === 'edit') {
 	$currentPreset = findPreset($db, $presetTable, $id);
 	if (!$currentPreset) {
 		go('index.php?action=list');
+	}
+	if (!canEditPreset($currentPreset)) {
+		go('index.php?action=list&pin_required=' . rawurlencode($currentPreset['steamid']) . '&pin_team=' . $team);
 	}
 
 	$steamid = $currentPreset['steamid'];
@@ -1292,6 +1486,8 @@ if ($action === 'edit') {
 }
 
 $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY `created_time` ASC, `id` ASC") : [];
+$returnTo = 'index.php' . (!empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '');
+$returnTo = safeReturnUrl($returnTo);
 ?>
 <!DOCTYPE html>
 <html lang="<?= h($currentLanguage) ?>" data-bs-theme="dark">
@@ -1332,18 +1528,42 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 			</section>
 		<?php elseif ($action === 'new') : ?>
 			<a class="back-link" href="index.php"><?= h(t('back_home')) ?></a>
-			<section class="panel narrow">
-				<h1><?= h(t('new_preset')) ?></h1>
-				<?php if ($error) : ?><div class="alert alert-danger"><?= h(t('save_failed')) ?></div><?php endif; ?>
-				<form method="post" class="form-grid">
+			<section class="panel loadout-info-panel create-loadout-panel">
+				<div class="identity-panel-head">
+					<div>
+						<h1><?= h(t('new_preset')) ?></h1>
+						<p><?= h(t('basic_info')) ?></p>
+					</div>
+					<span class="identity-status" data-pin-status data-enabled-label="<?= h(t('pin_enabled')) ?>" data-disabled-label="<?= h(t('pin_disabled')) ?>"><?= h(t('pin_disabled')) ?></span>
+				</div>
+				<?php if ($error) : ?><div class="alert alert-danger"><?= h($error) ?></div><?php endif; ?>
+				<form method="post" class="identity-form loadout-info-form">
 					<input type="hidden" name="action" value="create_preset">
-					<label>Steam64 ID
-						<input class="form-control" name="steamid" inputmode="numeric" autocomplete="off" required>
-					</label>
-					<label><?= h(t('nickname')) ?>
-						<input class="form-control" name="nickname" autocomplete="off" placeholder="<?= h(t('nickname_placeholder')) ?>">
-					</label>
-					<button class="btn btn-primary" type="submit"><?= h(t('save')) ?></button>
+					<div class="identity-main-fields">
+						<label>Steam64 ID
+							<input class="form-control" name="steamid" value="<?= h($_POST['steamid'] ?? '') ?>" inputmode="numeric" autocomplete="off" required>
+						</label>
+						<label><?= h(t('nickname')) ?>
+							<input class="form-control" name="nickname" value="<?= h($_POST['nickname'] ?? '') ?>" autocomplete="off" placeholder="<?= h(t('nickname_placeholder')) ?>">
+						</label>
+					</div>
+					<div class="identity-pin-settings">
+						<div class="pin-setting-copy">
+							<strong><?= h(t('pin_protection')) ?></strong>
+							<small><?= h(t('pin_optional_hint')) ?></small>
+						</div>
+						<label class="pin-toggle form-check form-switch">
+							<input class="form-check-input" type="checkbox" role="switch" name="enable_pin" value="1" data-pin-toggle <?= isset($_POST['enable_pin']) ? 'checked' : '' ?>>
+							<span><?= h(t('enable_pin')) ?></span>
+						</label>
+						<label class="pin-input-wrap<?= isset($_POST['enable_pin']) ? '' : ' d-none' ?>" data-pin-input-wrap>
+							<span class="visually-hidden"><?= h(t('enter_pin')) ?></span>
+							<input class="form-control" type="password" name="edit_pin" autocomplete="one-time-code" placeholder="<?= h(t('pin_set_placeholder')) ?>" data-pin-input data-pin-required-when-enabled>
+						</label>
+					</div>
+					<div class="identity-form-actions">
+						<button class="btn btn-primary" type="submit"><?= h(t('create')) ?></button>
+					</div>
 				</form>
 			</section>
 		<?php elseif ($action === 'list') : ?>
@@ -1369,13 +1589,23 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 						<div class="preset-card-body">
 							<strong><?= h(presetLabel($preset)) ?></strong>
 							<span><?= h($preset['steamid']) ?></span>
+							<?php if (presetHasPin($preset)) : ?>
+								<div class="preset-pin-badge" title="<?= h(t('pin_enabled')) ?>">
+									<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+									<?= h(t('pin_badge')) ?>
+								</div>
+							<?php endif; ?>
 						</div>
 						<div class="preset-actions">
-							<a class="btn btn-outline-light" href="index.php?action=edit&id=<?= h($preset['steamid']) ?>&team=1"><?= h(t('edit')) ?></a>
+							<?php if (canEditPreset($preset)) : ?>
+								<a class="btn btn-outline-light" href="<?= h(editUrl($preset, 1)) ?>"><?= h(t('edit')) ?></a>
+							<?php else : ?>
+								<button class="btn btn-outline-light" type="button" data-bs-toggle="modal" data-bs-target="#presetPinModal" data-pin-id="<?= h($preset['steamid']) ?>" data-pin-label="<?= h(presetLabel($preset)) ?>" data-pin-team="1"><?= h(t('edit')) ?></button>
+							<?php endif; ?>
 							<form method="post" onsubmit="return confirm(<?= h(json_encode(t('delete_confirm'), JSON_UNESCAPED_UNICODE)) ?>);">
 								<input type="hidden" name="action" value="delete_preset">
 								<input type="hidden" name="id" value="<?= h($preset['steamid']) ?>">
-								<button class="btn btn-outline-danger" type="submit"><?= h(t('delete')) ?></button>
+								<button class="btn btn-outline-danger" type="submit" <?= canEditPreset($preset) ? '' : 'disabled' ?>><?= h(t('delete')) ?></button>
 							</form>
 						</div>
 					</article>
@@ -1396,20 +1626,48 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 			</header>
 
 			<?php if (isset($_GET['saved'])) : ?><div class="alert alert-success"><?= h(t('saved_notice')) ?></div><?php endif; ?>
-			<?php if (isset($_GET['error'])) : ?><div class="alert alert-danger"><?= h(t('save_failed')) ?></div><?php endif; ?>
+			<?php if (($_GET['error'] ?? '') === 'pin') : ?>
+				<div class="alert alert-danger"><?= h(t('pin_required')) ?></div>
+			<?php elseif (isset($_GET['error'])) : ?>
+				<div class="alert alert-danger"><?= h(t('save_failed')) ?></div>
+			<?php endif; ?>
 
-			<section class="panel">
-				<form method="post" class="identity-form">
+			<section class="panel loadout-info-panel">
+				<div class="identity-panel-head">
+					<div>
+						<h2><?= h(t('basic_info')) ?></h2>
+					</div>
+					<span class="identity-status<?= presetHasPin($currentPreset) ? ' active' : '' ?>" data-pin-status data-enabled-label="<?= h(t('pin_enabled')) ?>" data-disabled-label="<?= h(t('pin_disabled')) ?>"><?= h(presetHasPin($currentPreset) ? t('pin_enabled') : t('pin_disabled')) ?></span>
+				</div>
+				<form method="post" class="identity-form loadout-info-form">
 					<input type="hidden" name="action" value="save_identity">
 					<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 					<input type="hidden" name="team" value="<?= $team ?>">
-					<label>Steam64 ID
-						<input class="form-control" name="steamid" value="<?= h($currentPreset['steamid']) ?>" inputmode="numeric" required>
-					</label>
-					<label><?= h(t('nickname')) ?>
-						<input class="form-control" name="nickname" value="<?= h($currentPreset['nickname'] ?? '') ?>">
-					</label>
-					<button class="btn btn-primary" type="submit"><?= h(t('save')) ?></button>
+					<div class="identity-main-fields">
+						<label>Steam64 ID
+							<input class="form-control" name="steamid" value="<?= h($currentPreset['steamid']) ?>" inputmode="numeric" required>
+						</label>
+						<label><?= h(t('nickname')) ?>
+							<input class="form-control" name="nickname" value="<?= h($currentPreset['nickname'] ?? '') ?>">
+						</label>
+					</div>
+					<div class="identity-pin-settings">
+						<div class="pin-setting-copy">
+							<strong><?= h(t('pin_protection')) ?></strong>
+							<small><?= h(t('pin_optional_hint')) ?></small>
+						</div>
+						<label class="pin-toggle form-check form-switch">
+							<input class="form-check-input" type="checkbox" role="switch" name="enable_pin" value="1" data-pin-toggle <?= presetHasPin($currentPreset) ? 'checked' : '' ?>>
+							<span><?= h(t('enable_pin')) ?></span>
+						</label>
+						<label class="pin-input-wrap<?= presetHasPin($currentPreset) ? '' : ' d-none' ?>" data-pin-input-wrap>
+							<span class="visually-hidden"><?= h(t('enter_pin')) ?></span>
+							<input class="form-control" type="password" name="edit_pin" autocomplete="one-time-code" placeholder="<?= h(presetHasPin($currentPreset) ? t('pin_change_placeholder') : t('pin_set_placeholder')) ?>" data-pin-input <?= presetHasPin($currentPreset) ? '' : 'data-pin-required-when-enabled' ?>>
+						</label>
+					</div>
+					<div class="identity-form-actions">
+						<button class="btn btn-primary" type="submit"><?= h(t('save')) ?></button>
+					</div>
 				</form>
 			</section>
 
@@ -2137,6 +2395,82 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 		</div>
 	</div>
 
+	<?php if ($accessGranted) : ?>
+		<div class="modal fade" id="presetPinModal" tabindex="-1" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered modal-sm">
+				<form method="post" class="modal-content">
+					<input type="hidden" name="action" value="verify_preset_pin">
+					<input type="hidden" name="id" value="" data-preset-pin-id>
+					<input type="hidden" name="team" value="1" data-preset-pin-team>
+					<div class="modal-header">
+						<div>
+							<h5 class="modal-title"><?= h(t('enter_pin')) ?></h5>
+							<div class="modal-subtitle" data-preset-pin-label></div>
+						</div>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('cancel')) ?>"></button>
+					</div>
+					<div class="modal-body form-grid">
+						<p class="hint"><?= h(t('pin_prompt')) ?></p>
+						<div class="alert alert-danger d-none" data-pin-error><?= h(t('pin_incorrect')) ?></div>
+						<label><?= h(t('enter_pin')) ?>
+							<input class="form-control" type="password" name="edit_pin" autocomplete="one-time-code" required data-preset-pin-input>
+						</label>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('cancel')) ?></button>
+						<button type="submit" class="btn btn-primary"><?= h(t('edit')) ?></button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<div class="modal fade" id="adminModal" tabindex="-1" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered modal-sm">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title"><?= h(isAdmin() ? t('admin_enabled') : t('admin_login')) ?></h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('cancel')) ?>"></button>
+					</div>
+					<div class="modal-body">
+						<?php if (adminPassword() === '') : ?>
+							<div class="alert alert-info mb-0"><?= h(t('admin_disabled')) ?></div>
+						<?php elseif (isAdmin()) : ?>
+							<p class="hint"><?= h(t('admin_enabled')) ?></p>
+						<?php else : ?>
+							<?php if ($adminError) : ?><div class="alert alert-danger"><?= h(t('admin_invalid')) ?></div><?php endif; ?>
+							<form method="post" class="form-grid" id="adminLoginForm">
+								<input type="hidden" name="action" value="admin_login">
+								<input type="hidden" name="return_to" value="<?= h($returnTo) ?>">
+								<label><?= h(t('admin_password')) ?>
+									<input class="form-control" type="password" name="admin_password" autocomplete="current-password" required>
+								</label>
+							</form>
+						<?php endif; ?>
+					</div>
+					<?php if (adminPassword() !== '') : ?>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('cancel')) ?></button>
+							<?php if (isAdmin()) : ?>
+								<form method="post">
+									<input type="hidden" name="action" value="admin_logout">
+									<input type="hidden" name="return_to" value="<?= h($returnTo) ?>">
+									<button class="btn btn-outline-danger" type="submit"><?= h(t('admin_exit')) ?></button>
+								</form>
+							<?php else : ?>
+								<button class="btn btn-primary" type="submit" form="adminLoginForm"><?= h(t('admin_enter')) ?></button>
+							<?php endif; ?>
+						</div>
+					<?php endif; ?>
+				</div>
+			</div>
+		</div>
+	<?php endif; ?>
+
+		<?php if ($accessGranted) : ?>
+			<button class="admin-button<?= isAdmin() ? ' active' : '' ?>" type="button" data-bs-toggle="modal" data-bs-target="#adminModal" aria-label="<?= h(isAdmin() ? t('admin_enabled') : t('admin')) ?>" title="<?= h(isAdmin() ? t('admin_enabled') : t('admin')) ?>">
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.2c0 4.6 3.1 8.2 7.5 9.8 4.4-1.6 7.5-5.2 7.5-9.8V6L12 3Z"></path><path d="M9.5 12.2 11.2 14l3.6-4"></path></svg>
+			</button>
+		<?php endif; ?>
 		<nav class="language-switch" aria-label="<?= h(t('language')) ?>">
 			<details class="language-menu">
 				<summary class="language-button" aria-label="<?= h(t('language')) ?>" title="<?= h(t('language')) ?>">
@@ -2158,6 +2492,61 @@ $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY
 		window.cs2StickerDataUrl = <?= json_encode(dataFileUrl(stickerDataFile()), JSON_UNESCAPED_SLASHES) ?>;
 		window.cs2StickerAliasDataUrl = <?= json_encode(stickerAliasDataFile() !== '' ? dataFileUrl(stickerAliasDataFile()) : '', JSON_UNESCAPED_SLASHES) ?>;
 		(function () {
+			document.querySelectorAll('[data-pin-toggle]').forEach(function (toggle) {
+				var form = toggle.closest('form');
+				var wrap = form ? form.querySelector('[data-pin-input-wrap]') : null;
+				var input = form ? form.querySelector('[data-pin-input]') : null;
+				var panel = form ? form.closest('.loadout-info-panel') : null;
+				var status = panel ? panel.querySelector('[data-pin-status]') : null;
+				var sync = function () {
+					if (wrap) wrap.classList.toggle('d-none', !toggle.checked);
+					if (input) {
+						input.disabled = !toggle.checked;
+						input.required = toggle.checked && input.hasAttribute('data-pin-required-when-enabled');
+					}
+					if (status) {
+						status.classList.toggle('active', toggle.checked);
+						status.textContent = toggle.checked ? status.dataset.enabledLabel : status.dataset.disabledLabel;
+					}
+				};
+				toggle.addEventListener('change', sync);
+				sync();
+			});
+
+			var pinModalEl = document.getElementById('presetPinModal');
+			if (pinModalEl) {
+				pinModalEl.addEventListener('show.bs.modal', function (event) {
+					var trigger = event.relatedTarget;
+					if (!trigger) return;
+					pinModalEl.querySelector('[data-preset-pin-id]').value = trigger.dataset.pinId || '';
+					pinModalEl.querySelector('[data-preset-pin-team]').value = trigger.dataset.pinTeam || '1';
+					pinModalEl.querySelector('[data-preset-pin-label]').textContent = trigger.dataset.pinLabel || '';
+					pinModalEl.querySelector('[data-pin-error]').classList.toggle('d-none', trigger.dataset.pinError !== '1');
+				});
+				pinModalEl.addEventListener('shown.bs.modal', function () {
+					var input = pinModalEl.querySelector('[data-preset-pin-input]');
+					if (input) input.focus();
+				});
+				pinModalEl.addEventListener('hidden.bs.modal', function () {
+					var input = pinModalEl.querySelector('[data-preset-pin-input]');
+					if (input) input.value = '';
+				});
+				var requestedPinId = <?= json_encode((string)($_GET['pin_error'] ?? $_GET['pin_required'] ?? ''), JSON_UNESCAPED_UNICODE) ?>;
+				if (requestedPinId) {
+					var trigger = document.querySelector('[data-pin-id="' + CSS.escape(requestedPinId) + '"]');
+					if (trigger) {
+						trigger.dataset.pinTeam = <?= json_encode((string)($_GET['pin_team'] ?? '1')) ?>;
+						if (<?= isset($_GET['pin_error']) ? 'true' : 'false' ?>) trigger.dataset.pinError = '1';
+						bootstrap.Modal.getOrCreateInstance(pinModalEl).show(trigger);
+					}
+				}
+			}
+
+			<?php if ($adminError && $accessGranted) : ?>
+			var adminModalEl = document.getElementById('adminModal');
+			if (adminModalEl) bootstrap.Modal.getOrCreateInstance(adminModalEl).show();
+			<?php endif; ?>
+
 			var loadRemoteImage = function (image) {
 				if (!image) return;
 				var remoteSrc = image.dataset.remoteSrc || '';

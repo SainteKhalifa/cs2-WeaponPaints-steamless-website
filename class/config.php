@@ -1,6 +1,7 @@
 <?php
 define('DEFAULT_LANGUAGE', 'en'); // Available values: en, zh-CN
 define('SITE_ACCESS_PASSWORD', ''); // Set a password to enable access protection
+define('ADMIN_PASSWORD', ''); // Leave empty to disable administrator mode
 
 define('DB_HOST', '127.0.0.1');
 define('DB_PORT', '3306');
