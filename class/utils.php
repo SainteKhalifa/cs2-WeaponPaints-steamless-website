@@ -94,6 +94,11 @@ class UtilsClass
         return self::dataFromJson(self::languageFile('keychains', defined('KEYCHAIN_LANGUAGE') ? KEYCHAIN_LANGUAGE : 'keychains_en'), 'keychains_en');
     }
 
+    public static function pinsFromJson(): array
+    {
+        return self::dataFromJson(self::languageFile('collectibles', defined('PIN_LANGUAGE') ? PIN_LANGUAGE : 'collectibles_en'), 'collectibles_en');
+    }
+
     public static function musicFromJson(): array
     {
         return self::dataFromJson(self::languageFile('music', defined('MUSIC_LANGUAGE') ? MUSIC_LANGUAGE : 'music_en'), 'music_en');

@@ -132,7 +132,7 @@ This feature is not a user registration system. A PIN protects one loadout from 
 ### Loadout PINs
 
 * A PIN can be enabled while creating a loadout or later from the Basic Information section of its edit page.
-* Protected loadouts display a lock and `PIN` badge on the loadout list.
+* Protected loadouts display a lock and `PIN` label on the loadout list.
 * Opening a protected loadout requires its PIN. After successful verification, that loadout remains unlocked for the current PHP browser session.
 * Entering a new PIN in Basic Information replaces the existing PIN. Leaving the field empty keeps the current PIN unchanged.
 * Turn off **Enable PIN** and save Basic Information to remove the PIN.
@@ -209,10 +209,10 @@ In addition, the website automatically creates two helper tables for its own use
 
 The website reads `wp_presets` first, then reads and writes WeaponPaints data according to the selected Steam64 ID.
 
-The website automatically adds `edit_pin_hash VARCHAR(255) NULL` to an existing `wp_presets` table. No manual SQL is required when the configured database user has `ALTER` permission. Otherwise, run:
+The website automatically adds `loadout_password_hash VARCHAR(255) NULL` to an existing `wp_presets` table. No manual SQL is required when the configured database user has `ALTER` permission. Otherwise, run:
 
 ```sql
-ALTER TABLE `wp_presets` ADD `edit_pin_hash` VARCHAR(255) NULL AFTER `nickname`;
+ALTER TABLE `wp_presets` ADD `loadout_password_hash` VARCHAR(255) NULL AFTER `nickname`;
 ```
 
 ## Notes
@@ -220,7 +220,7 @@ ALTER TABLE `wp_presets` ADD `edit_pin_hash` VARCHAR(255) NULL AFTER `nickname`;
 * Sticker editing applies only to weapon skins. Most weapons have 4 default sticker slots, while weapons with 5 default sticker slots will show 5 slots.
 * The website displays local placeholder images first, then automatically replaces them after remote images load successfully.
 * Skin data is stored in the `data/` directory and maintained through `tools/update_cs2_data.php`.
-* Keychains and collectibles data are already prepared for future feature expansion.
+* Keychains data are already prepared for future feature expansion.
 
 ## Security Notes
 

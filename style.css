@@ -531,7 +531,7 @@ label {
 	white-space: nowrap;
 }
 
-.preset-pin-badge {
+.loadout-password-label {
 	display: inline-flex;
 	align-items: center;
 	gap: 5px;
@@ -545,7 +545,7 @@ label {
 	line-height: 1;
 }
 
-.preset-pin-badge svg {
+.loadout-password-label svg {
 	width: 13px;
 	height: 13px;
 	fill: none;
@@ -666,7 +666,7 @@ label {
 	border-radius: 7px;
 }
 
-.identity-pin-settings {
+.identity-loadout-password-settings {
 	display: grid;
 	grid-template-columns: minmax(180px, 1fr) auto minmax(240px, .9fr);
 	align-items: center;
@@ -677,23 +677,23 @@ label {
 	background: rgba(8, 11, 16, .38);
 }
 
-.pin-setting-copy {
+.loadout-password-setting-copy {
 	display: grid;
 	gap: 4px;
 }
 
-.pin-setting-copy strong {
+.loadout-password-setting-copy strong {
 	color: var(--text);
 	font-size: 14px;
 }
 
-.pin-setting-copy small {
+.loadout-password-setting-copy small {
 	color: var(--muted);
 	font-size: 12px;
 	line-height: 1.45;
 }
 
-.pin-toggle {
+.loadout-password-toggle {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -705,18 +705,18 @@ label {
 	cursor: pointer;
 }
 
-.pin-toggle .form-check-input {
+.loadout-password-toggle .form-check-input {
 	float: none;
 	margin: 0;
 	margin-left: 0;
 	flex: 0 0 auto;
 }
 
-.pin-input-wrap {
+.loadout-password-input-wrap {
 	margin: 0;
 }
 
-.pin-input-wrap small,
+.loadout-password-input-wrap small,
 .modal-subtitle {
 	color: var(--muted);
 	font-size: 12px;
@@ -733,11 +733,11 @@ label {
 }
 
 @media (max-width: 900px) {
-	.identity-pin-settings {
+	.identity-loadout-password-settings {
 		grid-template-columns: minmax(0, 1fr) auto;
 	}
 
-	.pin-input-wrap {
+	.loadout-password-input-wrap {
 		grid-column: 1 / -1;
 	}
 }
@@ -1304,12 +1304,12 @@ label {
 	}
 
 	.identity-main-fields,
-	.identity-pin-settings {
+	.identity-loadout-password-settings {
 		grid-template-columns: 1fr;
 	}
 
-	.pin-toggle,
-	.pin-input-wrap {
+	.loadout-password-toggle,
+	.loadout-password-input-wrap {
 		grid-column: auto;
 	}
 

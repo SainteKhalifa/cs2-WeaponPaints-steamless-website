@@ -209,10 +209,10 @@ class/weapon_order.php
 
 网站会先读取 `wp_presets`，再根据选中的Steam64 ID读取和写入WeaponPaints的数据。
 
-网站会自动为已有的 `wp_presets` 表增加 `edit_pin_hash VARCHAR(255) NULL` 字段。只要配置的数据库用户拥有 `ALTER` 权限，就不需要手动执行 SQL；否则请执行：
+网站会自动为已有的 `wp_presets` 表增加 `loadout_password_hash VARCHAR(255) NULL` 字段。只要配置的数据库用户拥有 `ALTER` 权限，就不需要手动执行 SQL；否则请执行：
 
 ```sql
-ALTER TABLE `wp_presets` ADD `edit_pin_hash` VARCHAR(255) NULL AFTER `nickname`;
+ALTER TABLE `wp_presets` ADD `loadout_password_hash` VARCHAR(255) NULL AFTER `nickname`;
 ```
 
 ## 说明
@@ -220,7 +220,7 @@ ALTER TABLE `wp_presets` ADD `edit_pin_hash` VARCHAR(255) NULL AFTER `nickname`;
 * 贴纸编辑只适用于武器皮肤。大多数武器有4个默认贴纸槽，拥有5个默认贴纸槽的武器会显示5个槽位。
 * 网站会优先显示本地占位图，远程图片加载成功后再自动替换。
 * 饰品数据存放在`data/`目录中，并通过`tools/update_cs2_data.php`维护。
-* 钥匙串和收藏品数据已经预留，用于未来功能扩展。
+* 挂件数据已经预留，用于未来功能扩展。
 
 ## 安全说明
 
