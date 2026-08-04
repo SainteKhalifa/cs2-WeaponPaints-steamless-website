@@ -19,19 +19,27 @@ if (isset($_GET['lang']) && array_key_exists($_GET['lang'], $availableLanguages)
 	setcookie($languageCookieName, $currentLanguage, time() + 60 * 60 * 24 * 365, $cookiePath);
 }
 UtilsClass::setLanguage($currentLanguage);
+$siteNames = [
+	'en' => defined('SITE_NAME_EN') ? trim((string)SITE_NAME_EN) : '',
+	'zh-CN' => defined('SITE_NAME_ZH_CN') ? trim((string)SITE_NAME_ZH_CN) : '',
+];
+$siteNameFallback = 'CS2 WeaponPaints Loadout Manager';
+$siteName = $siteNames[$currentLanguage] !== ''
+	? $siteNames[$currentLanguage]
+	: ($siteNames['en'] !== '' ? $siteNames['en'] : $siteNameFallback);
 $teams = $currentLanguage === 'en' ? [1 => 'Global', 2 => 'T', 3 => 'CT'] : [1 => '全局', 2 => 'T 阵营', 3 => 'CT 阵营'];
 
 $uiText = [
 	'zh-CN' => [
-		'app_title' => 'CS2 社区服皮肤管理器',
 		'home_subtitle' => '使用 Steam64 ID 管理饰品配置',
 		'language' => '语言',
 		'select_preset' => '选择配置',
 		'new_preset' => '新建配置',
 		'back_home' => '返回主页',
 		'back_list' => '返回配置列表',
-		'nickname' => '备注用户名',
-		'nickname_placeholder' => '例如：小明',
+		'back' => '返回',
+		'nickname' => '备注名',
+		'nickname_placeholder' => '请输入用于备注的名称',
 		'create' => '新建',
 		'edit' => '编辑',
 		'select' => '选择',
@@ -39,7 +47,9 @@ $uiText = [
 		'choose_skin' => '皮肤',
 		'choose_type_title' => '选择类别',
 		'choose_skin_title' => '选择皮肤',
+		'search_skin' => '搜索皮肤',
 		'delete' => '删除',
+		'delete_permission_hint' => '只有管理员模式下才能删除配置',
 		'save' => '保存',
 		'cancel' => '取消',
 		'reset' => '重置',
@@ -49,17 +59,19 @@ $uiText = [
 		'edit_preset' => '编辑配置',
 		'saved_notice' => '配置信息已保存。',
 		'save_failed' => '保存失败，请检查 Steam64 ID。',
-		'knife_type' => '匕首',
-		'knife_model' => '刀型',
-		'knife_skin' => '匕首皮肤',
+		'knife' => '匕首',
 		'choose_knife_first' => '请先选择刀型',
 		'choose_knife_hint' => '请先选择刀型和匕首皮肤',
 		'wear_value' => '磨损',
 		'pattern' => '模板',
+		'wear_factory_new' => '崭新出厂',
+		'wear_minimal_wear' => '略有磨损',
+		'wear_field_tested' => '久经沙场',
+		'wear_well_worn' => '破损不堪',
+		'wear_battle_scarred' => '战痕累累',
 		'settings' => '设置',
 		'close' => '关闭',
-		'glove_type' => '手套',
-		'glove_skin' => '手套皮肤',
+		'gloves' => '手套',
 		'default_gloves' => '使用库存手套',
 		'choose_glove_first' => '请先选择手套类型',
 		'choose_glove_hint' => '请先选择手套类型和手套皮肤',
@@ -84,14 +96,23 @@ $uiText = [
 		'sticker_slot' => '贴纸槽位',
 		'sticker_slot_settings' => '贴纸槽位 {slot} 设置',
 		'sticker_settings' => '贴纸设置',
-		'sticker_wear' => 'Wear 磨损',
+		'sticker_wear' => '贴纸磨损',
 		'sticker_x' => 'X 偏移',
 		'sticker_y' => 'Y 偏移',
 		'sticker_scale' => '缩放',
 		'sticker_rotation' => '旋转',
 		'sticker_save_failed' => '贴纸参数保存失败，请刷新后重试。',
-		'apply_sticker_to_all' => "\u{4E00}\u{952E}\u{8986}\u{76D6}\u{5168}\u{90E8}\u{8D34}\u{7EB8}\u{69FD}\u{4F4D}",
-		'clear_all_stickers' => "\u{4E00}\u{952E}\u{6E05}\u{9664}\u{5168}\u{90E8}\u{8D34}\u{7EB8}",
+		'apply_sticker_to_all' => "覆盖所有槽位",
+		'clear_all_stickers' => "清空所有槽位",
+		'keychain' => '挂件',
+		'choose_keychain' => '选择挂件',
+		'search_keychain' => '搜索挂件',
+		'no_keychain' => '无挂件',
+		'keychain_settings' => '挂件设置',
+		'keychain_template' => '模板',
+		'keychain_x' => 'X 偏移',
+		'keychain_y' => 'Y 偏移',
+		'keychain_save_failed' => '挂件保存失败，请刷新后重试。',
 		'access_title' => '访问密码',
 		'access_prompt' => '请输入访问密码后继续进入网站',
 		'access_password' => '密码',
@@ -109,6 +130,7 @@ $uiText = [
 		'enter_loadout_password' => '输入 PIN',
 		'loadout_password_prompt' => '此配置已启用 PIN，请验证后继续。',
 		'loadout_password_incorrect' => 'PIN 错误，请重试。',
+		'auth_rate_limited' => '尝试次数过多，请在 %d 秒后重试。',
 		'loadout_password_set_placeholder' => '输入要设置的 PIN',
 		'loadout_password_change_placeholder' => '输入要修改的 PIN，留空则保持不变。',
 		'loadout_password_enabled' => '已启用 PIN',
@@ -121,18 +143,20 @@ $uiText = [
 		'invalid_steamid' => '请输入正确的 Steam64 ID',
 		'validation_required' => '请填写此字段',
 		'validation_number_range' => '请输入 {min} 到 {max} 之间的数字',
+		'validation_decimal_range' => '请输入 {min} 到 {max} 之间、最多 {decimals} 位小数的数字',
 		'validation_integer_range' => '请输入 {min} 到 {max} 之间的整数',
+		'csrf_invalid' => '安全令牌无效或已过期，请刷新页面后重试。',
 	],
 	'en' => [
-		'app_title' => 'CS2 Community Server Skin Manager',
 		'home_subtitle' => 'Manage your skins with Steam64 ID.',
 		'language' => 'Language',
 		'select_preset' => 'Select Loadout',
 		'new_preset' => 'New Loadout',
 		'back_home' => 'Back Home',
 		'back_list' => 'Back to Loadouts',
+		'back' => 'Back',
 		'nickname' => 'Nickname',
-		'nickname_placeholder' => 'Example: Alex',
+		'nickname_placeholder' => 'Enter a nickname for reference',
 		'create' => 'Create',
 		'edit' => 'Edit',
 		'select' => 'Select',
@@ -140,7 +164,9 @@ $uiText = [
 		'choose_skin' => 'Skin',
 		'choose_type_title' => 'Choose Category',
 		'choose_skin_title' => 'Choose Skin',
+		'search_skin' => 'Search skins',
 		'delete' => 'Delete',
+		'delete_permission_hint' => 'Loadouts can only be deleted in administrator mode.',
 		'save' => 'Save',
 		'cancel' => 'Cancel',
 		'reset' => 'Reset',
@@ -150,17 +176,19 @@ $uiText = [
 		'edit_preset' => 'Edit Loadout',
 		'saved_notice' => 'Loadout info saved.',
 		'save_failed' => 'Save failed. Please check the Steam64 ID.',
-		'knife_type' => 'Knife Type',
-		'knife_model' => 'Knife Model',
-		'knife_skin' => 'Knife Skin',
+		'knife' => 'Knife',
 		'choose_knife_first' => 'Choose a knife model first',
 		'choose_knife_hint' => 'Choose a knife model and knife skin first.',
 		'wear_value' => 'Wear Rating',
 		'pattern' => 'Pattern Template',
+		'wear_factory_new' => 'Factory New',
+		'wear_minimal_wear' => 'Minimal Wear',
+		'wear_field_tested' => 'Field-Tested',
+		'wear_well_worn' => 'Well-Worn',
+		'wear_battle_scarred' => 'Battle-Scarred',
 		'settings' => 'Settings',
 		'close' => 'Close',
-		'glove_type' => 'Glove Type',
-		'glove_skin' => 'Glove Skin',
+		'gloves' => 'Gloves',
 		'default_gloves' => 'Use inventory gloves',
 		'choose_glove_first' => 'Choose a glove type first',
 		'choose_glove_hint' => 'Choose a glove type and glove skin first.',
@@ -185,7 +213,7 @@ $uiText = [
 		'sticker_slot' => 'Sticker Slot',
 		'sticker_slot_settings' => 'Sticker Slot {slot} Settings',
 		'sticker_settings' => 'Sticker Settings',
-		'sticker_wear' => 'Wear',
+		'sticker_wear' => 'Sticker Wear',
 		'sticker_x' => 'X Offset',
 		'sticker_y' => 'Y Offset',
 		'sticker_scale' => 'Scale',
@@ -193,6 +221,15 @@ $uiText = [
 		'sticker_save_failed' => 'Failed to save sticker settings. Please refresh and try again.',
 		'apply_sticker_to_all' => 'Apply sticker to all slots',
 		'clear_all_stickers' => 'Clear all stickers',
+		'keychain' => 'Keychain',
+		'choose_keychain' => 'Choose Keychain',
+		'search_keychain' => 'Search keychains',
+		'no_keychain' => 'No keychain',
+		'keychain_settings' => 'Keychain Settings',
+		'keychain_template' => 'Pattern Template',
+		'keychain_x' => 'X Offset',
+		'keychain_y' => 'Y Offset',
+		'keychain_save_failed' => 'Failed to save keychain. Please refresh and try again.',
 		'access_title' => 'Access Password',
 		'access_prompt' => 'Please enter the access password to continue to the website.',
 		'access_password' => 'Password',
@@ -210,6 +247,7 @@ $uiText = [
 		'enter_loadout_password' => 'Enter PIN',
 		'loadout_password_prompt' => 'This loadout is protected by a PIN. Verify it to continue.',
 		'loadout_password_incorrect' => 'Incorrect PIN. Please try again.',
+		'auth_rate_limited' => 'Too many attempts. Please try again in %d seconds.',
 		'loadout_password_set_placeholder' => 'Enter a PIN to set',
 		'loadout_password_change_placeholder' => 'Enter a new PIN. Leave blank to keep current.',
 		'loadout_password_enabled' => 'PIN enabled',
@@ -222,7 +260,9 @@ $uiText = [
 		'invalid_steamid' => 'Please enter a valid Steam64 ID.',
 		'validation_required' => 'Please fill out this field.',
 		'validation_number_range' => 'Please enter a number from {min} to {max}.',
+		'validation_decimal_range' => 'Please enter a number from {min} to {max} with up to {decimals} decimal places.',
 		'validation_integer_range' => 'Please enter an integer from {min} to {max}.',
+		'csrf_invalid' => 'The security token is invalid or expired. Refresh the page and try again.',
 	],
 ];
 
@@ -235,6 +275,51 @@ function t($key)
 function h($value)
 {
 	return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+function csrfToken()
+{
+	$token = $_SESSION['csrf_token'] ?? '';
+	if (!is_string($token) || strlen($token) !== 64) {
+		$token = bin2hex(random_bytes(32));
+		$_SESSION['csrf_token'] = $token;
+	}
+	return $token;
+}
+
+function csrfInput()
+{
+	return '<input type="hidden" name="csrf_token" value="' . h(csrfToken()) . '">';
+}
+
+function requestCsrfToken()
+{
+	return (string)($_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+}
+
+function isAjaxRequest()
+{
+	return strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'fetch'
+		|| (string)($_POST['ajax'] ?? '') === '1';
+}
+
+function rejectInvalidCsrf()
+{
+	http_response_code(403);
+	if (isAjaxRequest()) {
+		header('Content-Type: application/json; charset=utf-8');
+		echo json_encode(['ok' => false, 'message' => t('csrf_invalid')], JSON_UNESCAPED_UNICODE);
+	} else {
+		header('Content-Type: text/plain; charset=utf-8');
+		echo t('csrf_invalid');
+	}
+	exit;
+}
+
+function verifyCsrfRequest()
+{
+	$submitted = requestCsrfToken();
+	return $submitted !== '' && hash_equals(csrfToken(), $submitted);
 }
 
 function go($url)
@@ -263,10 +348,6 @@ function ensurePresetTable($db, $presetTable)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 	if (!columnExists($db, $presetTable, 'loadout_password_hash')) {
 		$db->query("ALTER TABLE `{$presetTable}` ADD `loadout_password_hash` VARCHAR(255) NULL AFTER `nickname`");
-	}
-	$legacyLoadoutPasswordHashColumn = 'edit_' . 'pi' . 'n_hash';
-	if (columnExists($db, $presetTable, $legacyLoadoutPasswordHashColumn)) {
-		$db->query("UPDATE `{$presetTable}` SET `loadout_password_hash` = `{$legacyLoadoutPasswordHashColumn}` WHERE `loadout_password_hash` IS NULL AND `{$legacyLoadoutPasswordHashColumn}` IS NOT NULL");
 	}
 }
 
@@ -361,6 +442,11 @@ function canEditPreset($preset)
 	return $preset && (isAdmin() || !loadoutHasPassword($preset) || isLoadoutPasswordVerified($preset));
 }
 
+function canDeletePreset($preset)
+{
+	return $preset && isAdmin();
+}
+
 function editUrl($preset, $team = 1)
 {
 	return 'index.php?' . http_build_query([
@@ -374,6 +460,67 @@ function safeReturnUrl($value, $fallback = 'index.php')
 {
 	$value = trim((string)$value);
 	return preg_match('/^index\.php(?:\?[A-Za-z0-9_=&%+.-]*)?$/', $value) ? $value : $fallback;
+}
+
+function authRateLimitConfig($scope)
+{
+	return [
+		'attempts' => max(1, (int)(defined('AUTH_RATE_LIMIT_ATTEMPTS') ? AUTH_RATE_LIMIT_ATTEMPTS : 5)),
+		'window' => max(1, (int)(defined('AUTH_RATE_LIMIT_WINDOW_SECONDS') ? AUTH_RATE_LIMIT_WINDOW_SECONDS : 1800)),
+		'lock' => max(1, (int)(defined('AUTH_RATE_LIMIT_LOCK_SECONDS') ? AUTH_RATE_LIMIT_LOCK_SECONDS : 60)),
+	];
+}
+
+function authRateLimit($scope, $subject = '', $operation = 'check')
+{
+	$config = authRateLimitConfig($scope);
+	$clientAddress = (string)($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+	$key = hash('sha256', __DIR__ . '|' . $clientAddress . '|' . $scope . '|' . (string)$subject);
+	$directory = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'cs2_weaponpaints_rate_limits';
+	if (!is_dir($directory) && !@mkdir($directory, 0700, true) && !is_dir($directory)) {
+		return 0;
+	}
+
+	$handle = @fopen($directory . DIRECTORY_SEPARATOR . $key . '.json', 'c+');
+	if ($handle === false || !flock($handle, LOCK_EX)) {
+		if (is_resource($handle)) {
+			fclose($handle);
+		}
+		return 0;
+	}
+
+	$now = time();
+	$policy = hash('sha256', implode('|', [$config['attempts'], $config['window'], $config['lock']]));
+	rewind($handle);
+	$state = json_decode((string)stream_get_contents($handle), true);
+	if (!is_array($state) || !hash_equals($policy, (string)($state['policy'] ?? ''))) {
+		$state = ['attempts' => [], 'blocked_until' => 0, 'policy' => $policy];
+	}
+	$state['attempts'] = array_values(array_filter((array)($state['attempts'] ?? []), static function ($timestamp) use ($now, $config) {
+		return is_numeric($timestamp) && (int)$timestamp > $now - $config['window'];
+	}));
+	$state['blocked_until'] = max(0, (int)($state['blocked_until'] ?? 0));
+
+	if ($operation === 'clear') {
+		$state = ['attempts' => [], 'blocked_until' => 0, 'policy' => $policy];
+	} elseif ($state['blocked_until'] <= $now) {
+		$state['blocked_until'] = 0;
+		if ($operation === 'fail') {
+			$state['attempts'][] = $now;
+			if (count($state['attempts']) >= $config['attempts']) {
+				$state['blocked_until'] = $now + $config['lock'];
+				$state['attempts'] = [];
+			}
+		}
+	}
+
+	rewind($handle);
+	ftruncate($handle, 0);
+	fwrite($handle, json_encode($state));
+	fflush($handle);
+	flock($handle, LOCK_UN);
+	fclose($handle);
+	return max(0, $state['blocked_until'] - $now);
 }
 
 function selectedTeam()
@@ -483,14 +630,40 @@ function stickersFromJson()
 	return $stickers;
 }
 
+function keychainsFromJson()
+{
+	$keychains = [
+		0 => [
+			'id' => 0,
+			'name' => t('no_keychain'),
+			'image' => '',
+		],
+	];
+	foreach (UtilsClass::keychainsFromJson() as $keychain) {
+		$id = (int)($keychain['id'] ?? 0);
+		$keychains[$id] = [
+			'id' => $id,
+			'name' => $keychain['name'] ?? '',
+			'image' => $keychain['image'] ?? '',
+		];
+	}
+	ksort($keychains);
+	return $keychains;
+}
+
 function defaultStickerValue()
 {
 	return '0;0;0;0;0;0;0';
 }
 
+function defaultKeychainValue()
+{
+	return '0;0;0;0;0';
+}
+
 function stickerSlotCount($defindex)
 {
-	return in_array((int)$defindex, [11, 23, 60, 61, 64], true) ? 5 : 4;
+	return 5;
 }
 
 function stickerNumber($value, $min, $max, $default, $scaleMustBePositive = false)
@@ -535,6 +708,13 @@ function stickerFloatValue($value)
 	return number_format((float)$value, 2, '.', '');
 }
 
+function skinWearDisplayValue($value)
+{
+	$formatted = number_format(round(max(0.0, min(1.0, (float)$value)), 8), 8, '.', '');
+	$formatted = rtrim(rtrim($formatted, '0'), '.');
+	return $formatted === '' ? '0' : $formatted;
+}
+
 function buildStickerValueFromParts($id, $schema, $params)
 {
 	$id = max(0, (int)$id);
@@ -577,6 +757,69 @@ function readStickerAdvancedParamsFromPost()
 		'scale' => stickerNumber($_POST['sticker_scale'] ?? null, 0.2, 5, 1, true),
 		'rotation' => stickerNumber($_POST['sticker_rotation'] ?? null, 0, 360, 0),
 	];
+}
+
+function keychainValueParts($value)
+{
+	$parts = array_pad(explode(';', (string)$value), 5, '');
+	$id = max(0, (int)($parts[0] ?? 0));
+	return [
+		'id' => $id,
+		'x' => stickerNumber($parts[1] ?? null, -1, 1, 0),
+		'y' => stickerNumber($parts[2] ?? null, -1, 1, 0),
+		'z' => stickerNumber($parts[3] ?? null, -1, 1, 0),
+		'template' => $id > 0 ? max(1, min(99999, (int)($parts[4] ?? 1))) : 0,
+	];
+}
+
+function keychainIdFromValue($value)
+{
+	return keychainValueParts($value)['id'];
+}
+
+function buildKeychainValueFromParts($id, $params)
+{
+	$id = max(0, (int)$id);
+	if ($id === 0) {
+		return defaultKeychainValue();
+	}
+	$x = stickerFloatValue(stickerNumber($params['x'] ?? 0, -1, 1, 0));
+	$y = stickerFloatValue(stickerNumber($params['y'] ?? 0, -1, 1, 0));
+	$z = stickerFloatValue(stickerNumber($params['z'] ?? 0, -1, 1, 0));
+	$template = (string)max(1, min(99999, (int)($params['template'] ?? 1)));
+	return "{$id};{$x};{$y};{$z};{$template}";
+}
+
+function buildKeychainValue($keychainId)
+{
+	return buildKeychainValueFromParts($keychainId, [
+		'x' => 0,
+		'y' => 0,
+		'z' => 0,
+		'template' => 1,
+	]);
+}
+
+function readKeychainValueFromPost($keychains, $existingValue = null)
+{
+	if (!array_key_exists('keychain_present', $_POST)) {
+		return null;
+	}
+	$keychainId = (int)($_POST['keychain_id'] ?? 0);
+	if (!array_key_exists($keychainId, $keychains)) {
+		$keychainId = 0;
+	}
+	$postedParts = keychainValueParts($_POST['keychain_value'] ?? '');
+	if ($keychainId > 0 && $postedParts['id'] === $keychainId) {
+		return buildKeychainValueFromParts($keychainId, $postedParts);
+	}
+	if ($existingValue !== null) {
+		$existingParts = keychainValueParts($existingValue);
+		if ($keychainId > 0 && $existingParts['id'] === $keychainId) {
+			return buildKeychainValueFromParts($keychainId, $existingParts);
+		}
+	}
+	return buildKeychainValue($keychainId);
 }
 
 function wantsJsonResponse()
@@ -654,6 +897,26 @@ function stickerAliasDataFile()
 {
 	$current = stickerDataFile();
 	$english = 'data/stickers_en.json';
+	if ($current === $english || !is_file(__DIR__ . '/' . $english)) {
+		return '';
+	}
+	return $english;
+}
+
+function keychainDataFile()
+{
+	$currentLanguage = UtilsClass::currentLanguage();
+	$language = in_array($currentLanguage, ['zh-CN', 'en'], true) ? "keychains_{$currentLanguage}" : (defined('KEYCHAIN_LANGUAGE') ? KEYCHAIN_LANGUAGE : 'keychains_en');
+	if (!is_file(__DIR__ . "/data/{$language}.json")) {
+		$language = 'keychains_en';
+	}
+	return "data/{$language}.json";
+}
+
+function keychainAliasDataFile()
+{
+	$current = keychainDataFile();
+	$english = 'data/keychains_en.json';
 	if ($current === $english || !is_file(__DIR__ . '/' . $english)) {
 		return '';
 	}
@@ -806,10 +1069,16 @@ function loadSkinSettingCache($db, $skinSettingsTable, $steamid, $team, $definde
 	return $rows[0] ?? null;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verifyCsrfRequest()) {
+	rejectInvalidCsrf();
+}
+
 $message = '';
 $error = '';
-$accessError = false;
-$adminError = false;
+$accessError = '';
+$accessRetryAfter = 0;
+$adminError = '';
+$adminRetryAfter = 0;
 $action = $_GET['action'] ?? 'home';
 $accessPassword = defined('SITE_ACCESS_PASSWORD') ? (string)SITE_ACCESS_PASSWORD : '';
 $accessRequired = $accessPassword !== '';
@@ -818,13 +1087,20 @@ $accessGranted = !$accessRequired || (($_SESSION['cs2_site_access_granted'] ?? '
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'verify_access') {
 	$submittedPassword = (string)($_POST['access_password'] ?? '');
-	if ($accessRequired && hash_equals($accessPassword, $submittedPassword)) {
+	$accessRetryAfter = authRateLimit('access');
+	if ($accessRetryAfter > 0) {
+		$accessError = 'rate_limited';
+		$action = 'access';
+	} elseif ($accessRequired && hash_equals($accessPassword, $submittedPassword)) {
+		authRateLimit('access', '', 'clear');
 		$_SESSION['cs2_site_access_granted'] = $accessSessionKey;
 		session_regenerate_id(true);
 		go('index.php');
+	} else {
+		$accessRetryAfter = authRateLimit('access', '', 'fail');
+		$accessError = $accessRetryAfter > 0 ? 'rate_limited' : 'invalid';
+		$action = 'access';
 	}
-	$accessError = true;
-	$action = 'access';
 }
 
 if (!$accessGranted) {
@@ -840,13 +1116,22 @@ if ($accessGranted) {
 if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'admin_login') {
 	$returnTo = safeReturnUrl($_POST['return_to'] ?? 'index.php');
 	$submittedPassword = (string)($_POST['admin_password'] ?? '');
+	$adminRetryAfter = authRateLimit('admin');
+	if ($adminRetryAfter > 0) {
+		$_SESSION['cs2_admin_error'] = 'rate_limited';
+		$_SESSION['cs2_admin_retry_after'] = $adminRetryAfter;
+		go($returnTo);
+	}
 	if (adminPassword() !== '' && hash_equals(adminPassword(), $submittedPassword)) {
+		authRateLimit('admin', '', 'clear');
 		$_SESSION['is_admin'] = true;
 		$_SESSION['cs2_admin_key'] = hash('sha256', adminPassword());
 		session_regenerate_id(true);
 		go($returnTo);
 	}
-	$_SESSION['cs2_admin_error'] = true;
+	$adminRetryAfter = authRateLimit('admin', '', 'fail');
+	$_SESSION['cs2_admin_error'] = $adminRetryAfter > 0 ? 'rate_limited' : 'invalid';
+	$_SESSION['cs2_admin_retry_after'] = $adminRetryAfter;
 	go($returnTo);
 }
 
@@ -861,18 +1146,26 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action']
 	$team = selectedTeam();
 	$preset = findPreset($db, $presetTable, $id);
 	$submittedLoadoutPassword = (string)($_POST['loadout_password'] ?? '');
+	$loadoutRetryAfter = authRateLimit('loadout', $id);
+	if ($loadoutRetryAfter > 0) {
+		go('index.php?action=list&loadout_password_error=' . rawurlencode($id) . '&loadout_password_rate_limited=1&retry_after=' . $loadoutRetryAfter . '&loadout_password_team=' . $team);
+	}
 	if ($preset && (isAdmin() || !loadoutHasPassword($preset) || password_verify($submittedLoadoutPassword, (string)$preset['loadout_password_hash']))) {
+		authRateLimit('loadout', $id, 'clear');
 		if (loadoutHasPassword($preset) && !isAdmin()) {
 			markLoadoutPasswordVerified($preset);
 		}
 		session_regenerate_id(true);
 		go(editUrl($preset, $team));
 	}
-	go('index.php?action=list&loadout_password_error=' . rawurlencode($id) . '&loadout_password_team=' . $team);
+	$loadoutRetryAfter = authRateLimit('loadout', $id, 'fail');
+	$rateLimitQuery = $loadoutRetryAfter > 0 ? '&loadout_password_rate_limited=1&retry_after=' . $loadoutRetryAfter : '';
+	go('index.php?action=list&loadout_password_error=' . rawurlencode($id) . $rateLimitQuery . '&loadout_password_team=' . $team);
 }
 
-$adminError = !empty($_SESSION['cs2_admin_error']);
-unset($_SESSION['cs2_admin_error']);
+$adminError = (string)($_SESSION['cs2_admin_error'] ?? '');
+$adminRetryAfter = max(0, (int)($_SESSION['cs2_admin_retry_after'] ?? 0));
+unset($_SESSION['cs2_admin_error'], $_SESSION['cs2_admin_retry_after']);
 
 if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 	$postAction = $_POST['action'] ?? '';
@@ -894,7 +1187,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 				if (!canEditPreset($existingPreset)) {
 					go('index.php?action=list&loadout_password_required=' . rawurlencode($steamid));
 				}
-				$loadoutPasswordHash = $enableLoadoutPassword ? password_hash($newLoadoutPassword, PASSWORD_DEFAULT) : $existingPreset['loadout_password_hash'];
+				$loadoutPasswordHash = $enableLoadoutPassword ? password_hash($newLoadoutPassword, PASSWORD_DEFAULT) : null;
 				$db->query("UPDATE `{$presetTable}` SET `nickname` = :nickname, `loadout_password_hash` = :loadout_password_hash WHERE `steamid` = :steamid", [
 					"steamid" => $steamid,
 					"nickname" => $nickname !== '' ? $nickname : null,
@@ -903,6 +1196,8 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 				if ($enableLoadoutPassword && !isAdmin()) {
 					$existingPreset['loadout_password_hash'] = $loadoutPasswordHash;
 					markLoadoutPasswordVerified($existingPreset);
+				} else {
+					clearLoadoutPasswordVerification($existingPreset);
 				}
 				go('index.php?action=list&notice=updated_existing');
 			}
@@ -925,7 +1220,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 	if ($postAction === 'delete_preset') {
 		$id = cleanSteamId($_POST['id'] ?? '');
 		$preset = findPreset($db, $presetTable, $id);
-		if ($preset && canEditPreset($preset)) {
+		if (canDeletePreset($preset)) {
 			$steamid = $preset['steamid'];
 			foreach (['wp_player_skins', 'wp_player_knife', 'wp_player_agents', 'wp_player_gloves', 'wp_player_music', 'wp_player_pins'] as $table) {
 				if (tableExists($db, $table)) {
@@ -1103,6 +1398,49 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 			'params' => stickerValueParts($responseValue),
 		], $fallbackUrl);
 	}
+	if ($postAction === 'save_keychain_choice') {
+		$id = cleanSteamId($_POST['id'] ?? '');
+		$team = selectedTeam();
+		$preset = findPreset($db, $presetTable, $id);
+		$defindex = (int)($_POST['weapon_defindex'] ?? 0);
+		$keychainId = (int)($_POST['keychain_id'] ?? 0);
+		$keychains = keychainsFromJson();
+		$fallbackUrl = "index.php?action=edit&id={$id}&team={$team}";
+		if (!$preset || !canEditPreset($preset) || $defindex <= 0 || !array_key_exists($keychainId, $keychains)) {
+			stickerSlotResponse(false, ['message' => t('keychain_save_failed')], $fallbackUrl);
+		}
+
+		$newValue = buildKeychainValue($keychainId);
+		$updated = false;
+		foreach (writeTeams($team) as $targetTeam) {
+			$rows = $db->select("SELECT `weapon_defindex` FROM `wp_player_skins`
+				WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team LIMIT 1", [
+				"steamid" => $preset['steamid'],
+				"weapon_defindex" => $defindex,
+				"team" => $targetTeam,
+			]);
+			if (!$rows) {
+				continue;
+			}
+			$db->query("UPDATE `wp_player_skins` SET `weapon_keychain` = :keychain_value
+				WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team", [
+				"keychain_value" => $newValue,
+				"steamid" => $preset['steamid'],
+				"weapon_defindex" => $defindex,
+				"team" => $targetTeam,
+			]);
+			$updated = true;
+		}
+
+		if (!$updated) {
+			stickerSlotResponse(false, ['message' => t('keychain_save_failed')], $fallbackUrl);
+		}
+		stickerSlotResponse(true, [
+			'value' => $newValue,
+			'keychain_id' => $keychainId,
+			'params' => keychainValueParts($newValue),
+		], $fallbackUrl);
+	}
 	if ($postAction === 'save_skin') {
 		$id = cleanSteamId($_POST['id'] ?? '');
 		$team = selectedTeam();
@@ -1118,7 +1456,8 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$knifes = UtilsClass::getKnifeTypes();
 		$gloves = glovesFromJson();
 		$stickers = stickersFromJson();
-		$selectedRows = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`
+		$keychains = keychainsFromJson();
+		$selectedRows = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_keychain`
 			FROM `wp_player_skins`
 			WHERE `steamid` = :steamid AND `weapon_team` = :team", [
 			"steamid" => $steamid,
@@ -1194,7 +1533,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					]);
 
 					$paint = (int)array_key_first($gloves[$gloveDefindex]);
-					$existing = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4` FROM `wp_player_skins`
+					$existing = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_keychain` FROM `wp_player_skins`
 						WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team LIMIT 1", [
 						"steamid" => $steamid,
 						"weapon_defindex" => $gloveDefindex,
@@ -1241,7 +1580,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 			$hasExplicitWear = array_key_exists('wear', $_POST);
 			$hasExplicitSeed = array_key_exists('seed', $_POST);
 			$hasExplicitSettings = $hasExplicitWear || $hasExplicitSeed;
-			$submittedWear = $hasExplicitWear ? max(0.0, min(1.0, (float)$_POST['wear'])) : null;
+			$submittedWear = $hasExplicitWear ? round(max(0.0, min(1.0, (float)$_POST['wear'])), 8) : null;
 			$submittedSeed = $hasExplicitSeed ? max(0, min(1000, (int)$_POST['seed'])) : null;
 
 			foreach (writeTeams($team) as $targetTeam) {
@@ -1256,7 +1595,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					]);
 				}
 
-				$existing = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4` FROM `wp_player_skins`
+				$existing = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_keychain` FROM `wp_player_skins`
 					WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team LIMIT 1", [
 					"steamid" => $steamid,
 					"weapon_defindex" => $defindex,
@@ -1308,8 +1647,9 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 			$hasExplicitWear = array_key_exists('wear', $_POST);
 			$hasExplicitSeed = array_key_exists('seed', $_POST);
 			$submittedStickerValues = readStickerValuesFromPost(stickerSlotCount($defindex), $stickers);
-			$hasExplicitSettings = $hasExplicitWear || $hasExplicitSeed || array_key_exists('stattrak', $_POST) || array_key_exists('nametag_present', $_POST) || $submittedStickerValues !== null;
-			$submittedWear = $hasExplicitWear ? max(0.0, min(1.0, (float)$_POST['wear'])) : null;
+			$submittedKeychainValue = readKeychainValueFromPost($keychains, null);
+			$hasExplicitSettings = $hasExplicitWear || $hasExplicitSeed || array_key_exists('stattrak', $_POST) || array_key_exists('nametag_present', $_POST) || $submittedStickerValues !== null || $submittedKeychainValue !== null;
+			$submittedWear = $hasExplicitWear ? round(max(0.0, min(1.0, (float)$_POST['wear'])), 8) : null;
 			$submittedSeed = $hasExplicitSeed ? max(0, min(1000, (int)$_POST['seed'])) : null;
 			$submittedStatTrak = array_key_exists('stattrak', $_POST) ? 1 : 0;
 			$submittedStatTrakCount = $submittedStatTrak ? max(0, min(999999, (int)($_POST['weapon_stattrak_count'] ?? 0))) : 0;
@@ -1318,6 +1658,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 				go("index.php?action=edit&id={$id}&team={$team}&error=nametag");
 			}
 			$isKnifeSkin = in_array($defindex, knifeDefindexes($knifes), true);
+			$isInventorySkin = $paint === 0 && !$isKnifeSkin;
 
 			foreach (writeTeams($team) as $targetTeam) {
 				if ($isKnifeSkin) {
@@ -1331,7 +1672,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					]);
 				}
 
-				$existing = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4` FROM `wp_player_skins`
+				$existing = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_keychain` FROM `wp_player_skins`
 					WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team LIMIT 1", [
 					"steamid" => $steamid,
 					"weapon_defindex" => $defindex,
@@ -1342,13 +1683,22 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, (int)$current['weapon_paint_id'], (float)$current['weapon_wear'], (int)$current['weapon_seed'], (int)$current['weapon_stattrak'], (int)($current['weapon_stattrak_count'] ?? 0), $current['weapon_nametag']);
 				}
 
-				if ($hasExplicitSettings) {
+				if ($isInventorySkin) {
+					$wear = 0.0;
+					$seed = 0;
+					$stattrak = 0;
+					$stattrakCount = 0;
+					$nameTag = null;
+					$stickerValues = defaultStickerValues();
+					$keychainValue = defaultKeychainValue();
+				} elseif ($hasExplicitSettings) {
 					$wear = $submittedWear ?? ($existing[0]['weapon_wear'] ?? 0.0);
 					$seed = $submittedSeed ?? ($existing[0]['weapon_seed'] ?? 0);
 					$stattrak = $submittedStatTrak;
 					$stattrakCount = $stattrak ? $submittedStatTrakCount : 0;
 					$nameTag = array_key_exists('nametag_present', $_POST) ? $submittedNameTag : ($existing[0]['weapon_nametag'] ?? null);
 					$stickerValues = $submittedStickerValues ?? ($existing ? stickerValuesFromRow($existing[0]) : defaultStickerValues());
+					$keychainValue = $submittedKeychainValue ?? ($existing[0]['weapon_keychain'] ?? defaultKeychainValue());
 				} else {
 					$cached = loadSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, $paint);
 					$wear = $cached ? (float)$cached['weapon_wear'] : 0.0;
@@ -1357,11 +1707,12 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					$stattrakCount = $stattrak && $cached ? (int)($cached['weapon_stattrak_count'] ?? 0) : 0;
 					$nameTag = $cached ? $cached['weapon_nametag'] : null;
 					$stickerValues = $existing ? stickerValuesFromRow($existing[0]) : defaultStickerValues();
+					$keychainValue = $existing[0]['weapon_keychain'] ?? defaultKeychainValue();
 				}
 
 				if ($existing) {
 					$db->query("UPDATE `wp_player_skins`
-						SET `weapon_paint_id` = :weapon_paint_id, `weapon_wear` = :weapon_wear, `weapon_seed` = :weapon_seed, `weapon_stattrak` = :weapon_stattrak, `weapon_stattrak_count` = :weapon_stattrak_count, `weapon_nametag` = :weapon_nametag, `weapon_sticker_0` = :weapon_sticker_0, `weapon_sticker_1` = :weapon_sticker_1, `weapon_sticker_2` = :weapon_sticker_2, `weapon_sticker_3` = :weapon_sticker_3, `weapon_sticker_4` = :weapon_sticker_4
+						SET `weapon_paint_id` = :weapon_paint_id, `weapon_wear` = :weapon_wear, `weapon_seed` = :weapon_seed, `weapon_stattrak` = :weapon_stattrak, `weapon_stattrak_count` = :weapon_stattrak_count, `weapon_nametag` = :weapon_nametag, `weapon_sticker_0` = :weapon_sticker_0, `weapon_sticker_1` = :weapon_sticker_1, `weapon_sticker_2` = :weapon_sticker_2, `weapon_sticker_3` = :weapon_sticker_3, `weapon_sticker_4` = :weapon_sticker_4, `weapon_keychain` = :weapon_keychain
 						WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team", [
 						"steamid" => $steamid,
 						"weapon_defindex" => $defindex,
@@ -1376,12 +1727,13 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 						"weapon_sticker_2" => $stickerValues[2],
 						"weapon_sticker_3" => $stickerValues[3],
 						"weapon_sticker_4" => $stickerValues[4],
+						"weapon_keychain" => $keychainValue,
 						"team" => $targetTeam,
 					]);
 				} else {
 					$db->query("INSERT INTO `wp_player_skins`
-						(`steamid`, `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_team`)
-						VALUES (:steamid, :weapon_defindex, :weapon_paint_id, :weapon_wear, :weapon_seed, :weapon_stattrak, :weapon_stattrak_count, :weapon_nametag, :weapon_sticker_0, :weapon_sticker_1, :weapon_sticker_2, :weapon_sticker_3, :weapon_sticker_4, :team)", [
+						(`steamid`, `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_keychain`, `weapon_team`)
+						VALUES (:steamid, :weapon_defindex, :weapon_paint_id, :weapon_wear, :weapon_seed, :weapon_stattrak, :weapon_stattrak_count, :weapon_nametag, :weapon_sticker_0, :weapon_sticker_1, :weapon_sticker_2, :weapon_sticker_3, :weapon_sticker_4, :weapon_keychain, :team)", [
 						"steamid" => $steamid,
 						"weapon_defindex" => $defindex,
 						"weapon_paint_id" => $paint,
@@ -1395,6 +1747,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 						"weapon_sticker_2" => $stickerValues[2],
 						"weapon_sticker_3" => $stickerValues[3],
 						"weapon_sticker_4" => $stickerValues[4],
+						"weapon_keychain" => $keychainValue,
 						"team" => $targetTeam,
 					]);
 				}
@@ -1505,6 +1858,7 @@ $selectedAgent = null;
 $gloves = [];
 $selectedGlove = null;
 $stickers = [];
+$keychains = [];
 $music = [];
 $selectedMusic = null;
 $pins = [];
@@ -1526,9 +1880,10 @@ if ($action === 'edit') {
 	$skins = UtilsClass::skinsFromJson();
 	$gloves = glovesFromJson();
 	$stickers = stickersFromJson();
+	$keychains = keychainsFromJson();
 	$music = musicFromJson();
 	$pins = pinsFromJson();
-	$selectedRows = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`
+	$selectedRows = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_keychain`
 		FROM `wp_player_skins`
 		WHERE `steamid` = :steamid AND `weapon_team` = :team", [
 		"steamid" => $steamid,
@@ -1587,9 +1942,9 @@ $returnTo = safeReturnUrl($returnTo);
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-	<link rel="icon" type="image/svg+xml" href="favicon.svg">
+	<link rel="icon" type="image/png" href="favicon.png?v=<?= filemtime(__DIR__ . '/favicon.png') ?>">
 	<link rel="stylesheet" href="style.css?v=<?= filemtime(__DIR__ . '/style.css') ?>">
-	<title><?= h(t('app_title')) ?></title>
+	<title><?= h($siteName) ?></title>
 </head>
 
 <body>
@@ -1598,8 +1953,11 @@ $returnTo = safeReturnUrl($returnTo);
 			<section class="access-panel panel narrow">
 				<h1><?= h(t('access_title')) ?></h1>
 				<p class="hint"><?= h(t('access_prompt')) ?></p>
-				<?php if ($accessError) : ?><div class="alert alert-danger"><?= h(t('access_invalid')) ?></div><?php endif; ?>
+				<?php if ($accessError) : ?>
+					<div class="alert alert-danger"><?= h($accessError === 'rate_limited' ? sprintf(t('auth_rate_limited'), $accessRetryAfter) : t('access_invalid')) ?></div>
+				<?php endif; ?>
 				<form method="post" class="form-grid">
+					<?= csrfInput() ?>
 					<input type="hidden" name="action" value="verify_access">
 					<label><?= h(t('access_password')) ?>
 						<input class="form-control" type="password" name="access_password" autocomplete="current-password" required autofocus>
@@ -1609,13 +1967,12 @@ $returnTo = safeReturnUrl($returnTo);
 			</section>
 		<?php elseif ($action === 'home') : ?>
 			<section class="home-panel">
-				<h1><?= h(t('app_title')) ?></h1>
+				<h1><?= h($siteName) ?></h1>
 				<p><?= h(t('home_subtitle')) ?></p>
 				<div class="home-actions">
 					<a class="btn btn-primary btn-lg" href="index.php?action=list"><?= h(t('select_preset')) ?></a>
 					<a class="btn btn-outline-light btn-lg" href="index.php?action=new"><?= h(t('new_preset')) ?></a>
-				</div>
-			</section>
+											</section>
 		<?php elseif ($action === 'new') : ?>
 			<a class="back-link" href="index.php"><?= h(t('back_home')) ?></a>
 			<section class="panel loadout-info-panel create-loadout-panel">
@@ -1628,6 +1985,7 @@ $returnTo = safeReturnUrl($returnTo);
 				</div>
 				<?php if ($error) : ?><div class="alert alert-danger"><?= h($error) ?></div><?php endif; ?>
 				<form method="post" class="identity-form loadout-info-form">
+					<?= csrfInput() ?>
 					<input type="hidden" name="action" value="create_preset">
 					<div class="identity-main-fields">
 						<label>Steam64 ID
@@ -1646,7 +2004,7 @@ $returnTo = safeReturnUrl($returnTo);
 							<input class="form-check-input" type="checkbox" role="switch" name="enable_loadout_password" value="1" data-loadout-password-toggle <?= isset($_POST['enable_loadout_password']) ? 'checked' : '' ?>>
 							<span><?= h(t('enable_loadout_password')) ?></span>
 						</label>
-						<label class="loadout-password-input-wrap<?= isset($_POST['enable_loadout_password']) ? '' : ' d-none' ?>" data-loadout-password-input-wrap>
+						<label class="loadout-password-input-wrap<?= isset($_POST['enable_loadout_password']) ? '' : ' is-inactive' ?>" data-loadout-password-input-wrap>
 							<span class="visually-hidden"><?= h(t('enter_loadout_password')) ?></span>
 							<input class="form-control" type="password" name="loadout_password" autocomplete="one-time-code" placeholder="<?= h(t('loadout_password_set_placeholder')) ?>" data-loadout-password-input data-loadout-password-required-when-enabled>
 						</label>
@@ -1693,9 +2051,16 @@ $returnTo = safeReturnUrl($returnTo);
 								<button class="btn btn-outline-light" type="button" data-bs-toggle="modal" data-bs-target="#loadoutPasswordModal" data-loadout-password-id="<?= h($preset['steamid']) ?>" data-loadout-password-label="<?= h(presetLabel($preset)) ?>" data-loadout-password-team="1"><?= h(t('edit')) ?></button>
 							<?php endif; ?>
 							<form method="post" onsubmit="return confirm(<?= h(json_encode(t('delete_confirm'), JSON_UNESCAPED_UNICODE)) ?>);">
+								<?= csrfInput() ?>
 								<input type="hidden" name="action" value="delete_preset">
 								<input type="hidden" name="id" value="<?= h($preset['steamid']) ?>">
-								<button class="btn btn-outline-danger" type="submit" <?= canEditPreset($preset) ? '' : 'disabled' ?>><?= h(t('delete')) ?></button>
+								<?php if (canDeletePreset($preset)) : ?>
+									<button class="btn btn-outline-danger" type="submit"><?= h(t('delete')) ?></button>
+								<?php else : ?>
+									<span class="delete-tooltip-wrap" tabindex="0" title="<?= h(t('delete_permission_hint')) ?>">
+										<button class="btn btn-outline-danger" type="button" disabled><?= h(t('delete')) ?></button>
+									</span>
+								<?php endif; ?>
 							</form>
 						</div>
 					</article>
@@ -1730,6 +2095,7 @@ $returnTo = safeReturnUrl($returnTo);
 					<span class="identity-status<?= loadoutHasPassword($currentPreset) ? ' active' : '' ?>" data-loadout-password-status data-enabled-label="<?= h(t('loadout_password_enabled')) ?>" data-disabled-label="<?= h(t('loadout_password_disabled')) ?>"><?= h(loadoutHasPassword($currentPreset) ? t('loadout_password_enabled') : t('loadout_password_disabled')) ?></span>
 				</div>
 				<form method="post" class="identity-form loadout-info-form">
+					<?= csrfInput() ?>
 					<input type="hidden" name="action" value="save_identity">
 					<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 					<input type="hidden" name="team" value="<?= $team ?>">
@@ -1750,7 +2116,7 @@ $returnTo = safeReturnUrl($returnTo);
 							<input class="form-check-input" type="checkbox" role="switch" name="enable_loadout_password" value="1" data-loadout-password-toggle <?= loadoutHasPassword($currentPreset) ? 'checked' : '' ?>>
 							<span><?= h(t('enable_loadout_password')) ?></span>
 						</label>
-						<label class="loadout-password-input-wrap<?= loadoutHasPassword($currentPreset) ? '' : ' d-none' ?>" data-loadout-password-input-wrap>
+						<label class="loadout-password-input-wrap<?= loadoutHasPassword($currentPreset) ? '' : ' is-inactive' ?>" data-loadout-password-input-wrap>
 							<span class="visually-hidden"><?= h(t('enter_loadout_password')) ?></span>
 							<input class="form-control" type="password" name="loadout_password" autocomplete="one-time-code" placeholder="<?= h(loadoutHasPassword($currentPreset) ? t('loadout_password_change_placeholder') : t('loadout_password_set_placeholder')) ?>" data-loadout-password-input <?= loadoutHasPassword($currentPreset) ? '' : 'data-loadout-password-required-when-enabled' ?>>
 						</label>
@@ -1803,18 +2169,29 @@ $returnTo = safeReturnUrl($returnTo);
 						</div>
 					<?php endif; ?>
 					<div class="card-title-wrap">
-						<span><?= h(t('knife_type')) ?></span>
+						<span><?= h(t('knife')) ?></span>
 						<h2><?= h($currentKnifeSkin['paint_name']) ?></h2>
 					</div>
-					<?php $knifePlaceholder = weaponPlaceholderImage($actualKnife['weapon_name'] ?? ''); ?>
-					<?php if ($knifePlaceholder !== '') : ?>
-						<img src="<?= h($knifePlaceholder) ?>" data-remote-src="<?= h($currentKnifeSkin['image_url'] ?? '') ?>" class="skin-image" alt="">
-					<?php else : ?>
-						<img src="<?= h($currentKnifeSkin['image_url']) ?>" class="skin-image" alt="">
-					<?php endif; ?>
-					<div class="skin-meta">
-						<span><?= h(t('wear_value')) ?> <?= h($currentKnifeWear) ?></span>
-						<span><?= h(t('pattern')) ?> <?= h($currentKnifeSeed) ?></span>
+					<div class="skin-visual">
+						<?php $knifePlaceholder = weaponPlaceholderImage($actualKnife['weapon_name'] ?? ''); ?>
+						<?php if ($knifePlaceholder !== '') : ?>
+							<img src="<?= h($knifePlaceholder) ?>" data-remote-src="<?= h($currentKnifeSkin['image_url'] ?? '') ?>" class="skin-image" alt="">
+						<?php else : ?>
+							<img src="<?= h($currentKnifeSkin['image_url']) ?>" class="skin-image" alt="">
+						<?php endif; ?>
+						<span class="pattern-badge"><?= h(t('pattern')) ?> <?= h($currentKnifeSeed) ?></span>
+					</div>
+					<div class="wear-meter" title="<?= h(t('wear_value') . ' ' . $currentKnifeWear) ?>">
+						<span class="visually-hidden"><?= h(t('wear_value') . ' ' . $currentKnifeWear) ?></span>
+						<div class="wear-value"><?= h(t('wear_value')) ?>: <?= h($currentKnifeWear) ?></div>
+						<div class="wear-pointer-icon" style="left: <?= h(max(0, min(100, (float)$currentKnifeWear * 100))) ?>%"></div>
+						<div class="progress">
+							<div class="progress-bar progress-bar-fn" style="width: 7%" title="<?= h(t('wear_factory_new')) ?>"></div>
+							<div class="progress-bar progress-bar-mw" style="width: 8%" title="<?= h(t('wear_minimal_wear')) ?>"></div>
+							<div class="progress-bar progress-bar-ft" style="width: 23%" title="<?= h(t('wear_field_tested')) ?>"></div>
+							<div class="progress-bar progress-bar-ww" style="width: 7%" title="<?= h(t('wear_well_worn')) ?>"></div>
+							<div class="progress-bar progress-bar-bs" style="width: 55%" title="<?= h(t('wear_battle_scarred')) ?>"></div>
+						</div>
 					</div>
 					<div class="settings-row">
 						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#knifeTypeModal">
@@ -1829,6 +2206,7 @@ $returnTo = safeReturnUrl($returnTo);
 					</div>
 
 					<form method="post" class="modal-form">
+						<?= csrfInput() ?>
 						<input type="hidden" name="action" value="save_skin">
 						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 						<input type="hidden" name="team" value="<?= $team ?>">
@@ -1865,6 +2243,7 @@ $returnTo = safeReturnUrl($returnTo);
 					</form>
 
 					<form method="post" class="modal-form">
+						<?= csrfInput() ?>
 						<input type="hidden" name="action" value="save_skin">
 						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 						<input type="hidden" name="team" value="<?= $team ?>">
@@ -1875,14 +2254,17 @@ $returnTo = safeReturnUrl($returnTo);
 										<h5 class="modal-title"><?= h(t('choose_skin_title')) ?></h5>
 										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
 									</div>
-									<div class="modal-body">
+									<div class="modal-body picker-modal-body">
 										<?php if ($actualKnifeKey === 0) : ?>
 											<p class="hint"><?= h(t('choose_knife_hint')) ?></p>
 										<?php else : ?>
-											<div class="skin-picker-grid">
+											<div class="picker-search-bar">
+												<input type="search" class="form-control picker-search" placeholder="<?= h(t('search_skin')) ?>" autocomplete="off" data-picker-search>
+											</div>
+											<div class="skin-picker-grid picker-results-scroll">
 												<?php foreach ($knifeSkinOptions as $paintKey => $paint) : ?>
 													<?php $knifeSkinImage = (string)($paint['image_url'] ?? ''); ?>
-													<button type="submit" name="skin_forma" value="<?= (int)$actualKnifeKey ?>-<?= (int)$paintKey ?>" class="skin-result <?= $currentKnifePaintId === (int)$paintKey ? 'active' : '' ?>">
+													<button type="submit" name="skin_forma" value="<?= (int)$actualKnifeKey ?>-<?= (int)$paintKey ?>" class="skin-result <?= $currentKnifePaintId === (int)$paintKey ? 'active' : '' ?>" data-picker-result data-search="<?= h($paint['paint_name'] ?? '') ?>">
 														<?php if ($knifePlaceholder !== '') : ?>
 															<img src="<?= h($knifePlaceholder) ?>" data-picker-remote-src="<?= h($knifeSkinImage) ?>" alt="">
 														<?php elseif ($knifeSkinImage !== '') : ?>
@@ -1902,11 +2284,12 @@ $returnTo = safeReturnUrl($returnTo);
 					</form>
 
 					<form method="post">
+						<?= csrfInput() ?>
 						<input type="hidden" name="action" value="save_skin">
 						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 						<input type="hidden" name="team" value="<?= $team ?>">
 						<input type="hidden" name="forma" value="<?= (int)$actualKnifeKey ?>-<?= (int)$currentKnifePaintId ?>">
-						<div class="modal fade" id="knifeModal" tabindex="-1" aria-hidden="true">
+						<div class="modal fade skin-edit-modal" id="knifeModal" tabindex="-1" aria-hidden="true">
 							<div class="modal-dialog modal-dialog-centered">
 								<div class="modal-content">
 									<div class="modal-header">
@@ -1918,30 +2301,38 @@ $returnTo = safeReturnUrl($returnTo);
 											<p class="hint"><?= h(t('choose_knife_hint')) ?></p>
 										<?php else : ?>
 											<div class="row g-3">
-												<div class="col-sm-6">
-													<label><?= h(t('wear_value')) ?>
-														<input type="number" step="any" min="0" max="1" value="<?= h($currentKnifeWear) ?>" class="form-control" name="wear">
-													</label>
+												<div class="col-12 skin-param-grid">
+													<div class="skin-param-row" data-skin-param-row>
+														<label for="knifeWear"><?= h(t('wear_value')) ?></label>
+														<div class="skin-param-control">
+															<input type="range" min="0" max="1" step="0.01" value="<?= h($currentKnifeWear) ?>" data-skin-param-range>
+													<input id="knifeWear" type="number" min="0" max="1" step="0.01" value="<?= h(skinWearDisplayValue($currentKnifeWear)) ?>" class="form-control" name="wear" data-skin-param-number data-max-decimals="8">
+														</div>
+													</div>
+													<div class="skin-param-row" data-skin-param-row>
+														<label for="knifeSeed"><?= h(t('pattern')) ?></label>
+														<div class="skin-param-control">
+															<input type="range" min="0" max="1000" step="1" value="<?= h($currentKnifeSeed) ?>" data-skin-param-range>
+															<input id="knifeSeed" type="number" min="0" max="1000" step="1" value="<?= h($currentKnifeSeed) ?>" class="form-control" name="seed" data-skin-param-number>
+														</div>
+													</div>
 												</div>
-												<div class="col-sm-6">
-													<label><?= h(t('pattern')) ?>
-														<input type="number" min="0" max="1000" value="<?= h($currentKnifeSeed) ?>" class="form-control" name="seed">
-													</label>
-												</div>
-												<div class="col-12 nametag-row">
+												<div class="col-12 weapon-option-grid">
+												<div class="nametag-row weapon-option-card">
 													<input type="hidden" name="nametag_present" value="1">
 													<label class="check-line">
 														<input type="checkbox" name="nametag_enabled" value="1" data-nametag-toggle <?= $currentKnifeNameTagEnabled ? 'checked' : '' ?>>
 														<span class="nametag-label"><?= h(t('name_tag')) ?></span>
 													</label>
-													<input type="text" name="weapon_nametag" value="<?= h($currentKnifeNameTag ?? '') ?>" maxlength="20" class="form-control nametag-input" data-nametag-input <?= $currentKnifeNameTagEnabled ? '' : 'disabled hidden' ?>>
+											<input type="text" name="weapon_nametag" value="<?= h($currentKnifeNameTag ?? '') ?>" maxlength="20" autocomplete="off" autocapitalize="off" spellcheck="false" class="form-control nametag-input<?= $currentKnifeNameTagEnabled ? '' : ' is-inactive' ?>" data-nametag-input <?= $currentKnifeNameTagEnabled ? '' : 'disabled' ?>>
 												</div>
-												<div class="col-12 stattrak-row">
+												<div class="stattrak-row weapon-option-card">
 	<label class="check-line">
 		<input type="checkbox" name="stattrak" value="1" data-stattrak-toggle <?= $currentKnifeStatTrak ? 'checked' : '' ?>>
 		<span class="stattrak-label">StatTrak™</span>
 	</label>
-	<input type="number" name="weapon_stattrak_count" value="<?= h($currentKnifeStatTrakCount) ?>" min="0" max="999999" step="1" class="form-control stattrak-input" data-stattrak-input <?= $currentKnifeStatTrak ? '' : 'disabled hidden' ?>>
+	<input type="number" name="weapon_stattrak_count" value="<?= h($currentKnifeStatTrakCount) ?>" min="0" max="999999" step="1" class="form-control stattrak-input<?= $currentKnifeStatTrak ? '' : ' is-inactive' ?>" data-stattrak-input <?= $currentKnifeStatTrak ? '' : 'disabled' ?>>
+												</div>
 </div>
 											</div>
 										<?php endif; ?>
@@ -1983,20 +2374,31 @@ $returnTo = safeReturnUrl($returnTo);
 				?>
 				<div class="skin-card featured loadout-card">
 					<div class="card-title-wrap">
-						<span><?= h(t('glove_type')) ?></span>
+						<span><?= h(t('gloves')) ?></span>
 						<h2><?= h($currentGloveSkin['paint_name']) ?></h2>
 					</div>
-					<?php $glovePlaceholder = glovePlaceholderImage($actualGloveDefindex); ?>
-					<?php if ($glovePlaceholder !== '') : ?>
-						<img src="<?= h($glovePlaceholder) ?>" data-remote-src="<?= h($currentGloveSkin['image_url'] ?? '') ?>" class="skin-image" alt="">
-					<?php elseif (!empty($currentGloveSkin['image_url'])) : ?>
-						<img src="<?= h($currentGloveSkin['image_url']) ?>" class="skin-image" alt="">
-					<?php else : ?>
-						<div class="empty-image"><?= h(t('default_gloves')) ?></div>
-					<?php endif; ?>
-					<div class="skin-meta">
-						<span><?= h(t('wear_value')) ?> <?= h($currentGloveWear) ?></span>
-						<span><?= h(t('pattern')) ?> <?= h($currentGloveSeed) ?></span>
+					<div class="skin-visual">
+						<?php $glovePlaceholder = glovePlaceholderImage($actualGloveDefindex); ?>
+						<?php if ($glovePlaceholder !== '') : ?>
+							<img src="<?= h($glovePlaceholder) ?>" data-remote-src="<?= h($currentGloveSkin['image_url'] ?? '') ?>" class="skin-image" alt="">
+						<?php elseif (!empty($currentGloveSkin['image_url'])) : ?>
+							<img src="<?= h($currentGloveSkin['image_url']) ?>" class="skin-image" alt="">
+						<?php else : ?>
+							<div class="empty-image"><?= h(t('default_gloves')) ?></div>
+						<?php endif; ?>
+						<span class="pattern-badge"><?= h(t('pattern')) ?> <?= h($currentGloveSeed) ?></span>
+					</div>
+					<div class="wear-meter" title="<?= h(t('wear_value') . ' ' . $currentGloveWear) ?>">
+						<span class="visually-hidden"><?= h(t('wear_value') . ' ' . $currentGloveWear) ?></span>
+						<div class="wear-value"><?= h(t('wear_value')) ?>: <?= h($currentGloveWear) ?></div>
+						<div class="wear-pointer-icon" style="left: <?= h(max(0, min(100, (float)$currentGloveWear * 100))) ?>%"></div>
+						<div class="progress">
+							<div class="progress-bar progress-bar-fn" style="width: 7%" title="<?= h(t('wear_factory_new')) ?>"></div>
+							<div class="progress-bar progress-bar-mw" style="width: 8%" title="<?= h(t('wear_minimal_wear')) ?>"></div>
+							<div class="progress-bar progress-bar-ft" style="width: 23%" title="<?= h(t('wear_field_tested')) ?>"></div>
+							<div class="progress-bar progress-bar-ww" style="width: 7%" title="<?= h(t('wear_well_worn')) ?>"></div>
+							<div class="progress-bar progress-bar-bs" style="width: 55%" title="<?= h(t('wear_battle_scarred')) ?>"></div>
+						</div>
 					</div>
 					<div class="settings-row">
 						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#gloveTypeModal">
@@ -2011,6 +2413,7 @@ $returnTo = safeReturnUrl($returnTo);
 					</div>
 
 					<form method="post" class="modal-form">
+						<?= csrfInput() ?>
 						<input type="hidden" name="action" value="save_skin">
 						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 						<input type="hidden" name="team" value="<?= $team ?>">
@@ -2047,6 +2450,7 @@ $returnTo = safeReturnUrl($returnTo);
 					</form>
 
 					<form method="post" class="modal-form">
+						<?= csrfInput() ?>
 						<input type="hidden" name="action" value="save_skin">
 						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 						<input type="hidden" name="team" value="<?= $team ?>">
@@ -2057,14 +2461,17 @@ $returnTo = safeReturnUrl($returnTo);
 										<h5 class="modal-title"><?= h(t('choose_skin_title')) ?></h5>
 										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
 									</div>
-									<div class="modal-body">
+									<div class="modal-body picker-modal-body">
 										<?php if ($actualGloveDefindex === 0) : ?>
 											<p class="hint"><?= h(t('choose_glove_hint')) ?></p>
 										<?php else : ?>
-											<div class="skin-picker-grid">
+											<div class="picker-search-bar">
+												<input type="search" class="form-control picker-search" placeholder="<?= h(t('search_skin')) ?>" autocomplete="off" data-picker-search>
+											</div>
+											<div class="skin-picker-grid picker-results-scroll">
 												<?php foreach ($gloveSkinOptions as $paintKey => $paint) : ?>
 													<?php $gloveSkinImage = (string)($paint['image_url'] ?? ''); ?>
-													<button type="submit" name="skin_forma" value="gloveskin-<?= (int)$actualGloveDefindex ?>-<?= (int)$paintKey ?>" class="skin-result <?= $currentGlovePaintId === (int)$paintKey ? 'active' : '' ?>">
+													<button type="submit" name="skin_forma" value="gloveskin-<?= (int)$actualGloveDefindex ?>-<?= (int)$paintKey ?>" class="skin-result <?= $currentGlovePaintId === (int)$paintKey ? 'active' : '' ?>" data-picker-result data-search="<?= h($paint['paint_name'] ?? '') ?>">
 														<?php if ($glovePlaceholder !== '') : ?>
 															<img src="<?= h($glovePlaceholder) ?>" data-picker-remote-src="<?= h($gloveSkinImage) ?>" alt="">
 														<?php elseif ($gloveSkinImage !== '') : ?>
@@ -2084,11 +2491,12 @@ $returnTo = safeReturnUrl($returnTo);
 					</form>
 
 					<form method="post">
+						<?= csrfInput() ?>
 						<input type="hidden" name="action" value="save_skin">
 						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 						<input type="hidden" name="team" value="<?= $team ?>">
 						<input type="hidden" name="forma" value="gloveskin-<?= (int)$actualGloveDefindex ?>-<?= (int)$currentGlovePaintId ?>">
-						<div class="modal fade" id="gloveModal" tabindex="-1" aria-hidden="true">
+						<div class="modal fade skin-edit-modal" id="gloveModal" tabindex="-1" aria-hidden="true">
 							<div class="modal-dialog modal-dialog-centered">
 								<div class="modal-content">
 									<div class="modal-header">
@@ -2100,15 +2508,21 @@ $returnTo = safeReturnUrl($returnTo);
 											<p class="hint"><?= h(t('choose_glove_hint')) ?></p>
 										<?php else : ?>
 											<div class="row g-3">
-												<div class="col-sm-6">
-													<label><?= h(t('wear_value')) ?>
-														<input type="number" step="any" min="0" max="1" value="<?= h($currentGloveWear) ?>" class="form-control" name="wear">
-													</label>
-												</div>
-												<div class="col-sm-6">
-													<label><?= h(t('pattern')) ?>
-														<input type="number" min="0" max="1000" value="<?= h($currentGloveSeed) ?>" class="form-control" name="seed">
-													</label>
+												<div class="col-12 skin-param-grid">
+													<div class="skin-param-row" data-skin-param-row>
+														<label for="gloveWear"><?= h(t('wear_value')) ?></label>
+														<div class="skin-param-control">
+															<input type="range" min="0" max="1" step="0.01" value="<?= h($currentGloveWear) ?>" data-skin-param-range>
+													<input id="gloveWear" type="number" min="0" max="1" step="0.01" value="<?= h(skinWearDisplayValue($currentGloveWear)) ?>" class="form-control" name="wear" data-skin-param-number data-max-decimals="8">
+														</div>
+													</div>
+													<div class="skin-param-row" data-skin-param-row>
+														<label for="gloveSeed"><?= h(t('pattern')) ?></label>
+														<div class="skin-param-control">
+															<input type="range" min="0" max="1000" step="1" value="<?= h($currentGloveSeed) ?>" data-skin-param-range>
+															<input id="gloveSeed" type="number" min="0" max="1000" step="1" value="<?= h($currentGloveSeed) ?>" class="form-control" name="seed" data-skin-param-number>
+														</div>
+													</div>
 												</div>
 											</div>
 										<?php endif; ?>
@@ -2151,6 +2565,7 @@ $returnTo = safeReturnUrl($returnTo);
 						</div>
 
 						<form method="post" class="modal-form">
+							<?= csrfInput() ?>
 							<input type="hidden" name="action" value="save_agent">
 							<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 							<input type="hidden" name="team" value="<?= $team ?>">
@@ -2201,6 +2616,7 @@ $returnTo = safeReturnUrl($returnTo);
 						<img src="img/skins/music_kit.png" class="skin-image" alt="">
 					<?php endif; ?>
 					<form method="post" class="modal-form">
+						<?= csrfInput() ?>
 						<input type="hidden" name="action" value="save_music">
 						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 						<input type="hidden" name="team" value="<?= $team ?>">
@@ -2216,9 +2632,11 @@ $returnTo = safeReturnUrl($returnTo);
 										<h5 class="modal-title"><?= h(t('choose_music')) ?></h5>
 										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
 									</div>
-									<div class="modal-body">
-										<input type="search" class="form-control picker-search" placeholder="<?= h(t('search_music')) ?>" autocomplete="off" data-picker-search>
-										<div class="skin-picker-grid">
+									<div class="modal-body picker-modal-body">
+										<div class="picker-search-bar">
+											<input type="search" class="form-control picker-search" placeholder="<?= h(t('search_music')) ?>" autocomplete="off" data-picker-search>
+										</div>
+										<div class="skin-picker-grid picker-results-scroll">
 											<?php foreach ($music as $musicId => $musicKit) : ?>
 												<?php $musicImage = (string)($musicKit['image'] ?? ''); ?>
 												<?php $musicSearchText = trim(($musicKit['name'] ?? '') . ' ' . ($musicAliases[(int)$musicId] ?? '')); ?>
@@ -2256,6 +2674,7 @@ $returnTo = safeReturnUrl($returnTo);
 						<img src="img/skins/pin.png" class="skin-image" alt="">
 					<?php endif; ?>
 					<form method="post" class="modal-form">
+						<?= csrfInput() ?>
 						<input type="hidden" name="action" value="save_pin">
 						<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 						<input type="hidden" name="team" value="<?= $team ?>">
@@ -2271,9 +2690,11 @@ $returnTo = safeReturnUrl($returnTo);
 										<h5 class="modal-title"><?= h(t('choose_pin')) ?></h5>
 										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
 									</div>
-									<div class="modal-body">
-										<input type="search" class="form-control picker-search" placeholder="<?= h(t('search_pin')) ?>" autocomplete="off" data-picker-search>
-										<div class="skin-picker-grid">
+									<div class="modal-body picker-modal-body">
+										<div class="picker-search-bar">
+											<input type="search" class="form-control picker-search" placeholder="<?= h(t('search_pin')) ?>" autocomplete="off" data-picker-search>
+										</div>
+										<div class="skin-picker-grid picker-results-scroll">
 											<?php foreach ($pins as $pinId => $pin) : ?>
 												<?php $pinImage = (string)($pin['image'] ?? ''); ?>
 												<?php $pinSearchText = trim(($pin['name'] ?? '') . ' ' . ($pinAliases[(int)$pinId] ?? '')); ?>
@@ -2300,6 +2721,7 @@ $returnTo = safeReturnUrl($returnTo);
 					}
 					$hasSkin = array_key_exists($defindex, $selectedSkins);
 					$currentPaintId = $hasSkin ? (int)$selectedSkins[$defindex]['weapon_paint_id'] : 0;
+					$usesInventorySkin = $currentPaintId === 0;
 					$currentSkin = $hasSkin && isset($skins[$defindex][$currentPaintId]) ? $skins[$defindex][$currentPaintId] : $default;
 					$initialWearValue = $hasSkin ? $selectedSkins[$defindex]['weapon_wear'] : 0.0;
 					$initialSeedValue = $hasSkin ? $selectedSkins[$defindex]['weapon_seed'] : 0;
@@ -2307,6 +2729,10 @@ $returnTo = safeReturnUrl($returnTo);
 					$initialStatTrakCountValue = $initialStatTrakValue ? (int)($selectedSkins[$defindex]['weapon_stattrak_count'] ?? 0) : 0;
 					$initialNameTagValue = $hasSkin ? ($selectedSkins[$defindex]['weapon_nametag'] ?? null) : null;
 					$initialStickerValues = $hasSkin ? stickerValuesFromRow($selectedSkins[$defindex]) : defaultStickerValues();
+					$initialKeychainValue = $hasSkin ? ($selectedSkins[$defindex]['weapon_keychain'] ?? defaultKeychainValue()) : defaultKeychainValue();
+					$initialKeychainId = keychainIdFromValue($initialKeychainValue);
+					$initialKeychain = $keychains[$initialKeychainId] ?? $keychains[0];
+					$initialKeychainParts = keychainValueParts($initialKeychainValue);
 					$stickerSlotTotal = stickerSlotCount((int)$defindex);
 					if ($hasSkin) {
 						$cachedSkinSetting = loadSkinSettingCache($db, $skinSettingsTable, $currentPreset['steamid'], $displayTeam, (int)$defindex, $currentPaintId);
@@ -2334,19 +2760,23 @@ $returnTo = safeReturnUrl($returnTo);
 							<span><?= h($default['weapon_name']) ?></span>
 							<h2><?= h($currentSkin['paint_name']) ?></h2>
 						</div>
-						<?php $weaponPlaceholder = weaponPlaceholderImage($default['weapon_name'] ?? ''); ?>
-						<?php if ($weaponPlaceholder !== '') : ?>
-							<img src="<?= h($weaponPlaceholder) ?>" data-remote-src="<?= h($currentSkin['image_url'] ?? '') ?>" class="skin-image" alt="">
-						<?php else : ?>
-							<img src="<?= h($currentSkin['image_url']) ?>" class="skin-image" alt="">
-						<?php endif; ?>
+						<div class="skin-visual">
+							<?php $weaponPlaceholder = weaponPlaceholderImage($default['weapon_name'] ?? ''); ?>
+							<?php if ($weaponPlaceholder !== '') : ?>
+								<img src="<?= h($weaponPlaceholder) ?>" data-remote-src="<?= h($currentSkin['image_url'] ?? '') ?>" class="skin-image" alt="">
+							<?php else : ?>
+								<img src="<?= h($currentSkin['image_url']) ?>" class="skin-image" alt="">
+							<?php endif; ?>
+							<span class="pattern-badge"><?= h(t('pattern')) ?> <?= $usesInventorySkin ? '?' : h($initialSeedValue) ?></span>
+						</div>
 						<form method="post">
+							<?= csrfInput() ?>
 							<input type="hidden" name="action" value="save_skin">
 							<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
 							<input type="hidden" name="team" value="<?= $team ?>">
 							<input type="hidden" name="forma" value="<?= (int)$defindex ?>-<?= (int)$currentPaintId ?>">
 							<?php $cardStickerIds = array_values(array_filter(array_slice($initialStickerIds, 0, $stickerSlotTotal), static fn($stickerId) => (int)$stickerId > 0)); ?>
-							<?php if ($cardStickerIds) : ?>
+							<?php if ($cardStickerIds || $initialKeychainId > 0) : ?>
 								<div class="card-stickers" aria-label="<?= h(t('stickers')) ?>">
 									<?php foreach ($cardStickerIds as $cardStickerId) : ?>
 										<?php $cardSticker = $stickers[(int)$cardStickerId] ?? null; ?>
@@ -2354,12 +2784,25 @@ $returnTo = safeReturnUrl($returnTo);
 											<img src="img/skins/sticker.png" data-remote-src="<?= h($cardSticker['image'] ?? '') ?>" alt="<?= h($cardSticker['name'] ?? '') ?>" title="<?= h($cardSticker['name'] ?? '') ?>">
 										<?php endif; ?>
 									<?php endforeach; ?>
+									<?php if ($initialKeychainId > 0) : ?>
+										<img class="card-keychain-preview" src="img/skins/keychain.png" data-remote-src="<?= h($initialKeychain['image'] ?? '') ?>" alt="<?= h($initialKeychain['name'] ?? t('keychain')) ?>" title="<?= h($initialKeychain['name'] ?? t('keychain')) ?>">
+									<?php endif; ?>
 								</div>
 							<?php endif; ?>
 
-							<div class="skin-meta">
-								<span><?= h(t('wear_value')) ?> <?= h($initialWearValue) ?></span>
-								<span><?= h(t('pattern')) ?> <?= h($initialSeedValue) ?></span>
+							<div class="wear-meter" title="<?= h(t('wear_value') . ': ' . ($usesInventorySkin ? '?' : $initialWearValue)) ?>">
+								<span class="visually-hidden"><?= h(t('wear_value') . ': ' . ($usesInventorySkin ? '?' : $initialWearValue)) ?></span>
+								<div class="wear-value"><?= h(t('wear_value')) ?>: <?= $usesInventorySkin ? '?' : h($initialWearValue) ?></div>
+								<?php if (!$usesInventorySkin) : ?>
+									<div class="wear-pointer-icon" style="left: <?= h(max(0, min(100, (float)$initialWearValue * 100))) ?>%"></div>
+								<?php endif; ?>
+								<div class="progress">
+									<div class="progress-bar progress-bar-fn" style="width: 7%" title="<?= h(t('wear_factory_new')) ?>"></div>
+									<div class="progress-bar progress-bar-mw" style="width: 8%" title="<?= h(t('wear_minimal_wear')) ?>"></div>
+									<div class="progress-bar progress-bar-ft" style="width: 23%" title="<?= h(t('wear_field_tested')) ?>"></div>
+									<div class="progress-bar progress-bar-ww" style="width: 7%" title="<?= h(t('wear_well_worn')) ?>"></div>
+									<div class="progress-bar progress-bar-bs" style="width: 55%" title="<?= h(t('wear_battle_scarred')) ?>"></div>
+								</div>
 							</div>
 							<div class="settings-row">
 								<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#<?= h($skinPickerId) ?>">
@@ -2377,11 +2820,14 @@ $returnTo = safeReturnUrl($returnTo);
 											<h5 class="modal-title"><?= h(t('choose_skin_title')) ?></h5>
 											<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
 										</div>
-										<div class="modal-body">
-											<div class="skin-picker-grid">
+										<div class="modal-body picker-modal-body">
+											<div class="picker-search-bar">
+												<input type="search" class="form-control picker-search" placeholder="<?= h(t('search_skin')) ?>" autocomplete="off" data-picker-search>
+											</div>
+											<div class="skin-picker-grid picker-results-scroll">
 												<?php foreach ($skins[$defindex] as $paintKey => $paint) : ?>
 													<?php $paintImage = (string)($paint['image_url'] ?? ''); ?>
-													<button type="submit" name="skin_forma" value="<?= (int)$defindex ?>-<?= (int)$paintKey ?>" class="skin-result <?= $currentPaintId === (int)$paintKey ? 'active' : '' ?>">
+													<button type="submit" name="skin_forma" value="<?= (int)$defindex ?>-<?= (int)$paintKey ?>" class="skin-result <?= $currentPaintId === (int)$paintKey ? 'active' : '' ?>" data-picker-result data-search="<?= h($paint['paint_name'] ?? '') ?>">
 														<?php if ($weaponPlaceholder !== '') : ?>
 															<img src="<?= h($weaponPlaceholder) ?>" data-picker-remote-src="<?= h($paintImage) ?>" alt="">
 														<?php elseif ($paintImage !== '') : ?>
@@ -2398,7 +2844,7 @@ $returnTo = safeReturnUrl($returnTo);
 								</div>
 							</div>
 
-							<div class="modal fade" id="<?= h($modalId) ?>" tabindex="-1" aria-hidden="true">
+							<div class="modal fade skin-edit-modal" id="<?= h($modalId) ?>" tabindex="-1" aria-hidden="true">
 								<div class="modal-dialog modal-dialog-centered">
 									<div class="modal-content">
 										<div class="modal-header">
@@ -2406,33 +2852,42 @@ $returnTo = safeReturnUrl($returnTo);
 											<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
 										</div>
 										<div class="modal-body">
-											<div class="row g-3">
-												<div class="col-sm-6">
-													<label><?= h(t('wear_value')) ?>
-														<input type="number" step="any" min="0" max="1" value="<?= h($initialWearValue) ?>" class="form-control" id="wear<?= (int)$defindex ?>" name="wear">
-													</label>
+										<div class="row g-3">
+											<div class="col-12 skin-param-grid">
+												<div class="skin-param-row" data-skin-param-row>
+													<label for="wear<?= (int)$defindex ?>"><?= h(t('wear_value')) ?></label>
+													<div class="skin-param-control">
+														<input type="range" min="0" max="1" step="0.01" value="<?= h($initialWearValue) ?>" data-skin-param-range>
+												<input type="number" min="0" max="1" step="0.01" value="<?= h(skinWearDisplayValue($initialWearValue)) ?>" class="form-control" id="wear<?= (int)$defindex ?>" name="wear" data-skin-param-number data-max-decimals="8">
+													</div>
 												</div>
-												<div class="col-sm-6">
-													<label><?= h(t('pattern')) ?>
-														<input type="number" min="0" max="1000" value="<?= h($initialSeedValue) ?>" class="form-control" name="seed">
-													</label>
+												<div class="skin-param-row" data-skin-param-row>
+													<label for="seed<?= (int)$defindex ?>"><?= h(t('pattern')) ?></label>
+													<div class="skin-param-control">
+														<input type="range" min="0" max="1000" step="1" value="<?= h($initialSeedValue) ?>" data-skin-param-range>
+														<input id="seed<?= (int)$defindex ?>" type="number" min="0" max="1000" step="1" value="<?= h($initialSeedValue) ?>" class="form-control" name="seed" data-skin-param-number>
+													</div>
 												</div>
-												<div class="col-12 nametag-row">
+											</div>
+												<div class="col-12 weapon-option-grid">
+												<div class="nametag-row weapon-option-card">
 													<input type="hidden" name="nametag_present" value="1">
 													<label class="check-line">
 														<input type="checkbox" name="nametag_enabled" value="1" data-nametag-toggle <?= $initialNameTagEnabled ? 'checked' : '' ?>>
 														<span class="nametag-label"><?= h(t('name_tag')) ?></span>
 													</label>
-													<input type="text" name="weapon_nametag" value="<?= h($initialNameTagValue ?? '') ?>" maxlength="20" class="form-control nametag-input" data-nametag-input <?= $initialNameTagEnabled ? '' : 'disabled hidden' ?>>
+											<input type="text" name="weapon_nametag" value="<?= h($initialNameTagValue ?? '') ?>" maxlength="20" autocomplete="off" autocapitalize="off" spellcheck="false" class="form-control nametag-input<?= $initialNameTagEnabled ? '' : ' is-inactive' ?>" data-nametag-input <?= $initialNameTagEnabled ? '' : 'disabled' ?>>
 												</div>
-												<div class="col-12 stattrak-row">
+												<div class="stattrak-row weapon-option-card">
 	<label class="check-line">
 		<input type="checkbox" name="stattrak" value="1" data-stattrak-toggle <?= $initialStatTrakValue ? 'checked' : '' ?>>
 		<span class="stattrak-label">StatTrak™</span>
 	</label>
-	<input type="number" name="weapon_stattrak_count" value="<?= h($initialStatTrakCountValue) ?>" min="0" max="999999" step="1" class="form-control stattrak-input" data-stattrak-input <?= $initialStatTrakValue ? '' : 'disabled hidden' ?>>
+	<input type="number" name="weapon_stattrak_count" value="<?= h($initialStatTrakCountValue) ?>" min="0" max="999999" step="1" class="form-control stattrak-input<?= $initialStatTrakValue ? '' : ' is-inactive' ?>" data-stattrak-input <?= $initialStatTrakValue ? '' : 'disabled' ?>>
+												</div>
 </div>
-												<div class="col-12 sticker-section">
+												<div class="col-12 cosmetic-editor">
+												<section class="customization-panel sticker-section">
 													<input type="hidden" name="sticker_present" value="1">
 													<div class="sticker-section-heading">
 														<div class="sticker-section-title"><?= h(t('stickers')) ?></div>
@@ -2459,8 +2914,9 @@ $returnTo = safeReturnUrl($returnTo);
 													<div class="sticker-slot" data-empty-label="<?= h(t('sticker_slot') . ' ' . ($slotIndex + 1)) ?>" data-slot-number="<?= $slotIndex + 1 ?>" data-sticker-slot-index="<?= $slotIndex ?>" data-weapon-defindex="<?= (int)$defindex ?>" data-saved-sticker-id="<?= (int)$currentStickerId ?>">
 														<input type="hidden" name="sticker_<?= $slotIndex ?>" value="<?= (int)$currentStickerId ?>" data-sticker-input>
 														<input type="hidden" name="sticker_value_<?= $slotIndex ?>" value="<?= h($currentStickerValue) ?>" data-sticker-value>
-														<div class="sticker-slot-preview">
-															<button type="button" class="sticker-slot-button" data-sticker-open aria-label="<?= h(t('choose_sticker')) ?>">
+																<div class="sticker-slot-preview">
+																	<span class="sticker-slot-index" aria-hidden="true"><?= $slotIndex + 1 ?></span>
+																	<button type="button" class="sticker-slot-button" data-sticker-open aria-label="<?= h(t('choose_sticker')) ?>">
 																<span class="sticker-plus sticker-empty-icon" <?= $currentStickerId > 0 ? 'hidden' : '' ?>>+</span>
 																<img src="img/skins/sticker.png" data-remote-src="<?= h($currentSticker['image'] ?? '') ?>" alt="" data-sticker-preview <?= $currentStickerId > 0 ? '' : 'hidden' ?> >
 															</button>
@@ -2470,6 +2926,51 @@ $returnTo = safeReturnUrl($returnTo);
 													</div>
 														<?php endfor; ?>
 													</div>
+												</section>
+												<section class="customization-panel keychain-section">
+													<input type="hidden" name="keychain_present" value="1">
+													<div class="keychain-section-heading">
+														<div class="keychain-section-title"><?= h(t('keychain')) ?></div>
+													</div>
+											<div class="keychain-inline-editor">
+												<div class="keychain-grid">
+												<div class="keychain-slot" data-empty-label="<?= h(t('no_keychain')) ?>" data-keychain-slot data-weapon-defindex="<?= (int)$defindex ?>" data-saved-keychain-id="<?= (int)$initialKeychainId ?>">
+													<input type="hidden" name="keychain_id" value="<?= (int)$initialKeychainId ?>" data-keychain-input>
+													<input type="hidden" name="keychain_value" value="<?= h($initialKeychainValue) ?>" data-keychain-value>
+															<div class="keychain-slot-preview">
+																<button type="button" class="keychain-slot-button" data-keychain-open aria-label="<?= h(t('choose_keychain')) ?>">
+																	<span class="keychain-plus keychain-empty-icon" <?= $initialKeychainId > 0 ? 'hidden' : '' ?>>+</span>
+															<img src="img/skins/keychain.png" data-remote-src="<?= h($initialKeychain['image'] ?? '') ?>" alt="" data-keychain-preview <?= $initialKeychainId > 0 ? '' : 'hidden' ?> >
+														</button>
+													</div>
+													<div class="keychain-slot-name" data-keychain-name><span data-keychain-name-text><?= h($initialKeychainId > 0 ? ($initialKeychain['name'] ?? '') : t('no_keychain')) ?></span></div>
+												</div>
+												</div>
+											<div class="keychain-inline-controls" data-keychain-inline-controls>
+												<div class="keychain-param-row" data-keychain-param-row="template">
+													<label for="keychainTemplate<?= (int)$defindex ?>"><?= h(t('keychain_template')) ?></label>
+													<div class="keychain-param-control">
+														<input type="range" min="1" max="99999" step="1" value="<?= h($initialKeychainParts['template']) ?>" data-keychain-inline-range="template" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+														<input id="keychainTemplate<?= (int)$defindex ?>" type="number" name="keychain_template" min="1" max="99999" step="1" value="<?= h($initialKeychainParts['template']) ?>" class="form-control" data-keychain-inline-param="template" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+													</div>
+												</div>
+												<div class="keychain-param-row" data-keychain-param-row="x">
+													<label for="keychainX<?= (int)$defindex ?>"><?= h(t('keychain_x')) ?></label>
+													<div class="keychain-param-control">
+														<input type="range" min="-1" max="1" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['x'])) ?>" data-keychain-inline-range="x" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+														<input id="keychainX<?= (int)$defindex ?>" type="number" name="keychain_x" min="-1" max="1" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['x'])) ?>" class="form-control" data-keychain-inline-param="x" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+													</div>
+												</div>
+												<div class="keychain-param-row" data-keychain-param-row="y">
+													<label for="keychainY<?= (int)$defindex ?>"><?= h(t('keychain_y')) ?></label>
+													<div class="keychain-param-control">
+														<input type="range" min="-1" max="1" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['y'])) ?>" data-keychain-inline-range="y" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+														<input id="keychainY<?= (int)$defindex ?>" type="number" name="keychain_y" min="-1" max="1" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['y'])) ?>" class="form-control" data-keychain-inline-param="y" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+													</div>
+												</div>
+											</div>
+											</div>
+											</section>
 												</div>
 											</div>
 										</div>
@@ -2492,9 +2993,11 @@ $returnTo = safeReturnUrl($returnTo);
 					<h5 class="modal-title"><?= h(t('choose_sticker')) ?></h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
 				</div>
-				<div class="modal-body">
-					<input type="search" class="form-control sticker-search" placeholder="<?= h(t('search_sticker')) ?>" autocomplete="off">
-					<div class="sticker-picker-grid" data-sticker-results></div>
+				<div class="modal-body picker-modal-body">
+					<div class="picker-search-bar">
+						<input type="search" class="form-control sticker-search" placeholder="<?= h(t('search_sticker')) ?>" autocomplete="off">
+					</div>
+					<div class="sticker-picker-grid picker-results-scroll" data-sticker-results></div>
 				</div>
 			</div>
 		</div>
@@ -2502,6 +3005,7 @@ $returnTo = safeReturnUrl($returnTo);
 	<div class="modal fade sticker-advanced-modal" id="stickerAdvancedModal" tabindex="-1" aria-hidden="true">
 		<div class="modal-dialog modal-dialog-centered">
 			<form method="post" class="modal-content" data-sticker-advanced-form>
+				<?= csrfInput() ?>
 				<input type="hidden" name="action" value="save_sticker_slot">
 				<input type="hidden" name="id" value="<?= h($currentPreset['steamid'] ?? '') ?>" data-sticker-advanced-id>
 				<input type="hidden" name="team" value="<?= h((string)($team ?? 1)) ?>" data-sticker-advanced-team>
@@ -2540,11 +3044,27 @@ $returnTo = safeReturnUrl($returnTo);
 			</form>
 		</div>
 	</div>
-
+	<div class="modal fade keychain-picker-modal" id="keychainPickerModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title"><?= h(t('choose_keychain')) ?></h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
+				</div>
+				<div class="modal-body picker-modal-body">
+					<div class="picker-search-bar">
+						<input type="search" class="form-control keychain-search" placeholder="<?= h(t('search_keychain')) ?>" autocomplete="off">
+					</div>
+					<div class="keychain-picker-grid picker-results-scroll" data-keychain-results></div>
+				</div>
+			</div>
+		</div>
+	</div>
 	<?php if ($accessGranted) : ?>
 		<div class="modal fade" id="loadoutPasswordModal" tabindex="-1" aria-hidden="true">
 			<div class="modal-dialog modal-dialog-centered modal-sm">
 				<form method="post" class="modal-content">
+					<?= csrfInput() ?>
 					<input type="hidden" name="action" value="verify_loadout_password">
 					<input type="hidden" name="id" value="" data-loadout-password-id-input>
 					<input type="hidden" name="team" value="1" data-loadout-password-team-input>
@@ -2557,7 +3077,7 @@ $returnTo = safeReturnUrl($returnTo);
 					</div>
 					<div class="modal-body form-grid">
 						<p class="hint"><?= h(t('loadout_password_prompt')) ?></p>
-						<div class="alert alert-danger d-none" data-loadout-password-error><?= h(t('loadout_password_incorrect')) ?></div>
+						<div class="alert alert-danger d-none" data-loadout-password-error><?= h(isset($_GET['loadout_password_rate_limited']) ? sprintf(t('auth_rate_limited'), max(1, (int)($_GET['retry_after'] ?? 1))) : t('loadout_password_incorrect')) ?></div>
 						<label><?= h(t('enter_loadout_password')) ?>
 							<input class="form-control" type="password" name="loadout_password" autocomplete="one-time-code" required data-loadout-password-modal-input>
 						</label>
@@ -2583,8 +3103,11 @@ $returnTo = safeReturnUrl($returnTo);
 						<?php elseif (isAdmin()) : ?>
 							<p class="hint"><?= h(t('admin_enabled')) ?></p>
 						<?php else : ?>
-							<?php if ($adminError) : ?><div class="alert alert-danger"><?= h(t('admin_invalid')) ?></div><?php endif; ?>
+							<?php if ($adminError) : ?>
+								<div class="alert alert-danger"><?= h($adminError === 'rate_limited' ? sprintf(t('auth_rate_limited'), max(1, $adminRetryAfter)) : t('admin_invalid')) ?></div>
+							<?php endif; ?>
 							<form method="post" class="form-grid" id="adminLoginForm">
+								<?= csrfInput() ?>
 								<input type="hidden" name="action" value="admin_login">
 								<input type="hidden" name="return_to" value="<?= h($returnTo) ?>">
 								<label><?= h(t('admin_password')) ?>
@@ -2595,9 +3118,10 @@ $returnTo = safeReturnUrl($returnTo);
 					</div>
 					<?php if (adminPassword() !== '') : ?>
 						<div class="modal-footer">
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('cancel')) ?></button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('back')) ?></button>
 							<?php if (isAdmin()) : ?>
 								<form method="post">
+									<?= csrfInput() ?>
 									<input type="hidden" name="action" value="admin_logout">
 									<input type="hidden" name="return_to" value="<?= h($returnTo) ?>">
 									<button class="btn btn-outline-danger" type="submit"><?= h(t('admin_exit')) ?></button>
@@ -2635,8 +3159,11 @@ $returnTo = safeReturnUrl($returnTo);
 		<footer class="site-footer">Copyright © 2026 wtf729 - All rights reserved</footer>
 	</main>
 	<script>
+		window.cs2CsrfToken = <?= json_encode(csrfToken(), JSON_UNESCAPED_SLASHES) ?>;
 		window.cs2StickerDataUrl = <?= json_encode(dataFileUrl(stickerDataFile()), JSON_UNESCAPED_SLASHES) ?>;
 		window.cs2StickerAliasDataUrl = <?= json_encode(stickerAliasDataFile() !== '' ? dataFileUrl(stickerAliasDataFile()) : '', JSON_UNESCAPED_SLASHES) ?>;
+		window.cs2KeychainDataUrl = <?= json_encode(dataFileUrl(keychainDataFile()), JSON_UNESCAPED_SLASHES) ?>;
+		window.cs2KeychainAliasDataUrl = <?= json_encode(keychainAliasDataFile() !== '' ? dataFileUrl(keychainAliasDataFile()) : '', JSON_UNESCAPED_SLASHES) ?>;
 		(function () {
 			document.querySelectorAll('[data-loadout-password-toggle]').forEach(function (toggle) {
 				var form = toggle.closest('form');
@@ -2645,7 +3172,7 @@ $returnTo = safeReturnUrl($returnTo);
 				var panel = form ? form.closest('.loadout-info-panel') : null;
 				var status = panel ? panel.querySelector('[data-loadout-password-status]') : null;
 				var sync = function () {
-					if (wrap) wrap.classList.toggle('d-none', !toggle.checked);
+					if (wrap) wrap.classList.toggle('is-inactive', !toggle.checked);
 					if (input) {
 						input.disabled = !toggle.checked;
 						input.required = toggle.checked && input.hasAttribute('data-loadout-password-required-when-enabled');
@@ -2930,7 +3457,7 @@ $returnTo = safeReturnUrl($returnTo);
 				return fetch(window.location.href, {
 					method: 'POST',
 					body: formData,
-					headers: { 'X-Requested-With': 'fetch', 'Accept': 'application/json' }
+					headers: { 'X-Requested-With': 'fetch', 'X-CSRF-Token': window.cs2CsrfToken, 'Accept': 'application/json' }
 				}).then(function (response) {
 					return response.ok ? response.json() : Promise.reject();
 				}).then(function (payload) {
@@ -2975,6 +3502,12 @@ $returnTo = safeReturnUrl($returnTo);
 					event.preventDefault();
 					event.stopPropagation();
 					if (picker) picker.hide();
+					return;
+				}
+				if (keychainPickerEl && keychainPickerEl.classList.contains('show')) {
+					event.preventDefault();
+					event.stopPropagation();
+					if (keychainPicker) keychainPicker.hide();
 				}
 			}, true);
 			var fetchJson = function (url) {
@@ -3166,7 +3699,7 @@ $returnTo = safeReturnUrl($returnTo);
 					return;
 				}
 
-				var resultButton = event.target.closest('.sticker-result');
+				var resultButton = event.target.closest('[data-sticker-id]');
 				if (resultButton && activeStickerSlot) {
 					var id = resultButton.dataset.stickerId || '0';
 					var name = resultButton.dataset.stickerName || <?= json_encode(t('no_sticker'), JSON_UNESCAPED_UNICODE) ?>;
@@ -3230,7 +3763,7 @@ $returnTo = safeReturnUrl($returnTo);
 					fetch(window.location.href, {
 						method: 'POST',
 						body: formData,
-						headers: { 'X-Requested-With': 'fetch', 'Accept': 'application/json' }
+						headers: { 'X-Requested-With': 'fetch', 'X-CSRF-Token': window.cs2CsrfToken, 'Accept': 'application/json' }
 					}).then(function (response) {
 						return response.ok ? response.json() : Promise.reject();
 					}).then(function (payload) {
@@ -3246,20 +3779,374 @@ $returnTo = safeReturnUrl($returnTo);
 					});
 				});
 			}
+			var keychainData = null;
+			var activeKeychainSlot = null;
+			var keychainPickerEl = document.getElementById('keychainPickerModal');
+			var keychainPicker = keychainPickerEl && window.bootstrap ? new bootstrap.Modal(keychainPickerEl) : null;
+			var keychainSearchInput = keychainPickerEl ? keychainPickerEl.querySelector('.keychain-search') : null;
+			var keychainResultsEl = keychainPickerEl ? keychainPickerEl.querySelector('[data-keychain-results]') : null;
+			var keychainDefaults = { template: 1, x: 0, y: 0, z: 0 };
+			var keychainConfig = {
+				template: { min: 1, max: 99999, decimals: 0, defaultValue: 1 },
+				x: { min: -1, max: 1, decimals: 2, defaultValue: 0 },
+				y: { min: -1, max: 1, decimals: 2, defaultValue: 0 }
+			};
+			var keychainSaveFailedMessage = <?= json_encode(t('keychain_save_failed'), JSON_UNESCAPED_UNICODE) ?>;
+
+			var clampKeychainParam = function (key, value, fallback) {
+				var config = keychainConfig[key];
+				var numeric = parseFloat(value);
+				if (!config || !isFinite(numeric)) return fallback !== undefined ? fallback : (config ? config.defaultValue : 0);
+				return Math.min(config.max, Math.max(config.min, numeric));
+			};
+			var formatKeychainParam = function (key, value) {
+				var config = keychainConfig[key];
+				var normalized = clampKeychainParam(key, value, config ? config.defaultValue : 0);
+				return config && config.decimals > 0 ? normalized.toFixed(config.decimals) : String(Math.round(normalized));
+			};
+			var parseKeychainValue = function (value) {
+				var parts = String(value || '').split(';');
+				while (parts.length < 5) parts.push('');
+				return {
+					id: parseInt(parts[0], 10) || 0,
+					x: clampKeychainParam('x', parts[1], 0),
+					y: clampKeychainParam('y', parts[2], 0),
+					z: parseFloat(parts[3]) || 0,
+					template: clampKeychainParam('template', parts[4], 1)
+				};
+			};
+			var buildKeychainValueForClient = function (id, params) {
+				id = parseInt(id, 10) || 0;
+				if (!id) return '0;0;0;0;0';
+				params = params || keychainDefaults;
+				return [
+					id,
+					formatKeychainParam('x', params.x),
+					formatKeychainParam('y', params.y),
+					formatKeychainParam('x', params.z || 0),
+					formatKeychainParam('template', params.template)
+				].join(';');
+			};
+			var syncCardKeychainPreview = function (slot, id, name, image) {
+				var form = slot ? slot.closest('form') : null;
+				if (!form) return;
+				var row = form.querySelector('.card-stickers');
+				var existing = row ? row.querySelector('.card-keychain-preview') : null;
+				id = parseInt(id, 10) || 0;
+				if (!id) {
+					if (existing) existing.remove();
+					if (row && !row.querySelector('img')) row.remove();
+					return;
+				}
+				if (!row) {
+					row = document.createElement('div');
+					row.className = 'card-stickers';
+					row.setAttribute('aria-label', <?= json_encode(t('keychain'), JSON_UNESCAPED_UNICODE) ?>);
+					var wearMeter = form.querySelector('.wear-meter');
+					if (wearMeter) form.insertBefore(row, wearMeter);
+				}
+				if (!existing) {
+					existing = document.createElement('img');
+					existing.className = 'card-keychain-preview';
+					row.appendChild(existing);
+				}
+				existing.src = 'img/skins/keychain.png';
+				existing.dataset.remoteSrc = image || '';
+				existing.alt = name || '';
+				existing.title = name || '';
+				loadRemoteImage(existing);
+			};
+			var syncKeychainInlineControls = function (slot, params) {
+				var input = slot ? slot.querySelector('[data-keychain-input]') : null;
+				var id = input ? String(input.value || '0') : '0';
+				var enabled = id !== '0';
+				var valueInput = slot ? slot.querySelector('[data-keychain-value]') : null;
+				var values = params || parseKeychainValue(valueInput ? valueInput.value : '');
+				var editor = slot ? slot.closest('.keychain-inline-editor') : null;
+				if (!editor) return;
+				editor.querySelectorAll('[data-keychain-inline-param]').forEach(function (field) {
+					var key = field.dataset.keychainInlineParam;
+					var range = editor.querySelector('[data-keychain-inline-range="' + key + '"]');
+					var value = formatKeychainParam(key, enabled ? values[key] : keychainDefaults[key]);
+					field.disabled = !enabled;
+					field.value = value;
+					if (range) {
+						range.disabled = !enabled;
+						range.value = value;
+					}
+				});
+			};
+			var updateKeychainValueFromInlineControls = function (slot, normalizeFields) {
+				var input = slot ? slot.querySelector('[data-keychain-input]') : null;
+				var valueInput = slot ? slot.querySelector('[data-keychain-value]') : null;
+				var editor = slot ? slot.closest('.keychain-inline-editor') : null;
+				var id = input ? parseInt(input.value, 10) || 0 : 0;
+				if (!valueInput || !editor) return;
+				if (!id) {
+					valueInput.value = buildKeychainValueForClient(0, keychainDefaults);
+					return;
+				}
+				var current = parseKeychainValue(valueInput.value);
+				var params = { template: current.template, x: current.x, y: current.y, z: 0 };
+				editor.querySelectorAll('[data-keychain-inline-param]').forEach(function (field) {
+					var key = field.dataset.keychainInlineParam;
+					var numeric = parseFloat(field.value);
+					var value = isFinite(numeric)
+						? clampKeychainParam(key, numeric, current[key])
+						: current[key];
+					if (normalizeFields) field.value = formatKeychainParam(key, value);
+					var range = editor.querySelector('[data-keychain-inline-range="' + key + '"]');
+					if (range && isFinite(numeric)) range.value = String(value);
+					params[key] = value;
+				});
+				valueInput.value = buildKeychainValueForClient(id, params);
+			};
+			var setKeychainSlot = function (slot, id, name, image) {
+				if (!slot) return;
+				var input = slot.querySelector('[data-keychain-input]');
+				var valueInput = slot.querySelector('[data-keychain-value]');
+				var preview = slot.querySelector('[data-keychain-preview]');
+				var plus = slot.querySelector('.keychain-plus');
+				var label = slot.querySelector('[data-keychain-name-text]') || slot.querySelector('[data-keychain-name]');
+				id = String(id || '0');
+				image = image || '';
+				if (input) input.value = id;
+				if (valueInput) valueInput.value = buildKeychainValueForClient(id, keychainDefaults);
+				if (preview) {
+					preview.src = 'img/skins/keychain.png';
+					preview.dataset.remoteSrc = image;
+					preview.hidden = id === '0' || !image;
+					loadRemoteImage(preview);
+				}
+				if (plus) plus.hidden = id !== '0' && !!image;
+				if (label) label.textContent = id === '0' ? (slot.dataset.emptyLabel || <?= json_encode(t('no_keychain'), JSON_UNESCAPED_UNICODE) ?>) : name;
+				syncKeychainInlineControls(slot, keychainDefaults);
+				syncCardKeychainPreview(slot, id, name, image);
+			};
+			var loadKeychains = function () {
+				if (keychainData) return Promise.resolve(keychainData);
+				return Promise.all([
+					fetchJson(window.cs2KeychainDataUrl),
+					fetchJson(window.cs2KeychainAliasDataUrl)
+				]).then(function (payloads) {
+					var items = payloads[0] || [];
+					var aliases = payloads[1] || [];
+					var aliasById = {};
+					var seen = {};
+					aliases.forEach(function (item) {
+						aliasById[parseInt(item.id, 10) || 0] = item.name || '';
+					});
+					keychainData = [{ id: 0, name: <?= json_encode(t('no_keychain'), JSON_UNESCAPED_UNICODE) ?>, image: '' }].concat(items.map(function (item) {
+						var id = parseInt(item.id, 10) || 0;
+						var name = item.name || '';
+						var alias = aliasById[id] || '';
+						seen[id] = true;
+						return { id: id, name: name, image: item.image || '', searchText: name + ' ' + alias };
+					}));
+					aliases.forEach(function (item) {
+						var id = parseInt(item.id, 10) || 0;
+						if (!id || seen[id]) return;
+						keychainData.push({ id: id, name: item.name || '', image: item.image || '', searchText: item.name || '' });
+					});
+					return keychainData;
+				});
+			};
+			var renderKeychainResults = function () {
+				if (!keychainResultsEl || !keychainData) return;
+				var query = (keychainSearchInput ? keychainSearchInput.value : '').trim().toLowerCase();
+				var terms = query ? query.split(/\s+/).filter(Boolean) : [];
+				var shown = keychainData.filter(function (item) {
+					var searchText = (item.searchText || item.name || '').toLowerCase();
+					return !query || String(item.id) === query || terms.every(function (term) {
+						return searchText.indexOf(term) !== -1;
+					});
+				}).slice(0, 80);
+				keychainResultsEl.innerHTML = '';
+				shown.forEach(function (item) {
+					var button = document.createElement('button');
+					button.type = 'button';
+					button.className = 'keychain-result';
+					button.dataset.keychainId = String(item.id);
+					button.dataset.keychainName = item.name;
+					button.dataset.keychainImage = item.image || '';
+					if (item.image) {
+						var image = document.createElement('img');
+						image.src = 'img/skins/keychain.png';
+						image.dataset.remoteSrc = item.image;
+						image.alt = '';
+						button.appendChild(image);
+						loadRemoteImage(image);
+					} else {
+						var empty = document.createElement('span');
+						empty.className = 'keychain-empty-icon';
+						empty.textContent = '+';
+						button.appendChild(empty);
+					}
+					var name = document.createElement('span');
+					name.textContent = item.name;
+					button.appendChild(name);
+					keychainResultsEl.appendChild(button);
+				});
+			};
+			var saveKeychainChoice = function (slot, id) {
+				if (!window.fetch || !slot) return Promise.resolve(null);
+				var form = slot.closest('form');
+				var formData = new FormData();
+				formData.append('action', 'save_keychain_choice');
+				formData.append('id', form ? (form.querySelector('input[name="id"]') || {}).value || '' : '');
+				formData.append('team', form ? (form.querySelector('input[name="team"]') || {}).value || '1' : '1');
+				formData.append('weapon_defindex', slot.dataset.weaponDefindex || '0');
+				formData.append('keychain_id', String(id || '0'));
+				formData.append('ajax', '1');
+				return fetch(window.location.href, {
+					method: 'POST',
+					body: formData,
+					headers: { 'X-Requested-With': 'fetch', 'X-CSRF-Token': window.cs2CsrfToken, 'Accept': 'application/json' }
+				}).then(function (response) {
+					return response.ok ? response.json() : Promise.reject();
+				}).then(function (payload) {
+					if (!payload || !payload.ok) throw new Error(payload && payload.message ? payload.message : keychainSaveFailedMessage);
+					return payload;
+				});
+			};
+			if (keychainPickerEl) {
+				keychainPickerEl.addEventListener('shown.bs.modal', markStickerBackdrop);
+				keychainPickerEl.addEventListener('hidden.bs.modal', function () {
+					setStickerUnderlay(null);
+				});
+			}
+			document.querySelectorAll('[data-keychain-slot]').forEach(function (slot) {
+				syncKeychainInlineControls(slot);
+				var editor = slot.closest('.keychain-inline-editor');
+				if (!editor) return;
+				editor.querySelectorAll('[data-keychain-inline-param]').forEach(function (field) {
+					var key = field.dataset.keychainInlineParam;
+					var range = editor.querySelector('[data-keychain-inline-range="' + key + '"]');
+					field.addEventListener('input', function () {
+						if (!field.disabled) updateKeychainValueFromInlineControls(slot, false);
+					});
+					field.addEventListener('change', function () {
+						if (field.disabled) return;
+						updateKeychainValueFromInlineControls(slot, true);
+					});
+					if (range) {
+						range.addEventListener('input', function () {
+							if (range.disabled) return;
+							field.value = formatKeychainParam(key, range.value);
+							updateKeychainValueFromInlineControls(slot, false);
+						});
+					}
+				});
+			});
+			if (keychainSearchInput) {
+				keychainSearchInput.addEventListener('input', renderKeychainResults);
+			}
+			document.addEventListener('click', function (event) {
+				var keychainOpenButton = event.target.closest('[data-keychain-open]');
+				if (keychainOpenButton) {
+					activeKeychainSlot = keychainOpenButton.closest('[data-keychain-slot]');
+					setStickerUnderlay(keychainOpenButton.closest('.modal'));
+					loadKeychains().then(function () {
+						if (keychainSearchInput) keychainSearchInput.value = '';
+						renderKeychainResults();
+						if (keychainPicker) {
+							keychainPicker.show();
+							setTimeout(markStickerBackdrop, 0);
+						}
+						setTimeout(function () { if (keychainSearchInput) keychainSearchInput.focus(); }, 150);
+					});
+					return;
+				}
+				var keychainResultButton = event.target.closest('[data-keychain-id]');
+				if (keychainResultButton && activeKeychainSlot) {
+					var id = keychainResultButton.dataset.keychainId || '0';
+					var name = keychainResultButton.dataset.keychainName || <?= json_encode(t('no_keychain'), JSON_UNESCAPED_UNICODE) ?>;
+					var image = keychainResultButton.dataset.keychainImage || '';
+					saveKeychainChoice(activeKeychainSlot, id).then(function (payload) {
+						setKeychainSlot(activeKeychainSlot, id, name, image);
+						var valueInput = activeKeychainSlot.querySelector('[data-keychain-value]');
+						if (valueInput && payload && payload.value) valueInput.value = payload.value;
+						activeKeychainSlot.dataset.savedKeychainId = String(id || '0');
+						syncKeychainInlineControls(activeKeychainSlot, parseKeychainValue(valueInput ? valueInput.value : ''));
+						if (keychainPicker) keychainPicker.hide();
+					}).catch(function (error) {
+						alert(error && error.message ? error.message : keychainSaveFailedMessage);
+					});
+				}
+			});
 			if (searchInput) {
 				searchInput.addEventListener('input', renderStickerResults);
 			}
 
+			document.querySelectorAll('[data-skin-param-row]').forEach(function (row) {
+				var range = row.querySelector('[data-skin-param-range]');
+				var number = row.querySelector('[data-skin-param-number]');
+				if (!range || !number) return;
+				var spinnerStep = number.dataset.maxDecimals ? number.step : '';
+				var enablePreciseInput = function () {
+					if (spinnerStep) number.step = 'any';
+				};
+				if (spinnerStep) {
+					enablePreciseInput();
+					number.addEventListener('pointerdown', function () {
+						number.step = spinnerStep;
+					});
+					number.addEventListener('pointerup', enablePreciseInput);
+					number.addEventListener('pointercancel', enablePreciseInput);
+					number.addEventListener('keydown', function (event) {
+						if (event.key === 'ArrowUp' || event.key === 'ArrowDown') number.step = spinnerStep;
+					});
+					number.addEventListener('keyup', enablePreciseInput);
+					number.addEventListener('blur', enablePreciseInput);
+				}
+				var clampValue = function (value, fallback) {
+					var numeric = parseFloat(value);
+					if (!isFinite(numeric)) return fallback;
+					var min = parseFloat(number.min);
+					var max = parseFloat(number.max);
+					if (isFinite(min)) numeric = Math.max(min, numeric);
+					if (isFinite(max)) numeric = Math.min(max, numeric);
+					return numeric;
+				};
+				var formatNumberValue = function (value) {
+					var maxDecimals = parseInt(number.dataset.maxDecimals || '', 10);
+					if (!isFinite(maxDecimals)) return String(value);
+					var formatted = Number(value).toFixed(maxDecimals).replace(/0+$/, '').replace(/\.$/, '');
+					return formatted === '' || formatted === '-0' ? '0' : formatted;
+				};
+				range.addEventListener('input', function () {
+					number.value = range.value;
+				});
+				number.addEventListener('input', function () {
+					var numeric = parseFloat(number.value);
+					if (isFinite(numeric)) range.value = String(clampValue(numeric, range.value));
+				});
+				number.addEventListener('change', function () {
+					var value = clampValue(number.value, parseFloat(range.value) || 0);
+					number.value = formatNumberValue(value);
+					range.value = String(value);
+				});
+			});
+
 			var validationMessages = {
 				required: <?= json_encode(t('validation_required'), JSON_UNESCAPED_UNICODE) ?>,
 				numberRange: <?= json_encode(t('validation_number_range'), JSON_UNESCAPED_UNICODE) ?>,
+				decimalRange: <?= json_encode(t('validation_decimal_range'), JSON_UNESCAPED_UNICODE) ?>,
 				integerRange: <?= json_encode(t('validation_integer_range'), JSON_UNESCAPED_UNICODE) ?>
 			};
 
 			var fillValidationMessage = function (template, input) {
 				return template
 					.replace('{min}', input.min || '0')
-					.replace('{max}', input.max || '');
+					.replace('{max}', input.max || '')
+					.replace('{decimals}', input.dataset.maxDecimals || '');
+			};
+
+			var decimalPlaces = function (value) {
+				var normalized = String(value || '').trim();
+				if (/[eE]/.test(normalized)) return Infinity;
+				var match = normalized.match(/^-?\d*(?:\.(\d*))?$/);
+				return match ? (match[1] || '').length : Infinity;
 			};
 
 			var validateLocalizedInput = function (input) {
@@ -3268,8 +4155,16 @@ $returnTo = safeReturnUrl($returnTo);
 					input.setCustomValidity(validationMessages.required);
 					return;
 				}
+				var maxDecimals = parseInt(input.dataset.maxDecimals || '', 10);
+				if (isFinite(maxDecimals) && decimalPlaces(input.value) > maxDecimals) {
+					input.setCustomValidity(fillValidationMessage(validationMessages.decimalRange, input));
+					return;
+				}
 				if (input.type === 'number' && (input.validity.rangeUnderflow || input.validity.rangeOverflow || input.validity.stepMismatch)) {
-					var template = input.step && input.step !== 'any' ? validationMessages.integerRange : validationMessages.numberRange;
+					var step = parseFloat(input.step);
+					var template = input.dataset.maxDecimals
+						? validationMessages.decimalRange
+						: (isFinite(step) && Number.isInteger(step) ? validationMessages.integerRange : validationMessages.numberRange);
 					input.setCustomValidity(fillValidationMessage(template, input));
 				}
 			};
@@ -3291,7 +4186,7 @@ $returnTo = safeReturnUrl($returnTo);
 				var input = row ? row.querySelector('[data-nametag-input]') : null;
 				var sync = function () {
 					if (!input) return;
-					input.hidden = !toggle.checked;
+					input.classList.toggle('is-inactive', !toggle.checked);
 					input.disabled = !toggle.checked;
 					input.required = toggle.checked;
 					validateLocalizedInput(input);
@@ -3304,7 +4199,7 @@ $returnTo = safeReturnUrl($returnTo);
 				var input = row ? row.querySelector('[data-stattrak-input]') : null;
 				var sync = function () {
 					if (!input) return;
-					input.hidden = !toggle.checked;
+					input.classList.toggle('is-inactive', !toggle.checked);
 					input.disabled = !toggle.checked;
 					input.required = toggle.checked;
 					validateLocalizedInput(input);

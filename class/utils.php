@@ -192,6 +192,7 @@ class UtilsClass
                 'weapon_sticker_2' => $weapon['weapon_sticker_2'] ?? '0;0;0;0;0;0;0',
                 'weapon_sticker_3' => $weapon['weapon_sticker_3'] ?? '0;0;0;0;0;0;0',
                 'weapon_sticker_4' => $weapon['weapon_sticker_4'] ?? '0;0;0;0;0;0;0',
+                'weapon_keychain' => $weapon['weapon_keychain'] ?? '0;0;0;0;0',
             ];
         }
 
