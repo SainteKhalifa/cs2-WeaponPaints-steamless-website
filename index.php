@@ -150,7 +150,9 @@ $uiText = [
 		'inspect_3d' => '3D',
 		'inspect_title' => '3D 预览与导入',
 		'inspect_open' => '在 SkinCraft 中打开',
-		'inspect_hint' => '在 SkinCraft 中调整贴纸和挂件位置，复制检视链接，然后粘贴到下方。',
+		'inspect_step_open' => '点击下方按钮，在 SkinCraft 中打开该武器。',
+		'inspect_step_place' => '在 SkinCraft 中调整贴纸和挂件，然后复制检视链接。',
+		'inspect_step_paste' => '回到本页，把链接粘贴到下方并导入。',
 		'inspect_import_placeholder' => '粘贴检视链接或十六进制代码',
 		'inspect_paste' => '从剪贴板粘贴',
 		'inspect_import_apply' => '导入',
@@ -280,7 +282,9 @@ $uiText = [
 		'inspect_3d' => '3D',
 		'inspect_title' => '3D preview and import',
 		'inspect_open' => 'Open in SkinCraft',
-		'inspect_hint' => 'Place your stickers and charm in SkinCraft, copy the inspect link, then paste it below.',
+		'inspect_step_open' => 'Open this weapon in SkinCraft with the button below.',
+		'inspect_step_place' => 'Place your stickers and charm there, then copy the inspect link.',
+		'inspect_step_paste' => 'Come back here, paste the link below and import it.',
 		'inspect_import_placeholder' => 'Paste an inspect link or hex payload',
 		'inspect_paste' => 'Paste from clipboard',
 		'inspect_import_apply' => 'Import',
@@ -786,15 +790,25 @@ function readStickerAdvancedParamsFromPost()
 	];
 }
 
+/**
+ * Amplitude des décalages d'un charm.
+ *
+ * Contrairement aux stickers, qui se placent dans un carré unitaire, le
+ * pendentif est positionné en unités de monde : un lien d'inspection réel
+ * porte couramment des valeurs de l'ordre de 10. Les borner à 1 replacerait
+ * le charm au mauvais endroit à chaque enregistrement.
+ */
+const KEYCHAIN_OFFSET_LIMIT = 100;
+
 function keychainValueParts($value)
 {
 	$parts = array_pad(explode(';', (string)$value), 5, '');
 	$id = max(0, (int)($parts[0] ?? 0));
 	return [
 		'id' => $id,
-		'x' => stickerNumber($parts[1] ?? null, -1, 1, 0),
-		'y' => stickerNumber($parts[2] ?? null, -1, 1, 0),
-		'z' => stickerNumber($parts[3] ?? null, -1, 1, 0),
+		'x' => stickerNumber($parts[1] ?? null, -KEYCHAIN_OFFSET_LIMIT, KEYCHAIN_OFFSET_LIMIT, 0),
+		'y' => stickerNumber($parts[2] ?? null, -KEYCHAIN_OFFSET_LIMIT, KEYCHAIN_OFFSET_LIMIT, 0),
+		'z' => stickerNumber($parts[3] ?? null, -KEYCHAIN_OFFSET_LIMIT, KEYCHAIN_OFFSET_LIMIT, 0),
 		'template' => $id > 0 ? max(1, min(99999, (int)($parts[4] ?? 1))) : 0,
 	];
 }
@@ -810,9 +824,9 @@ function buildKeychainValueFromParts($id, $params)
 	if ($id === 0) {
 		return defaultKeychainValue();
 	}
-	$x = stickerFloatValue(stickerNumber($params['x'] ?? 0, -1, 1, 0));
-	$y = stickerFloatValue(stickerNumber($params['y'] ?? 0, -1, 1, 0));
-	$z = stickerFloatValue(stickerNumber($params['z'] ?? 0, -1, 1, 0));
+	$x = stickerFloatValue(stickerNumber($params['x'] ?? 0, -KEYCHAIN_OFFSET_LIMIT, KEYCHAIN_OFFSET_LIMIT, 0));
+	$y = stickerFloatValue(stickerNumber($params['y'] ?? 0, -KEYCHAIN_OFFSET_LIMIT, KEYCHAIN_OFFSET_LIMIT, 0));
+	$z = stickerFloatValue(stickerNumber($params['z'] ?? 0, -KEYCHAIN_OFFSET_LIMIT, KEYCHAIN_OFFSET_LIMIT, 0));
 	$template = (string)max(1, min(99999, (int)($params['template'] ?? 1)));
 	return "{$id};{$x};{$y};{$z};{$template}";
 }
@@ -3229,15 +3243,15 @@ $returnTo = safeReturnUrl($returnTo);
 												<div class="keychain-param-row" data-keychain-param-row="x">
 													<label for="keychainX<?= (int)$defindex ?>"><?= h(t('keychain_x')) ?></label>
 													<div class="keychain-param-control">
-														<input type="range" min="-1" max="1" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['x'])) ?>" data-keychain-inline-range="x" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
-														<input id="keychainX<?= (int)$defindex ?>" type="number" name="keychain_x" min="-1" max="1" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['x'])) ?>" class="form-control" data-keychain-inline-param="x" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+														<input type="range" min="-<?= KEYCHAIN_OFFSET_LIMIT ?>" max="<?= KEYCHAIN_OFFSET_LIMIT ?>" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['x'])) ?>" data-keychain-inline-range="x" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+														<input id="keychainX<?= (int)$defindex ?>" type="number" name="keychain_x" min="-<?= KEYCHAIN_OFFSET_LIMIT ?>" max="<?= KEYCHAIN_OFFSET_LIMIT ?>" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['x'])) ?>" class="form-control" data-keychain-inline-param="x" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
 													</div>
 												</div>
 												<div class="keychain-param-row" data-keychain-param-row="y">
 													<label for="keychainY<?= (int)$defindex ?>"><?= h(t('keychain_y')) ?></label>
 													<div class="keychain-param-control">
-														<input type="range" min="-1" max="1" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['y'])) ?>" data-keychain-inline-range="y" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
-														<input id="keychainY<?= (int)$defindex ?>" type="number" name="keychain_y" min="-1" max="1" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['y'])) ?>" class="form-control" data-keychain-inline-param="y" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+														<input type="range" min="-<?= KEYCHAIN_OFFSET_LIMIT ?>" max="<?= KEYCHAIN_OFFSET_LIMIT ?>" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['y'])) ?>" data-keychain-inline-range="y" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+														<input id="keychainY<?= (int)$defindex ?>" type="number" name="keychain_y" min="-<?= KEYCHAIN_OFFSET_LIMIT ?>" max="<?= KEYCHAIN_OFFSET_LIMIT ?>" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['y'])) ?>" class="form-control" data-keychain-inline-param="y" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
 													</div>
 												</div>
 											</div>
@@ -3274,15 +3288,14 @@ $returnTo = safeReturnUrl($returnTo);
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
 				</div>
 				<div class="modal-body">
-					<div class="inspect-frame-wrap">
-						<iframe class="inspect-frame" data-inspect-frame title="<?= h(t('inspect_title')) ?>"
-							referrerpolicy="no-referrer" loading="lazy"
-							sandbox="allow-scripts allow-same-origin"></iframe>
-					</div>
-					<p class="inspect-hint"><?= h(t('inspect_hint')) ?></p>
+					<ol class="inspect-steps">
+						<li><?= h(t('inspect_step_open')) ?></li>
+						<li><?= h(t('inspect_step_place')) ?></li>
+						<li><?= h(t('inspect_step_paste')) ?></li>
+					</ol>
 					<div class="inspect-actions">
-						<a class="btn btn-sm btn-primary" href="#" target="_blank" rel="noopener noreferrer" data-inspect-open-link><?= h(t('inspect_open')) ?></a>
-						<button type="button" class="btn btn-sm btn-outline-light" data-inspect-paste hidden><?= h(t('inspect_paste')) ?></button>
+						<a class="btn btn-primary" href="#" target="_blank" rel="noopener noreferrer" data-inspect-open-link><?= h(t('inspect_open')) ?></a>
+						<button type="button" class="btn btn-outline-light" data-inspect-paste hidden><?= h(t('inspect_paste')) ?></button>
 					</div>
 					<input type="text" name="inspect_link" class="form-control inspect-input" placeholder="<?= h(t('inspect_import_placeholder')) ?>" autocomplete="off" spellcheck="false" required data-inspect-input>
 				</div>
@@ -4518,7 +4531,6 @@ $returnTo = safeReturnUrl($returnTo);
 			var inspectEl = document.getElementById('inspectModal');
 			if (inspectEl && window.bootstrap) {
 				var inspectModal = new bootstrap.Modal(inspectEl);
-				var inspectFrame = inspectEl.querySelector('[data-inspect-frame]');
 				var inspectOpenLink = inspectEl.querySelector('[data-inspect-open-link]');
 				var inspectLabel = inspectEl.querySelector('[data-inspect-label]');
 				var inspectInput = inspectEl.querySelector('[data-inspect-input]');
@@ -4533,17 +4545,8 @@ $returnTo = safeReturnUrl($returnTo);
 						if (inspectLabel) inspectLabel.textContent = button.getAttribute('data-inspect-label') || '';
 						if (inspectInput) inspectInput.value = '';
 						if (inspectOpenLink) inspectOpenLink.href = <?= json_encode(InspectLink::VIEWER_URL, JSON_UNESCAPED_SLASHES) ?> + hex;
-						// L'aperçu n'est chargé qu'à l'ouverture : autrement chaque
-						// visite de la page tirerait une iframe par arme.
-						if (inspectFrame) inspectFrame.src = <?= json_encode(InspectLink::VIEWER_EMBED_URL, JSON_UNESCAPED_SLASHES) ?> + hex;
 						inspectModal.show();
 					});
-				});
-
-				// Décharge l'iframe à la fermeture, sinon le rendu continue de
-				// tourner en arrière-plan.
-				inspectEl.addEventListener('hidden.bs.modal', function () {
-					if (inspectFrame) inspectFrame.removeAttribute('src');
 				});
 
 				if (inspectPaste && navigator.clipboard && navigator.clipboard.readText) {
