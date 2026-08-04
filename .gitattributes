@@ -1,0 +1,9 @@
+# Ces fichiers sont consommés par Docker et nginx sous Linux. Un retour
+# chariot en fin de ligne casserait les continuations « \ » du Dockerfile et
+# les directives nginx, avec des erreurs peu parlantes.
+Dockerfile      text eol=lf
+docker-compose.yml text eol=lf
+nginx.conf      text eol=lf
+.dockerignore   text eol=lf
+.env.example    text eol=lf
+*.sh            text eol=lf
