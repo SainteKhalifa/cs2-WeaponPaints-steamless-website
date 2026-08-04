@@ -32,7 +32,14 @@ RUN set -eux; \
 # verrait aucune variable passée par docker-compose et class/config.php
 # retomberait silencieusement sur ses valeurs de repli.
 # ping.path sert au HEALTHCHECK.
-RUN printf '[www]\nclear_env = no\nping.path = /healthz\nping.response = pong\n' \
+# L'accès est déjà journalisé par nginx, avec le statut et la taille en plus :
+# le second journal de php-fpm ne ferait que dupliquer chaque ligne.
+RUN printf '%s\n' \
+        '[www]' \
+        'clear_env = no' \
+        'ping.path = /healthz' \
+        'ping.response = pong' \
+        'access.log = /dev/null' \
         > /usr/local/etc/php-fpm.d/zz-env.conf
 
 # memory_limit : le décodage de data/stickers_*.json (près de 4 Mo) dépasse la
@@ -55,8 +62,12 @@ COPY nginx.conf /etc/nginx/http.d/default.conf
 # simplement, si l'on préfère éditer à chaud.
 COPY --chown=www-data:www-data . /var/www/html
 
+# Sans ces liens, nginx écrit dans des fichiers internes au conteneur : ni les
+# requêtes ni surtout ses erreurs n'apparaissent dans `docker compose logs`.
 RUN set -eux; \
-    mkdir -p /run/nginx; \
+    mkdir -p /run/nginx /var/log/nginx; \
+    ln -sf /dev/stdout /var/log/nginx/access.log; \
+    ln -sf /dev/stderr /var/log/nginx/error.log; \
     chown -R www-data:www-data /var/www/html /run/nginx
 
 EXPOSE 80
