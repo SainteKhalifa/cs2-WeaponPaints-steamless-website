@@ -2,6 +2,7 @@
 require_once 'class/config.php';
 require_once 'class/database.php';
 require_once 'class/utils.php';
+require_once 'class/inspect.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
 	session_start();
@@ -146,6 +147,19 @@ $uiText = [
 		'validation_decimal_range' => '请输入 {min} 到 {max} 之间、最多 {decimals} 位小数的数字',
 		'validation_integer_range' => '请输入 {min} 到 {max} 之间的整数',
 		'csrf_invalid' => '安全令牌无效或已过期，请刷新页面后重试。',
+		'inspect_3d' => '3D',
+		'inspect_title' => '3D 预览与导入',
+		'inspect_open' => '在 SkinCraft 中打开',
+		'inspect_hint' => '在 SkinCraft 中调整贴纸和挂件位置，复制检视链接，然后粘贴到下方。',
+		'inspect_import_placeholder' => '粘贴检视链接或十六进制代码',
+		'inspect_paste' => '从剪贴板粘贴',
+		'inspect_import_apply' => '导入',
+		'inspect_preview_unavailable' => '请先选择皮肤，然后才能使用 3D 预览。',
+		'inspect_imported' => '检视链接导入成功，请在游戏中重新执行 !ws 或重生以生效。',
+		'inspect_error_invalid' => '无法识别该检视链接，请复制完整链接后重试。',
+		'inspect_error_weapon_mismatch' => '该检视链接对应的武器与当前武器不符。',
+		'inspect_error_unknown_paint' => '该检视链接的皮肤不在可用列表中。',
+		'inspect_error_failed' => '导入失败，请刷新后重试。',
 	],
 	'en' => [
 		'home_subtitle' => 'Manage your skins with Steam64 ID.',
@@ -263,6 +277,19 @@ $uiText = [
 		'validation_decimal_range' => 'Please enter a number from {min} to {max} with up to {decimals} decimal places.',
 		'validation_integer_range' => 'Please enter an integer from {min} to {max}.',
 		'csrf_invalid' => 'The security token is invalid or expired. Refresh the page and try again.',
+		'inspect_3d' => '3D',
+		'inspect_title' => '3D preview and import',
+		'inspect_open' => 'Open in SkinCraft',
+		'inspect_hint' => 'Place your stickers and charm in SkinCraft, copy the inspect link, then paste it below.',
+		'inspect_import_placeholder' => 'Paste an inspect link or hex payload',
+		'inspect_paste' => 'Paste from clipboard',
+		'inspect_import_apply' => 'Import',
+		'inspect_preview_unavailable' => 'Choose a skin first to use the 3D preview.',
+		'inspect_imported' => 'Inspect link imported. Run !ws again or respawn in game to apply it.',
+		'inspect_error_invalid' => 'That inspect link could not be read. Copy the full link and try again.',
+		'inspect_error_weapon_mismatch' => 'That inspect link is for a different weapon.',
+		'inspect_error_unknown_paint' => 'That inspect link uses a skin that is not available here.',
+		'inspect_error_failed' => 'Import failed. Please refresh and try again.',
 	],
 ];
 
@@ -903,6 +930,97 @@ function stickerAliasDataFile()
 	return $english;
 }
 
+/**
+ * Construit l'item normalisé attendu par InspectLink à partir d'une ligne.
+ *
+ * Le charm est nommé `template` ici et `seed` dans le protobuf d'inspection :
+ * c'est le même champ, la traduction se fait dans les deux sens.
+ */
+function inspectItemFromRow($row, $defindex, $keychainValue = null)
+{
+	$slotCount = min(5, stickerSlotCount($defindex));
+	$stickerValues = stickerValuesFromRow($row);
+	$stickers = [];
+	for ($i = 0; $i < $slotCount; $i++) {
+		$parts = stickerValueParts($stickerValues[$i]);
+		if ($parts['id'] > 0) {
+			$stickers[$i] = $parts;
+		}
+	}
+
+	$keychain = null;
+	if ($keychainValue !== null && $keychainValue !== '') {
+		$parts = keychainValueParts($keychainValue);
+		if ($parts['id'] > 0) {
+			$keychain = [
+				'id' => $parts['id'],
+				'x' => $parts['x'],
+				'y' => $parts['y'],
+				'z' => $parts['z'],
+				'seed' => $parts['template'],
+			];
+		}
+	}
+
+	$row['weapon_defindex'] = (int)$defindex;
+	return InspectLink::itemFromParts($row, $stickers, $keychain);
+}
+
+/**
+ * Encode une pièce du loadout en lien d'inspection, ou '' si rien à montrer.
+ */
+function inspectHexFromValues($defindex, $paint, $wear, $seed, $stattrak, $stattrakCount, $nameTag, $stickerValues = null, $keychainValue = null)
+{
+	$defindex = (int)$defindex;
+	if ($defindex <= 0 || (int)$paint <= 0) {
+		return '';
+	}
+
+	$row = [
+		'weapon_defindex' => $defindex,
+		'weapon_paint_id' => (int)$paint,
+		'weapon_wear' => (float)$wear,
+		'weapon_seed' => (int)$seed,
+		'weapon_stattrak' => (int)$stattrak,
+		'weapon_stattrak_count' => (int)$stattrakCount,
+		'weapon_nametag' => $nameTag,
+	];
+	foreach (($stickerValues ?? defaultStickerValues()) as $slot => $value) {
+		$row["weapon_sticker_{$slot}"] = $value;
+	}
+
+	return InspectLink::encode(inspectItemFromRow($row, $defindex, $keychainValue));
+}
+
+/**
+ * Données de référence contre lesquelles un lien importé est recoupé.
+ */
+function inspectReference($defindex, $skins, $stickers, $keychains)
+{
+	return [
+		'defindex' => (int)$defindex,
+		'paints' => $skins[(int)$defindex] ?? [],
+		'stickers' => $stickers,
+		'keychains' => $keychains,
+		'slots' => stickerSlotCount($defindex),
+	];
+}
+
+/**
+ * Bouton « 3D » d'une carte. Identique pour les armes, les couteaux et les
+ * gants : il ne transporte que de quoi ouvrir la fenêtre partagée.
+ */
+function inspectButton($defindex, $hex, $label)
+{
+	$disabled = $hex === '' ? ' disabled' : '';
+	return '<button type="button" class="btn btn-sm btn-outline-light inspect-button" data-inspect-open'
+		. ' data-inspect-defindex="' . (int)$defindex . '"'
+		. ' data-inspect-hex="' . h($hex) . '"'
+		. ' data-inspect-label="' . h($label) . '"'
+		. ' title="' . h($hex === '' ? t('inspect_preview_unavailable') : t('inspect_title')) . '"'
+		. $disabled . '>' . h(t('inspect_3d')) . '</button>';
+}
+
 function keychainDataFile()
 {
 	$currentLanguage = UtilsClass::currentLanguage();
@@ -1441,6 +1559,125 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 			'params' => keychainValueParts($newValue),
 		], $fallbackUrl);
 	}
+	if ($postAction === 'import_inspect_link') {
+		$id = cleanSteamId($_POST['id'] ?? '');
+		$team = selectedTeam();
+		$preset = findPreset($db, $presetTable, $id);
+		$defindex = (int)($_POST['weapon_defindex'] ?? 0);
+		$fallbackUrl = "index.php?action=edit&id={$id}&team={$team}";
+		$skins = UtilsClass::skinsFromJson();
+		if (!$preset || !canEditPreset($preset) || $defindex <= 0 || !array_key_exists($defindex, $skins)) {
+			go("{$fallbackUrl}&error=inspect_failed");
+		}
+
+		$decoded = InspectLink::decode((string)($_POST['inspect_link'] ?? ''));
+		if (!$decoded['ok']) {
+			go("{$fallbackUrl}&error=inspect_{$decoded['error']}");
+		}
+
+		// Le lien vient du joueur : tout est recoupé avec les données du site.
+		$sanitized = InspectLink::sanitize(
+			$decoded['item'],
+			inspectReference($defindex, $skins, stickersFromJson(), keychainsFromJson())
+		);
+		if (!$sanitized['ok']) {
+			go("{$fallbackUrl}&error=inspect_{$sanitized['error']}");
+		}
+
+		$item = $sanitized['item'];
+		$steamid = $preset['steamid'];
+		$knifes = UtilsClass::getKnifeTypes();
+		$gloves = glovesFromJson();
+
+		$stickerValues = defaultStickerValues();
+		foreach ($item['stickers'] as $sticker) {
+			$stickerValues[(int)$sticker['slot']] = buildStickerValueFromParts($sticker['id'], $sticker['id'], $sticker);
+		}
+		$keychainValue = $item['keychain'] !== null
+			? buildKeychainValueFromParts($item['keychain']['id'], [
+				'x' => $item['keychain']['x'],
+				'y' => $item['keychain']['y'],
+				'z' => $item['keychain']['z'],
+				'template' => $item['keychain']['seed'],
+			])
+			: defaultKeychainValue();
+
+		$paint = (int)$item['paintindex'];
+		$wear = round((float)$item['paintwear'], 8);
+		$seed = (int)$item['paintseed'];
+		$stattrak = $item['stattrak'] ? 1 : 0;
+		$stattrakCount = $stattrak ? (int)$item['stattrak_count'] : 0;
+		$nameTag = $item['customname'] !== '' ? $item['customname'] : null;
+
+		$isKnifeSkin = in_array($defindex, knifeDefindexes($knifes), true);
+		$isGloveSkin = in_array($defindex, gloveDefindexes($gloves), true);
+
+		foreach (writeTeams($team) as $targetTeam) {
+			// Couteaux et gants ont leur propre table de sélection : le lien ne
+			// peut concerner que la pièce déjà équipée, mais la ligne peut
+			// manquer si le joueur n'a encore rien enregistré.
+			if ($isKnifeSkin && isset($knifes[$defindex])) {
+				$db->query("INSERT INTO `wp_player_knife` (`steamid`, `knife`, `weapon_team`)
+					VALUES(:steamid, :knife, :team)
+					ON DUPLICATE KEY UPDATE `knife` = :knife_update", [
+					"steamid" => $steamid,
+					"knife" => $knifes[$defindex]['weapon_name'],
+					"team" => $targetTeam,
+					"knife_update" => $knifes[$defindex]['weapon_name'],
+				]);
+			}
+			if ($isGloveSkin && tableExists($db, 'wp_player_gloves')) {
+				$db->query("INSERT INTO `wp_player_gloves` (`steamid`, `weapon_team`, `weapon_defindex`)
+					VALUES (:steamid, :team, :weapon_defindex)
+					ON DUPLICATE KEY UPDATE `weapon_defindex` = :weapon_defindex_update", [
+					"steamid" => $steamid,
+					"team" => $targetTeam,
+					"weapon_defindex" => $defindex,
+					"weapon_defindex_update" => $defindex,
+				]);
+			}
+
+			$bindings = [
+				"steamid" => $steamid,
+				"weapon_defindex" => $defindex,
+				"weapon_paint_id" => $paint,
+				"weapon_wear" => $wear,
+				"weapon_seed" => $seed,
+				"weapon_stattrak" => $stattrak,
+				"weapon_stattrak_count" => $stattrakCount,
+				"weapon_nametag" => $nameTag,
+				"weapon_sticker_0" => $stickerValues[0],
+				"weapon_sticker_1" => $stickerValues[1],
+				"weapon_sticker_2" => $stickerValues[2],
+				"weapon_sticker_3" => $stickerValues[3],
+				"weapon_sticker_4" => $stickerValues[4],
+				"weapon_keychain" => $keychainValue,
+				"team" => $targetTeam,
+			];
+
+			$existing = $db->select("SELECT `weapon_defindex` FROM `wp_player_skins`
+				WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team LIMIT 1", [
+				"steamid" => $steamid,
+				"weapon_defindex" => $defindex,
+				"team" => $targetTeam,
+			]);
+
+			if ($existing) {
+				$db->query("UPDATE `wp_player_skins`
+					SET `weapon_paint_id` = :weapon_paint_id, `weapon_wear` = :weapon_wear, `weapon_seed` = :weapon_seed, `weapon_stattrak` = :weapon_stattrak, `weapon_stattrak_count` = :weapon_stattrak_count, `weapon_nametag` = :weapon_nametag, `weapon_sticker_0` = :weapon_sticker_0, `weapon_sticker_1` = :weapon_sticker_1, `weapon_sticker_2` = :weapon_sticker_2, `weapon_sticker_3` = :weapon_sticker_3, `weapon_sticker_4` = :weapon_sticker_4, `weapon_keychain` = :weapon_keychain
+					WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team", $bindings);
+			} else {
+				$db->query("INSERT INTO `wp_player_skins`
+					(`steamid`, `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_keychain`, `weapon_team`)
+					VALUES (:steamid, :weapon_defindex, :weapon_paint_id, :weapon_wear, :weapon_seed, :weapon_stattrak, :weapon_stattrak_count, :weapon_nametag, :weapon_sticker_0, :weapon_sticker_1, :weapon_sticker_2, :weapon_sticker_3, :weapon_sticker_4, :weapon_keychain, :team)", $bindings);
+			}
+
+			saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, $paint, $wear, $seed, $stattrak, $stattrakCount, $nameTag);
+		}
+
+		go("{$fallbackUrl}&imported=1");
+	}
+
 	if ($postAction === 'save_skin') {
 		$id = cleanSteamId($_POST['id'] ?? '');
 		$team = selectedTeam();
@@ -2081,8 +2318,12 @@ $returnTo = safeReturnUrl($returnTo);
 			</header>
 
 			<?php if (isset($_GET['saved'])) : ?><div class="alert alert-success"><?= h(t('saved_notice')) ?></div><?php endif; ?>
+			<?php if (isset($_GET['imported'])) : ?><div class="alert alert-success"><?= h(t('inspect_imported')) ?></div><?php endif; ?>
 			<?php if (($_GET['error'] ?? '') === 'loadout_password') : ?>
 				<div class="alert alert-danger"><?= h(t('loadout_password_required')) ?></div>
+			<?php elseif (strpos((string)($_GET['error'] ?? ''), 'inspect_') === 0) : ?>
+				<?php $inspectErrorKey = 'inspect_error_' . substr((string)$_GET['error'], strlen('inspect_')); ?>
+				<div class="alert alert-danger"><?= h(t($inspectErrorKey) !== $inspectErrorKey ? t($inspectErrorKey) : t('inspect_error_failed')) ?></div>
 			<?php elseif (isset($_GET['error'])) : ?>
 				<div class="alert alert-danger"><?= h(t('save_failed')) ?></div>
 			<?php endif; ?>
@@ -2193,6 +2434,20 @@ $returnTo = safeReturnUrl($returnTo);
 							<div class="progress-bar progress-bar-bs" style="width: 55%" title="<?= h(t('wear_battle_scarred')) ?>"></div>
 						</div>
 					</div>
+					<?php
+					$knifeInspectHex = inspectHexFromValues(
+						$actualKnifeKey,
+						$currentKnifePaintId,
+						$currentKnifeWear,
+						$currentKnifeSeed,
+						$currentKnifeStatTrak,
+						$currentKnifeStatTrakCount,
+						$currentKnifeNameTag,
+						null,
+						$selectedKnifeSkin['weapon_keychain'] ?? null
+					);
+					$knifeInspectLabel = ($actualKnife['weapon_name'] ?? '') . ' — ' . ($currentKnifeSkin['paint_name'] ?? '');
+					?>
 					<div class="settings-row">
 						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#knifeTypeModal">
 							<?= h(t('choose_type')) ?>
@@ -2203,6 +2458,7 @@ $returnTo = safeReturnUrl($returnTo);
 						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#knifeModal" <?= $actualKnifeKey === 0 ? 'disabled' : '' ?>>
 							<?= h(t('edit')) ?>
 						</button>
+						<?= inspectButton($actualKnifeKey, $knifeInspectHex, $knifeInspectLabel) ?>
 					</div>
 
 					<form method="post" class="modal-form">
@@ -2410,6 +2666,13 @@ $returnTo = safeReturnUrl($returnTo);
 						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#gloveModal" <?= ($actualGloveDefindex === 0 || $currentGlovePaintId === 0) ? 'disabled' : '' ?>>
 							<?= h(t('edit')) ?>
 						</button>
+						<?php
+						// Les gants n'ont ni sticker, ni charm, ni StatTrak, ni nom
+						// personnalisé : seuls la peinture, l'usure et le motif comptent.
+						$gloveInspectHex = inspectHexFromValues($actualGloveDefindex, $currentGlovePaintId, $currentGloveWear, $currentGloveSeed, 0, 0, null, null, null);
+						$gloveInspectLabel = ($actualGlove['weapon_name'] ?? '') . ' — ' . ($currentGloveSkin['paint_name'] ?? '');
+						?>
+						<?= inspectButton($actualGloveDefindex, $gloveInspectHex, $gloveInspectLabel) ?>
 					</div>
 
 					<form method="post" class="modal-form">
@@ -2740,12 +3003,20 @@ $returnTo = safeReturnUrl($returnTo);
 							$initialWearValue = $cachedSkinSetting['weapon_wear'];
 							$initialSeedValue = $cachedSkinSetting['weapon_seed'];
 							$initialStatTrakValue = (int)$cachedSkinSetting['weapon_stattrak'];
-							$initialStatTrakCountValue = $initialStatTrakValue ? (int)($cachedSkinSetting['weapon_stattrak_count'] ?? 0) : 0;
+							// Le compteur de frags est un état de jeu vivant que le plugin
+							// incrémente : on garde celui de la ligne enregistrée. Reprendre
+							// celui du cache réafficherait une valeur périmée, que
+							// l'enregistrement suivant graverait.
+							if (!$initialStatTrakValue) {
+								$initialStatTrakCountValue = 0;
+							}
 							$initialNameTagValue = $cachedSkinSetting['weapon_nametag'];
 						}
 					}
 					$initialNameTagEnabled = $initialNameTagValue !== null && $initialNameTagValue !== '';
 					$initialStickerIds = array_map('stickerIdFromValue', $initialStickerValues);
+					$inspectHex = inspectHexFromValues($defindex, $currentPaintId, $initialWearValue, $initialSeedValue, $initialStatTrakValue, $initialStatTrakCountValue, $initialNameTagValue, $initialStickerValues, $initialKeychainValue);
+					$inspectLabel = $default['weapon_name'] . ' — ' . $currentSkin['paint_name'];
 					$modalId = "weaponModal{$defindex}";
 					$skinPickerId = "skinPicker{$defindex}";
 					?>
@@ -2811,6 +3082,7 @@ $returnTo = safeReturnUrl($returnTo);
 								<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#<?= h($modalId) ?>" <?= $currentPaintId === 0 ? 'disabled' : '' ?>>
 									<?= h(t('edit')) ?>
 								</button>
+								<?= inspectButton($defindex, $inspectHex, $inspectLabel) ?>
 							</div>
 
 							<div class="modal fade skin-picker-modal" id="<?= h($skinPickerId) ?>" tabindex="-1" aria-hidden="true">
@@ -2986,6 +3258,41 @@ $returnTo = safeReturnUrl($returnTo);
 				<?php endforeach; ?>
 			</div>
 		<?php endif; ?>
+	<div class="modal fade inspect-modal" id="inspectModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered">
+			<form method="post" class="modal-content">
+				<?= csrfInput() ?>
+				<input type="hidden" name="action" value="import_inspect_link">
+				<input type="hidden" name="id" value="<?= h($currentPreset['steamid'] ?? '') ?>">
+				<input type="hidden" name="team" value="<?= h((string)($team ?? 1)) ?>">
+				<input type="hidden" name="weapon_defindex" value="" data-inspect-defindex-field>
+				<div class="modal-header">
+					<div>
+						<h5 class="modal-title"><?= h(t('inspect_title')) ?></h5>
+						<div class="inspect-subtitle" data-inspect-label></div>
+					</div>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
+				</div>
+				<div class="modal-body">
+					<div class="inspect-frame-wrap">
+						<iframe class="inspect-frame" data-inspect-frame title="<?= h(t('inspect_title')) ?>"
+							referrerpolicy="no-referrer" loading="lazy"
+							sandbox="allow-scripts allow-same-origin"></iframe>
+					</div>
+					<p class="inspect-hint"><?= h(t('inspect_hint')) ?></p>
+					<div class="inspect-actions">
+						<a class="btn btn-sm btn-primary" href="#" target="_blank" rel="noopener noreferrer" data-inspect-open-link><?= h(t('inspect_open')) ?></a>
+						<button type="button" class="btn btn-sm btn-outline-light" data-inspect-paste hidden><?= h(t('inspect_paste')) ?></button>
+					</div>
+					<input type="text" name="inspect_link" class="form-control inspect-input" placeholder="<?= h(t('inspect_import_placeholder')) ?>" autocomplete="off" spellcheck="false" required data-inspect-input>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('cancel')) ?></button>
+					<button type="submit" class="btn btn-primary"><?= h(t('inspect_import_apply')) ?></button>
+				</div>
+			</form>
+		</div>
+	</div>
 	<div class="modal fade sticker-picker-modal" id="stickerPickerModal" tabindex="-1" aria-hidden="true">
 		<div class="modal-dialog modal-lg modal-dialog-scrollable">
 			<div class="modal-content">
@@ -4207,6 +4514,55 @@ $returnTo = safeReturnUrl($returnTo);
 				toggle.addEventListener('change', sync);
 				sync();
 			});
+
+			var inspectEl = document.getElementById('inspectModal');
+			if (inspectEl && window.bootstrap) {
+				var inspectModal = new bootstrap.Modal(inspectEl);
+				var inspectFrame = inspectEl.querySelector('[data-inspect-frame]');
+				var inspectOpenLink = inspectEl.querySelector('[data-inspect-open-link]');
+				var inspectLabel = inspectEl.querySelector('[data-inspect-label]');
+				var inspectInput = inspectEl.querySelector('[data-inspect-input]');
+				var inspectDefindex = inspectEl.querySelector('[data-inspect-defindex-field]');
+				var inspectPaste = inspectEl.querySelector('[data-inspect-paste]');
+
+				document.querySelectorAll('[data-inspect-open]').forEach(function (button) {
+					button.addEventListener('click', function () {
+						var hex = button.getAttribute('data-inspect-hex') || '';
+						if (!hex) return;
+						if (inspectDefindex) inspectDefindex.value = button.getAttribute('data-inspect-defindex') || '';
+						if (inspectLabel) inspectLabel.textContent = button.getAttribute('data-inspect-label') || '';
+						if (inspectInput) inspectInput.value = '';
+						if (inspectOpenLink) inspectOpenLink.href = <?= json_encode(InspectLink::VIEWER_URL, JSON_UNESCAPED_SLASHES) ?> + hex;
+						// L'aperçu n'est chargé qu'à l'ouverture : autrement chaque
+						// visite de la page tirerait une iframe par arme.
+						if (inspectFrame) inspectFrame.src = <?= json_encode(InspectLink::VIEWER_EMBED_URL, JSON_UNESCAPED_SLASHES) ?> + hex;
+						inspectModal.show();
+					});
+				});
+
+				// Décharge l'iframe à la fermeture, sinon le rendu continue de
+				// tourner en arrière-plan.
+				inspectEl.addEventListener('hidden.bs.modal', function () {
+					if (inspectFrame) inspectFrame.removeAttribute('src');
+				});
+
+				if (inspectPaste && navigator.clipboard && navigator.clipboard.readText) {
+					inspectPaste.hidden = false;
+					inspectPaste.addEventListener('click', function () {
+						navigator.clipboard.readText().then(function (text) {
+							if (!inspectInput || !text) return;
+							inspectInput.value = text.trim();
+							inspectInput.focus();
+						}).catch(function () {
+							if (inspectInput) inspectInput.focus();
+						});
+					});
+				}
+
+				inspectEl.addEventListener('shown.bs.modal', function () {
+					if (inspectInput) inspectInput.focus();
+				});
+			}
 		})();
 	</script>
 </body>
