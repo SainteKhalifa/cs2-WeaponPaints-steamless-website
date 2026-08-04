@@ -31,16 +31,19 @@ RUN set -eux; \
 # php-fpm efface l'environnement par défaut : sans clear_env, getenv() ne
 # verrait aucune variable passée par docker-compose et class/config.php
 # retomberait silencieusement sur ses valeurs de repli.
-# ping.path sert au HEALTHCHECK.
 # L'accès est déjà journalisé par nginx, avec le statut et la taille en plus :
 # le second journal de php-fpm ne ferait que dupliquer chaque ligne.
 RUN printf '%s\n' \
         '[www]' \
         'clear_env = no' \
-        'ping.path = /healthz' \
-        'ping.response = pong' \
         'access.log = /dev/null' \
         > /usr/local/etc/php-fpm.d/zz-env.conf
+
+# Sonde du HEALTHCHECK. Volontairement hors de /var/www/html : monter le dépôt
+# en volume recouvre la racine web, pas ce fichier. Elle exerce nginx, php-fpm
+# et l'exécution de PHP sans toucher à l'application ni à la base.
+RUN printf '%s\n' '<?php header("Content-Type: text/plain"); echo "pong";' \
+        > /var/www/health.php
 
 # memory_limit : le décodage de data/stickers_*.json (près de 4 Mo) dépasse la
 # limite de 128 Mo par défaut sur certaines configurations.
