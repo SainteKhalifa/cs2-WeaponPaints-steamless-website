@@ -2639,7 +2639,13 @@ $returnTo = safeReturnUrl($returnTo);
 							$initialWearValue = $cachedSkinSetting['weapon_wear'];
 							$initialSeedValue = $cachedSkinSetting['weapon_seed'];
 							$initialStatTrakValue = (int)$cachedSkinSetting['weapon_stattrak'];
-							$initialStatTrakCountValue = $initialStatTrakValue ? (int)($cachedSkinSetting['weapon_stattrak_count'] ?? 0) : 0;
+							// Le compteur de frags est un état de jeu vivant que le plugin
+							// incrémente, pas un réglage mémorisé : on garde celui de la
+							// ligne enregistrée. Reprendre celui du cache réafficherait une
+							// valeur périmée, que l'enregistrement suivant graverait.
+							if (!$initialStatTrakValue) {
+								$initialStatTrakCountValue = 0;
+							}
 							$initialNameTagValue = $cachedSkinSetting['weapon_nametag'];
 						}
 					}
@@ -2655,14 +2661,7 @@ $returnTo = safeReturnUrl($returnTo);
 					$inspectRow['weapon_wear'] = $initialWearValue;
 					$inspectRow['weapon_seed'] = $initialSeedValue;
 					$inspectRow['weapon_stattrak'] = $initialStatTrakValue;
-					// getSelectedSkins() ne remonte pas le compteur StatTrak : sans
-					// valeur en cache, on le relit sur la ligne brute pour que le
-					// lien porte le compteur réellement enregistré.
-					$inspectStatTrakCount = (int)($selectedRowsByDefindex[(int)$defindex]['weapon_stattrak_count'] ?? 0);
-					if ($initialStatTrakCountValue > 0) {
-						$inspectStatTrakCount = $initialStatTrakCountValue;
-					}
-					$inspectRow['weapon_stattrak_count'] = $initialStatTrakValue ? $inspectStatTrakCount : 0;
+					$inspectRow['weapon_stattrak_count'] = $initialStatTrakCountValue;
 					$inspectRow['weapon_nametag'] = $initialNameTagValue;
 					$inspectRow['weapon_paint_id'] = $currentPaintId;
 					$inspectHex = $currentPaintId > 0

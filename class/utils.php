@@ -186,6 +186,7 @@ class UtilsClass
                 'weapon_seed' => $weapon['weapon_seed'],
                 'weapon_wear' => $weapon['weapon_wear'],
                 'weapon_stattrak' => $weapon['weapon_stattrak'] ?? 0,
+                'weapon_stattrak_count' => $weapon['weapon_stattrak_count'] ?? 0,
                 'weapon_nametag' => $weapon['weapon_nametag'] ?? null,
                 'weapon_sticker_0' => $weapon['weapon_sticker_0'] ?? '0;0;0;0;0;0;0',
                 'weapon_sticker_1' => $weapon['weapon_sticker_1'] ?? '0;0;0;0;0;0;0',
