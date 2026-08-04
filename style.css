@@ -1412,3 +1412,45 @@ label {
 		grid-template-columns: 1fr;
 	}
 }
+
+.keychain-section {
+	display: grid;
+	gap: 8px;
+	padding-top: 12px;
+	border-top: 1px solid var(--line);
+}
+
+.inspect-section {
+	display: grid;
+	gap: 8px;
+	padding-top: 12px;
+	border-top: 1px solid var(--line);
+}
+
+.inspect-section-title {
+	color: var(--text);
+	font-weight: 600;
+}
+
+.inspect-hint {
+	color: var(--muted);
+	font-size: .85rem;
+	margin: 0;
+}
+
+.inspect-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.inspect-import-weapon {
+	color: var(--text);
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
+.inspect-import-modal .modal-body .form-control {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: .85rem;
+}

@@ -2,6 +2,7 @@
 require_once 'class/config.php';
 require_once 'class/database.php';
 require_once 'class/utils.php';
+require_once 'class/inspect.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
 	session_start();
@@ -122,6 +123,22 @@ $uiText = [
 		'validation_required' => '请填写此字段',
 		'validation_number_range' => '请输入 {min} 到 {max} 之间的数字',
 		'validation_integer_range' => '请输入 {min} 到 {max} 之间的整数',
+		'keychain' => '挂件',
+		'no_keychain' => '不使用挂件',
+		'choose_keychain' => '选择挂件',
+		'search_keychain' => '搜索挂件',
+		'keychain_seed' => '挂件种子',
+		'inspect_3d_edit' => '3D 编辑',
+		'inspect_3d_hint' => '在 3D 预览中调整贴纸和挂件位置，然后复制检视链接并粘贴到下方。',
+		'inspect_import' => '导入检视链接',
+		'inspect_import_placeholder' => '粘贴检视链接或十六进制代码',
+		'inspect_import_apply' => '导入',
+		'inspect_preview' => '3D 预览',
+		'inspect_imported' => '检视链接导入成功，请在游戏中重新执行 !ws 或重生以生效。',
+		'inspect_error_invalid' => '无法识别该检视链接，请复制完整链接后重试。',
+		'inspect_error_weapon_mismatch' => '该检视链接对应的武器与当前武器不符。',
+		'inspect_error_unknown_paint' => '该检视链接的皮肤不在可用列表中。',
+		'inspect_error_failed' => '导入失败，请刷新后重试。',
 	],
 	'en' => [
 		'app_title' => 'CS2 Community Server Skin Manager',
@@ -223,6 +240,22 @@ $uiText = [
 		'validation_required' => 'Please fill out this field.',
 		'validation_number_range' => 'Please enter a number from {min} to {max}.',
 		'validation_integer_range' => 'Please enter an integer from {min} to {max}.',
+		'keychain' => 'Charm',
+		'no_keychain' => 'No charm',
+		'choose_keychain' => 'Choose a charm',
+		'search_keychain' => 'Search charms',
+		'keychain_seed' => 'Charm seed',
+		'inspect_3d_edit' => 'Edit in 3D',
+		'inspect_3d_hint' => 'Place your stickers and charm in the 3D preview, then copy the inspect link and paste it below.',
+		'inspect_import' => 'Import inspect link',
+		'inspect_import_placeholder' => 'Paste an inspect link or hex payload',
+		'inspect_import_apply' => 'Import',
+		'inspect_preview' => '3D preview',
+		'inspect_imported' => 'Inspect link imported. Run !ws again or respawn in game to apply it.',
+		'inspect_error_invalid' => 'That inspect link could not be read. Copy the full link and try again.',
+		'inspect_error_weapon_mismatch' => 'That inspect link is for a different weapon.',
+		'inspect_error_unknown_paint' => 'That inspect link uses a skin that is not available here.',
+		'inspect_error_failed' => 'Import failed. Please refresh and try again.',
 	],
 ];
 
@@ -633,6 +666,144 @@ function readStickerValuesFromPost($slotCount, $stickers)
 	}
 	return $values;
 }
+function readKeychainValueFromPost($keychains)
+{
+	if (!array_key_exists('keychain_present', $_POST)) {
+		return null;
+	}
+	$id = (int)($_POST['keychain_id'] ?? 0);
+	if (!array_key_exists($id, $keychains)) {
+		$id = 0;
+	}
+	if ($id === 0) {
+		return defaultKeychainValue();
+	}
+	// Les offsets viennent d'un import 3D : on les conserve tant que le charm
+	// reste le même, seul le seed est modifiable depuis le formulaire.
+	$posted = keychainValueParts((string)($_POST['keychain_value'] ?? ''));
+	$keepOffsets = $posted['id'] === $id;
+	return buildKeychainValueFromParts($id, [
+		'x' => $keepOffsets ? $posted['x'] : 0,
+		'y' => $keepOffsets ? $posted['y'] : 0,
+		'z' => $keepOffsets ? $posted['z'] : 0,
+		'seed' => array_key_exists('keychain_seed', $_POST) ? (int)$_POST['keychain_seed'] : ($keepOffsets ? $posted['seed'] : 0),
+	]);
+}
+
+function keychainsFromJson()
+{
+	$keychains = [
+		0 => [
+			'id' => 0,
+			'name' => t('no_keychain'),
+			'image' => '',
+		],
+	];
+	foreach (UtilsClass::keychainsFromJson() as $keychain) {
+		$id = (int)($keychain['id'] ?? 0);
+		$keychains[$id] = [
+			'id' => $id,
+			'name' => $keychain['name'] ?? '',
+			'image' => $keychain['image'] ?? '',
+		];
+	}
+	ksort($keychains);
+	return $keychains;
+}
+
+function defaultKeychainValue()
+{
+	return '0;0;0;0;0';
+}
+
+function keychainValueParts($value)
+{
+	$parts = array_pad(explode(';', (string)$value), 5, '');
+	return [
+		'id' => max(0, (int)($parts[0] ?? 0)),
+		'x' => stickerNumber($parts[1] ?? null, -100, 100, 0),
+		'y' => stickerNumber($parts[2] ?? null, -100, 100, 0),
+		'z' => stickerNumber($parts[3] ?? null, -100, 100, 0),
+		'seed' => max(0, min(100000, (int)($parts[4] ?? 0))),
+	];
+}
+
+function buildKeychainValueFromParts($id, $params)
+{
+	$id = max(0, (int)$id);
+	if ($id === 0) {
+		return defaultKeychainValue();
+	}
+	$x = stickerFloatValue(stickerNumber($params['x'] ?? 0, -100, 100, 0));
+	$y = stickerFloatValue(stickerNumber($params['y'] ?? 0, -100, 100, 0));
+	$z = stickerFloatValue(stickerNumber($params['z'] ?? 0, -100, 100, 0));
+	$seed = max(0, min(100000, (int)($params['seed'] ?? 0)));
+	return "{$id};{$x};{$y};{$z};{$seed}";
+}
+
+/**
+ * La colonne `weapon_keychain` n'existe que sur les schémas WeaponPaints récents.
+ */
+function keychainColumnAvailable($db)
+{
+	static $available = null;
+	if ($available === null) {
+		$available = columnExists($db, 'wp_player_skins', 'weapon_keychain');
+	}
+	return $available;
+}
+
+function keychainDataFile()
+{
+	$currentLanguage = UtilsClass::currentLanguage();
+	$language = in_array($currentLanguage, ['zh-CN', 'en'], true) ? "keychains_{$currentLanguage}" : (defined('KEYCHAIN_LANGUAGE') ? KEYCHAIN_LANGUAGE : 'keychains_en');
+	if (!is_file(__DIR__ . "/data/{$language}.json")) {
+		$language = 'keychains_en';
+	}
+	return "data/{$language}.json";
+}
+
+/**
+ * Construit l'item normalisé attendu par InspectLink depuis une ligne de base.
+ */
+function inspectItemFromRow($row, $defindex, $keychainValue = null)
+{
+	$slotCount = min(5, stickerSlotCount($defindex));
+	$stickerValues = stickerValuesFromRow($row);
+	$stickers = [];
+	for ($i = 0; $i < $slotCount; $i++) {
+		$parts = stickerValueParts($stickerValues[$i]);
+		if ($parts['id'] > 0) {
+			$stickers[$i] = $parts;
+		}
+	}
+
+	$keychain = null;
+	if ($keychainValue !== null && $keychainValue !== '') {
+		$parts = keychainValueParts($keychainValue);
+		if ($parts['id'] > 0) {
+			$keychain = $parts;
+		}
+	}
+
+	$row['weapon_defindex'] = (int)$defindex;
+	return InspectLink::itemFromParts($row, $stickers, $keychain);
+}
+
+/**
+ * Données de référence contre lesquelles un lien importé est recoupé.
+ */
+function inspectReference($defindex, $skins, $stickers, $keychains)
+{
+	return [
+		'defindex' => (int)$defindex,
+		'paints' => $skins[(int)$defindex] ?? [],
+		'stickers' => $stickers,
+		'keychains' => $keychains,
+		'slots' => stickerSlotCount($defindex),
+	];
+}
+
 function stickerDataFile()
 {
 	$currentLanguage = UtilsClass::currentLanguage();
@@ -1103,6 +1274,131 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 			'params' => stickerValueParts($responseValue),
 		], $fallbackUrl);
 	}
+	if ($postAction === 'import_inspect_link') {
+		$id = cleanSteamId($_POST['id'] ?? '');
+		$team = selectedTeam();
+		$preset = findPreset($db, $presetTable, $id);
+		$defindex = (int)($_POST['weapon_defindex'] ?? 0);
+		$fallbackUrl = "index.php?action=edit&id={$id}&team={$team}";
+		$skins = UtilsClass::skinsFromJson();
+		if (!$preset || !canEditPreset($preset) || $defindex <= 0 || !array_key_exists($defindex, $skins)) {
+			go("{$fallbackUrl}&error=inspect_failed");
+		}
+
+		$decoded = InspectLink::decode((string)($_POST['inspect_link'] ?? ''));
+		if (!$decoded['ok']) {
+			go("{$fallbackUrl}&error=inspect_{$decoded['error']}");
+		}
+
+		// Le lien vient du joueur : tout est recoupé avec les données du site.
+		$sanitized = InspectLink::sanitize(
+			$decoded['item'],
+			inspectReference($defindex, $skins, stickersFromJson(), keychainsFromJson())
+		);
+		if (!$sanitized['ok']) {
+			go("{$fallbackUrl}&error=inspect_{$sanitized['error']}");
+		}
+
+		$item = $sanitized['item'];
+		$steamid = $preset['steamid'];
+		$knifes = UtilsClass::getKnifeTypes();
+		$hasKeychainColumn = keychainColumnAvailable($db);
+
+		$stickerValues = defaultStickerValues();
+		foreach ($item['stickers'] as $sticker) {
+			$stickerValues[(int)$sticker['slot']] = buildStickerValueFromParts($sticker['id'], $sticker['id'], $sticker);
+		}
+		$keychainValue = $item['keychain'] !== null
+			? buildKeychainValueFromParts($item['keychain']['id'], $item['keychain'])
+			: defaultKeychainValue();
+
+		$paint = (int)$item['paintindex'];
+		$wear = (float)$item['paintwear'];
+		$seed = (int)$item['paintseed'];
+		$stattrak = $item['stattrak'] ? 1 : 0;
+		$stattrakCount = $stattrak ? (int)$item['stattrak_count'] : 0;
+		$nameTag = $item['customname'] !== '' ? $item['customname'] : null;
+
+		$assignments = [
+			'`weapon_paint_id` = :weapon_paint_id',
+			'`weapon_wear` = :weapon_wear',
+			'`weapon_seed` = :weapon_seed',
+			'`weapon_stattrak` = :weapon_stattrak',
+			'`weapon_stattrak_count` = :weapon_stattrak_count',
+			'`weapon_nametag` = :weapon_nametag',
+			'`weapon_sticker_0` = :weapon_sticker_0',
+			'`weapon_sticker_1` = :weapon_sticker_1',
+			'`weapon_sticker_2` = :weapon_sticker_2',
+			'`weapon_sticker_3` = :weapon_sticker_3',
+			'`weapon_sticker_4` = :weapon_sticker_4',
+		];
+		$insertColumns = ['`steamid`', '`weapon_defindex`', '`weapon_paint_id`', '`weapon_wear`', '`weapon_seed`', '`weapon_stattrak`', '`weapon_stattrak_count`', '`weapon_nametag`', '`weapon_sticker_0`', '`weapon_sticker_1`', '`weapon_sticker_2`', '`weapon_sticker_3`', '`weapon_sticker_4`', '`weapon_team`'];
+		$insertValues = [':steamid', ':weapon_defindex', ':weapon_paint_id', ':weapon_wear', ':weapon_seed', ':weapon_stattrak', ':weapon_stattrak_count', ':weapon_nametag', ':weapon_sticker_0', ':weapon_sticker_1', ':weapon_sticker_2', ':weapon_sticker_3', ':weapon_sticker_4', ':team'];
+		if ($hasKeychainColumn) {
+			$assignments[] = '`weapon_keychain` = :weapon_keychain';
+			array_splice($insertColumns, -1, 0, ['`weapon_keychain`']);
+			array_splice($insertValues, -1, 0, [':weapon_keychain']);
+		}
+
+		$isKnifeSkin = in_array($defindex, knifeDefindexes($knifes), true);
+		$updated = false;
+		foreach (writeTeams($team) as $targetTeam) {
+			if ($isKnifeSkin) {
+				$db->query("INSERT INTO `wp_player_knife` (`steamid`, `knife`, `weapon_team`)
+					VALUES(:steamid, :knife, :team)
+					ON DUPLICATE KEY UPDATE `knife` = :knife_update", [
+					"steamid" => $steamid,
+					"knife" => $knifes[$defindex]['weapon_name'],
+					"team" => $targetTeam,
+					"knife_update" => $knifes[$defindex]['weapon_name'],
+				]);
+			}
+
+			$bindings = [
+				"steamid" => $steamid,
+				"weapon_defindex" => $defindex,
+				"weapon_paint_id" => $paint,
+				"weapon_wear" => $wear,
+				"weapon_seed" => $seed,
+				"weapon_stattrak" => $stattrak,
+				"weapon_stattrak_count" => $stattrakCount,
+				"weapon_nametag" => $nameTag,
+				"weapon_sticker_0" => $stickerValues[0],
+				"weapon_sticker_1" => $stickerValues[1],
+				"weapon_sticker_2" => $stickerValues[2],
+				"weapon_sticker_3" => $stickerValues[3],
+				"weapon_sticker_4" => $stickerValues[4],
+				"team" => $targetTeam,
+			];
+			if ($hasKeychainColumn) {
+				$bindings['weapon_keychain'] = $keychainValue;
+			}
+
+			$existing = $db->select("SELECT `weapon_defindex` FROM `wp_player_skins`
+				WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team LIMIT 1", [
+				"steamid" => $steamid,
+				"weapon_defindex" => $defindex,
+				"team" => $targetTeam,
+			]);
+
+			if ($existing) {
+				$db->query("UPDATE `wp_player_skins` SET " . implode(', ', $assignments) . "
+					WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team", $bindings);
+			} else {
+				$db->query("INSERT INTO `wp_player_skins` (" . implode(', ', $insertColumns) . ")
+					VALUES (" . implode(', ', $insertValues) . ")", $bindings);
+			}
+
+			saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, $paint, $wear, $seed, $stattrak, $stattrakCount, $nameTag);
+			$updated = true;
+		}
+
+		if (!$updated) {
+			go("{$fallbackUrl}&error=inspect_failed");
+		}
+		go("{$fallbackUrl}&imported=1");
+	}
+
 	if ($postAction === 'save_skin') {
 		$id = cleanSteamId($_POST['id'] ?? '');
 		$team = selectedTeam();
@@ -1118,6 +1414,8 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$knifes = UtilsClass::getKnifeTypes();
 		$gloves = glovesFromJson();
 		$stickers = stickersFromJson();
+		$keychains = keychainsFromJson();
+		$hasKeychainColumn = keychainColumnAvailable($db);
 		$selectedRows = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`
 			FROM `wp_player_skins`
 			WHERE `steamid` = :steamid AND `weapon_team` = :team", [
@@ -1308,7 +1606,8 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 			$hasExplicitWear = array_key_exists('wear', $_POST);
 			$hasExplicitSeed = array_key_exists('seed', $_POST);
 			$submittedStickerValues = readStickerValuesFromPost(stickerSlotCount($defindex), $stickers);
-			$hasExplicitSettings = $hasExplicitWear || $hasExplicitSeed || array_key_exists('stattrak', $_POST) || array_key_exists('nametag_present', $_POST) || $submittedStickerValues !== null;
+			$submittedKeychainValue = $hasKeychainColumn ? readKeychainValueFromPost($keychains) : null;
+			$hasExplicitSettings = $hasExplicitWear || $hasExplicitSeed || array_key_exists('stattrak', $_POST) || array_key_exists('nametag_present', $_POST) || $submittedStickerValues !== null || $submittedKeychainValue !== null;
 			$submittedWear = $hasExplicitWear ? max(0.0, min(1.0, (float)$_POST['wear'])) : null;
 			$submittedSeed = $hasExplicitSeed ? max(0, min(1000, (int)$_POST['seed'])) : null;
 			$submittedStatTrak = array_key_exists('stattrak', $_POST) ? 1 : 0;
@@ -1359,9 +1658,22 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					$stickerValues = $existing ? stickerValuesFromRow($existing[0]) : defaultStickerValues();
 				}
 
+				// La colonne charm n'est touchée que si le formulaire l'a envoyée,
+				// pour ne pas l'effacer lors d'un simple changement de skin.
+				$keychainAssignment = '';
+				$keychainInsertColumn = '';
+				$keychainInsertValue = '';
+				$keychainBinding = [];
+				if ($hasKeychainColumn && $submittedKeychainValue !== null) {
+					$keychainAssignment = ', `weapon_keychain` = :weapon_keychain';
+					$keychainInsertColumn = ', `weapon_keychain`';
+					$keychainInsertValue = ', :weapon_keychain';
+					$keychainBinding = ["weapon_keychain" => $submittedKeychainValue];
+				}
+
 				if ($existing) {
 					$db->query("UPDATE `wp_player_skins`
-						SET `weapon_paint_id` = :weapon_paint_id, `weapon_wear` = :weapon_wear, `weapon_seed` = :weapon_seed, `weapon_stattrak` = :weapon_stattrak, `weapon_stattrak_count` = :weapon_stattrak_count, `weapon_nametag` = :weapon_nametag, `weapon_sticker_0` = :weapon_sticker_0, `weapon_sticker_1` = :weapon_sticker_1, `weapon_sticker_2` = :weapon_sticker_2, `weapon_sticker_3` = :weapon_sticker_3, `weapon_sticker_4` = :weapon_sticker_4
+						SET `weapon_paint_id` = :weapon_paint_id, `weapon_wear` = :weapon_wear, `weapon_seed` = :weapon_seed, `weapon_stattrak` = :weapon_stattrak, `weapon_stattrak_count` = :weapon_stattrak_count, `weapon_nametag` = :weapon_nametag, `weapon_sticker_0` = :weapon_sticker_0, `weapon_sticker_1` = :weapon_sticker_1, `weapon_sticker_2` = :weapon_sticker_2, `weapon_sticker_3` = :weapon_sticker_3, `weapon_sticker_4` = :weapon_sticker_4{$keychainAssignment}
 						WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team", [
 						"steamid" => $steamid,
 						"weapon_defindex" => $defindex,
@@ -1377,11 +1689,11 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 						"weapon_sticker_3" => $stickerValues[3],
 						"weapon_sticker_4" => $stickerValues[4],
 						"team" => $targetTeam,
-					]);
+					] + $keychainBinding);
 				} else {
 					$db->query("INSERT INTO `wp_player_skins`
-						(`steamid`, `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_team`)
-						VALUES (:steamid, :weapon_defindex, :weapon_paint_id, :weapon_wear, :weapon_seed, :weapon_stattrak, :weapon_stattrak_count, :weapon_nametag, :weapon_sticker_0, :weapon_sticker_1, :weapon_sticker_2, :weapon_sticker_3, :weapon_sticker_4, :team)", [
+						(`steamid`, `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`{$keychainInsertColumn}, `weapon_team`)
+						VALUES (:steamid, :weapon_defindex, :weapon_paint_id, :weapon_wear, :weapon_seed, :weapon_stattrak, :weapon_stattrak_count, :weapon_nametag, :weapon_sticker_0, :weapon_sticker_1, :weapon_sticker_2, :weapon_sticker_3, :weapon_sticker_4{$keychainInsertValue}, :team)", [
 						"steamid" => $steamid,
 						"weapon_defindex" => $defindex,
 						"weapon_paint_id" => $paint,
@@ -1396,7 +1708,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 						"weapon_sticker_3" => $stickerValues[3],
 						"weapon_sticker_4" => $stickerValues[4],
 						"team" => $targetTeam,
-					]);
+					] + $keychainBinding);
 				}
 				saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, $paint, $wear, $seed, $stattrak, $stattrakCount, $nameTag);
 			}
@@ -1528,13 +1840,22 @@ if ($action === 'edit') {
 	$stickers = stickersFromJson();
 	$music = musicFromJson();
 	$pins = pinsFromJson();
-	$selectedRows = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`
+	$keychains = keychainsFromJson();
+	$hasKeychainColumn = keychainColumnAvailable($db);
+	$keychainSelect = $hasKeychainColumn ? ', `weapon_keychain`' : '';
+	$selectedRows = $db->select("SELECT `weapon_defindex`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, `weapon_stattrak`, `weapon_stattrak_count`, `weapon_nametag`, `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`{$keychainSelect}
 		FROM `wp_player_skins`
 		WHERE `steamid` = :steamid AND `weapon_team` = :team", [
 		"steamid" => $steamid,
 		"team" => $displayTeam,
 	]);
 	$selectedSkins = UtilsClass::getSelectedSkins($selectedRows);
+	// getSelectedSkins tronque la ligne : on garde les lignes brutes pour l'encodage
+	// du lien d'inspection, qui a besoin du compteur StatTrak et du charm.
+	$selectedRowsByDefindex = [];
+	foreach ($selectedRows as $selectedRow) {
+		$selectedRowsByDefindex[(int)$selectedRow['weapon_defindex']] = $selectedRow;
+	}
 	$selectedKnifeRows = $db->select("SELECT * FROM `wp_player_knife` WHERE `steamid` = :steamid AND `weapon_team` = :team LIMIT 1", [
 		"steamid" => $steamid,
 		"team" => $displayTeam,
@@ -1716,8 +2037,12 @@ $returnTo = safeReturnUrl($returnTo);
 			</header>
 
 			<?php if (isset($_GET['saved'])) : ?><div class="alert alert-success"><?= h(t('saved_notice')) ?></div><?php endif; ?>
+			<?php if (isset($_GET['imported'])) : ?><div class="alert alert-success"><?= h(t('inspect_imported')) ?></div><?php endif; ?>
 			<?php if (($_GET['error'] ?? '') === 'loadout_password') : ?>
 				<div class="alert alert-danger"><?= h(t('loadout_password_required')) ?></div>
+			<?php elseif (strpos((string)($_GET['error'] ?? ''), 'inspect_') === 0) : ?>
+				<?php $inspectErrorKey = 'inspect_error_' . substr((string)$_GET['error'], strlen('inspect_')); ?>
+				<div class="alert alert-danger"><?= h(t($inspectErrorKey) !== $inspectErrorKey ? t($inspectErrorKey) : t('inspect_error_failed')) ?></div>
 			<?php elseif (isset($_GET['error'])) : ?>
 				<div class="alert alert-danger"><?= h(t('save_failed')) ?></div>
 			<?php endif; ?>
@@ -2320,6 +2645,29 @@ $returnTo = safeReturnUrl($returnTo);
 					}
 					$initialNameTagEnabled = $initialNameTagValue !== null && $initialNameTagValue !== '';
 					$initialStickerIds = array_map('stickerIdFromValue', $initialStickerValues);
+					$initialKeychainValue = (string)($selectedRowsByDefindex[(int)$defindex]['weapon_keychain'] ?? defaultKeychainValue());
+					$initialKeychainParts = keychainValueParts($initialKeychainValue);
+					$initialKeychain = $keychains[$initialKeychainParts['id']] ?? $keychains[0];
+					$inspectRow = [];
+					for ($inspectSlot = 0; $inspectSlot < 5; $inspectSlot++) {
+						$inspectRow["weapon_sticker_{$inspectSlot}"] = $initialStickerValues[$inspectSlot] ?? defaultStickerValue();
+					}
+					$inspectRow['weapon_wear'] = $initialWearValue;
+					$inspectRow['weapon_seed'] = $initialSeedValue;
+					$inspectRow['weapon_stattrak'] = $initialStatTrakValue;
+					// getSelectedSkins() ne remonte pas le compteur StatTrak : sans
+					// valeur en cache, on le relit sur la ligne brute pour que le
+					// lien porte le compteur réellement enregistré.
+					$inspectStatTrakCount = (int)($selectedRowsByDefindex[(int)$defindex]['weapon_stattrak_count'] ?? 0);
+					if ($initialStatTrakCountValue > 0) {
+						$inspectStatTrakCount = $initialStatTrakCountValue;
+					}
+					$inspectRow['weapon_stattrak_count'] = $initialStatTrakValue ? $inspectStatTrakCount : 0;
+					$inspectRow['weapon_nametag'] = $initialNameTagValue;
+					$inspectRow['weapon_paint_id'] = $currentPaintId;
+					$inspectHex = $currentPaintId > 0
+						? InspectLink::encode(inspectItemFromRow($inspectRow, (int)$defindex, $initialKeychainValue))
+						: '';
 					$modalId = "weaponModal{$defindex}";
 					$skinPickerId = "skinPicker{$defindex}";
 					?>
@@ -2471,6 +2819,40 @@ $returnTo = safeReturnUrl($returnTo);
 														<?php endfor; ?>
 													</div>
 												</div>
+												<?php if ($hasKeychainColumn) : ?>
+													<div class="col-12 keychain-section">
+														<input type="hidden" name="keychain_present" value="1">
+														<input type="hidden" name="keychain_value" value="<?= h($initialKeychainValue) ?>">
+														<div class="row g-3">
+															<div class="col-sm-8">
+																<label><?= h(t('keychain')) ?>
+																	<select name="keychain_id" class="form-control">
+																		<?php foreach ($keychains as $keychainId => $keychainItem) : ?>
+																			<option value="<?= (int)$keychainId ?>" <?= (int)$keychainId === (int)$initialKeychainParts['id'] ? 'selected' : '' ?>><?= h($keychainItem['name']) ?></option>
+																		<?php endforeach; ?>
+																	</select>
+																</label>
+															</div>
+															<div class="col-sm-4">
+																<label><?= h(t('keychain_seed')) ?>
+																	<input type="number" name="keychain_seed" min="0" max="100000" step="1" value="<?= (int)$initialKeychainParts['seed'] ?>" class="form-control">
+																</label>
+															</div>
+														</div>
+													</div>
+												<?php endif; ?>
+												<div class="col-12 inspect-section">
+													<div class="inspect-section-title"><?= h(t('inspect_preview')) ?></div>
+													<p class="inspect-hint"><?= h(t('inspect_3d_hint')) ?></p>
+													<div class="inspect-actions">
+														<?php if ($inspectHex !== '') : ?>
+															<a class="btn btn-sm btn-outline-light" href="<?= h(InspectLink::viewerUrl($inspectHex)) ?>" target="_blank" rel="noopener noreferrer"><?= h(t('inspect_3d_edit')) ?></a>
+														<?php else : ?>
+															<button type="button" class="btn btn-sm btn-outline-light" disabled><?= h(t('inspect_3d_edit')) ?></button>
+														<?php endif; ?>
+														<button type="button" class="btn btn-sm btn-outline-light" data-inspect-import data-inspect-weapon-defindex="<?= (int)$defindex ?>" data-inspect-weapon-name="<?= h($default['weapon_name'] . ' - ' . $currentSkin['paint_name']) ?>"><?= h(t('inspect_import')) ?></button>
+													</div>
+												</div>
 											</div>
 										</div>
 										<div class="modal-footer">
@@ -2485,6 +2867,29 @@ $returnTo = safeReturnUrl($returnTo);
 				<?php endforeach; ?>
 			</div>
 		<?php endif; ?>
+	<div class="modal fade inspect-import-modal" id="inspectImportModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<form method="post" class="modal-content">
+				<input type="hidden" name="action" value="import_inspect_link">
+				<input type="hidden" name="id" value="<?= h($currentPreset['steamid'] ?? '') ?>">
+				<input type="hidden" name="team" value="<?= h((string)($team ?? 1)) ?>">
+				<input type="hidden" name="weapon_defindex" value="" data-inspect-defindex>
+				<div class="modal-header">
+					<h5 class="modal-title"><?= h(t('inspect_import')) ?></h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
+				</div>
+				<div class="modal-body">
+					<div class="inspect-import-weapon" data-inspect-weapon-label></div>
+					<p class="inspect-hint"><?= h(t('inspect_3d_hint')) ?></p>
+					<input type="text" name="inspect_link" class="form-control" placeholder="<?= h(t('inspect_import_placeholder')) ?>" autocomplete="off" spellcheck="false" required data-inspect-input>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('cancel')) ?></button>
+					<button type="submit" class="btn btn-primary"><?= h(t('inspect_import_apply')) ?></button>
+				</div>
+			</form>
+		</div>
+	</div>
 	<div class="modal fade sticker-picker-modal" id="stickerPickerModal" tabindex="-1" aria-hidden="true">
 		<div class="modal-dialog modal-lg modal-dialog-scrollable">
 			<div class="modal-content">
@@ -3312,6 +3717,39 @@ $returnTo = safeReturnUrl($returnTo);
 				toggle.addEventListener('change', sync);
 				sync();
 			});
+
+			var inspectImportEl = document.getElementById('inspectImportModal');
+			if (inspectImportEl && window.bootstrap) {
+				var inspectModal = new bootstrap.Modal(inspectImportEl);
+				var inspectDefindexInput = inspectImportEl.querySelector('[data-inspect-defindex]');
+				var inspectWeaponLabel = inspectImportEl.querySelector('[data-inspect-weapon-label]');
+				var inspectLinkInput = inspectImportEl.querySelector('[data-inspect-input]');
+
+				document.querySelectorAll('[data-inspect-import]').forEach(function (button) {
+					button.addEventListener('click', function () {
+						if (inspectDefindexInput) inspectDefindexInput.value = button.getAttribute('data-inspect-weapon-defindex') || '';
+						if (inspectWeaponLabel) inspectWeaponLabel.textContent = button.getAttribute('data-inspect-weapon-name') || '';
+						if (inspectLinkInput) inspectLinkInput.value = '';
+						// La modale d'arme et celle d'import ne peuvent pas coexister :
+						// on ferme la première avant d'ouvrir la seconde.
+						var parentModalEl = button.closest('.modal');
+						var parentModal = parentModalEl ? bootstrap.Modal.getInstance(parentModalEl) : null;
+						if (parentModal) {
+							parentModalEl.addEventListener('hidden.bs.modal', function open() {
+								parentModalEl.removeEventListener('hidden.bs.modal', open);
+								inspectModal.show();
+							});
+							parentModal.hide();
+						} else {
+							inspectModal.show();
+						}
+					});
+				});
+
+				inspectImportEl.addEventListener('shown.bs.modal', function () {
+					if (inspectLinkInput) inspectLinkInput.focus();
+				});
+			}
 		})();
 	</script>
 </body>
