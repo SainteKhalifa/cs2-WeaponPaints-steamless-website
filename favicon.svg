@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CS2 Community Server Skin Manager icon">
-  <rect width="64" height="64" rx="14" fill="#0d1117"/>
-  <rect x="14" y="16" width="36" height="32" rx="8" fill="#161b22" stroke="#4f8cff" stroke-width="3"/>
-  <path d="M22 26h20M22 38h20" stroke="#8fb6ff" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="29" cy="26" r="4" fill="#f0f6fc"/>
-  <circle cx="37" cy="38" r="4" fill="#f0f6fc"/>
-  <path d="M22 48h20" stroke="#30363d" stroke-width="4" stroke-linecap="round"/>
-</svg>

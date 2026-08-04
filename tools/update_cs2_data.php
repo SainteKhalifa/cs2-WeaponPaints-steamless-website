@@ -773,6 +773,35 @@ function buildSimpleIdRows(array $items, string $nameField): array
     return [$rows, $skipped];
 }
 
+function buildCollectibleRows(array $items): array
+{
+    $allowedTypes = [
+        'Pin',
+        'Service Medal',
+        'Operation Coin',
+        'Pick\'Em Coin',
+        'Old Pick\'Em Trophy',
+        'Fantasy Trophy',
+        'Tournament Finalist Trophy',
+        'Premier Season Coin',
+        'Map Contributor Coin',
+        null,
+    ];
+    $allowedItems = [];
+    $filtered = [];
+
+    foreach ($items as $item) {
+        if (!array_key_exists('type', $item) || !in_array($item['type'], $allowedTypes, true)) {
+            $filtered[] = (string)($item['name'] ?? '(missing name)');
+            continue;
+        }
+        $allowedItems[] = $item;
+    }
+
+    [$rows, $skipped] = buildSimpleIdRows($allowedItems, 'name');
+    return [$rows, $skipped, $filtered];
+}
+
 function normalizeMusicKitName(string $name): string
 {
     return trim(preg_replace('/^StatTrak™\s*/u', '', $name));
@@ -885,6 +914,7 @@ try {
 
         $agentsSourceCount = $musicSourceCount = $stickerSourceCount = $keychainSourceCount = $collectiblesSourceCount = 0;
         $agents = $music = $stickers = $keychains = $collectibles = [];
+        $collectiblesFiltered = [];
         $agentSkipped = $musicSkipped = $stickerSkipped = $keychainSkipped = $collectibleSkipped = [];
 
         if ($only !== 'skins') {
@@ -917,7 +947,7 @@ try {
 
             echo "Downloading {$language} collectibles data...\n";
             $collectibleItems = fetchJson($urls['collectibles'], sourceCachePath($sourceCacheDir, $language, 'collectibles'), !$dryRun);
-            [$collectibles, $collectibleSkipped] = buildSimpleIdRows($collectibleItems, 'name');
+            [$collectibles, $collectibleSkipped, $collectiblesFiltered] = buildCollectibleRows($collectibleItems);
             $collectiblesSourceCount = count($collectibleItems);
             unset($collectibleItems);
         }
@@ -954,15 +984,16 @@ try {
             'stickers_written' => count($stickers),
             'keychains_written' => count($keychains),
             'collectibles_written' => count($collectibles),
+            'collectibles_filtered' => count($collectiblesFiltered),
             'skipped' => count($skinSkipped) + count($agentSkipped) + count($musicSkipped) + count($stickerSkipped) + count($keychainSkipped) + count($collectibleSkipped),
         ];
 
-        unset($skins, $gloves, $agents, $music, $stickers, $keychains, $collectibles, $skinSkipped, $agentSkipped, $musicSkipped, $stickerSkipped, $keychainSkipped, $collectibleSkipped);
+        unset($skins, $gloves, $agents, $music, $stickers, $keychains, $collectibles, $skinSkipped, $agentSkipped, $musicSkipped, $stickerSkipped, $keychainSkipped, $collectibleSkipped, $collectiblesFiltered);
     }
 
     echo $dryRun ? "\nDry run complete. No files were changed.\n" : "\nUpdate complete.\n";
     foreach ($summary as $row) {
-        echo "{$row['language']}: skinsSource={$row['skins_source']}, agentsSource={$row['agents_source']}, musicSource={$row['music_source']}, stickersSource={$row['stickers_source']}, keychainsSource={$row['keychains_source']}, collectiblesSource={$row['collectibles_source']}, skins={$row['skins_written']}, gloves={$row['gloves_written']}, agents={$row['agents_written']}, music={$row['music_written']}, stickers={$row['stickers_written']}, keychains={$row['keychains_written']}, collectibles={$row['collectibles_written']}, skipped={$row['skipped']}\n";
+        echo "{$row['language']}: skinsSource={$row['skins_source']}, agentsSource={$row['agents_source']}, musicSource={$row['music_source']}, stickersSource={$row['stickers_source']}, keychainsSource={$row['keychains_source']}, collectiblesSource={$row['collectibles_source']}, skins={$row['skins_written']}, gloves={$row['gloves_written']}, agents={$row['agents_written']}, music={$row['music_written']}, stickers={$row['stickers_written']}, keychains={$row['keychains_written']}, collectibles={$row['collectibles_written']}, collectiblesFiltered={$row['collectibles_filtered']}, skipped={$row['skipped']}\n";
     }
     if (!$dryRun) {
         echo "Backups: {$backupDir}\n";

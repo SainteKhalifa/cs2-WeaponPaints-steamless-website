@@ -21,6 +21,16 @@ function config_value(string $name, string $fallback): string
     return $value === false ? $fallback : $value;
 }
 
+function config_int(string $name, int $fallback): int
+{
+    $value = getenv($name);
+    if ($value === false || $value === '' || !is_numeric($value)) {
+        return $fallback;
+    }
+
+    return (int)$value;
+}
+
 function config_flag(string $name, bool $fallback): bool
 {
     $value = getenv($name);
@@ -33,8 +43,14 @@ function config_flag(string $name, bool $fallback): bool
 }
 
 define('DEFAULT_LANGUAGE', config_value('DEFAULT_LANGUAGE', 'en')); // Available values: en, zh-CN
+define('SITE_NAME_EN', config_value('SITE_NAME_EN', 'CS2 WeaponPaints Loadout Manager')); // English name and fallback
+define('SITE_NAME_ZH_CN', config_value('SITE_NAME_ZH_CN', 'CS2 WeaponPaints 配置管理器')); // Simplified Chinese name
 define('SITE_ACCESS_PASSWORD', config_value('SITE_ACCESS_PASSWORD', '')); // Set a password to enable access protection
 define('ADMIN_PASSWORD', config_value('ADMIN_PASSWORD', '')); // Leave empty to disable administrator mode
+
+define('AUTH_RATE_LIMIT_ATTEMPTS', config_int('AUTH_RATE_LIMIT_ATTEMPTS', 5)); // Failed attempts allowed within the time window
+define('AUTH_RATE_LIMIT_WINDOW_SECONDS', config_int('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800)); // Failure tracking window: 30 minutes
+define('AUTH_RATE_LIMIT_LOCK_SECONDS', config_int('AUTH_RATE_LIMIT_LOCK_SECONDS', 60)); // Lock duration: 1 minute
 
 define('DB_HOST', config_value('DB_HOST', '127.0.0.1'));
 define('DB_PORT', config_value('DB_PORT', '3306'));

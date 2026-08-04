@@ -615,11 +615,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSU6l97y4Tn7VapFB6kzsLmrXcP7vSvMfY_d6jAWTfHlLZ34rA4GXrnlkh052_TwomvdWXXMFHAFOJ0XQ"
     },
     {
-        "id": "1000",
-        "name": "Operation Payback Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSU6lt44Yn9_kDYUgjhjpny6R1L7uG9JqVoIqXBCDPJlrcm5rlrGnixx09352iBm9v9eHuTP1AhD8ciRrQKthem0oqwRNsC8zE"
-    },
-    {
         "id": "1001",
         "name": "Operation Payback Challenge Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSU6lt44Yn9_kDYUgjhjpny6R1L7uG9V6diKf7CQGHJxLl347dsSnC1xhgitTjXnoqodCmfbAZxC5IhReENuxK5kdbgZe78p1uJXR7WsSM"
@@ -668,11 +663,6 @@
         "id": "1010",
         "name": "Library Map Coin",
         "image": "https://cdn.steamstatic.com/apps/730/icons/econ/status_icons/maptoken_library.632d2c3e46f17cb1a3262823ac514cfe03cbb534.png"
-    },
-    {
-        "id": "1012",
-        "name": "Operation Bravo Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYQw_wiJnf7SNI_LyqMKdvcanFWDbJkrojs7lrGnHrxhty4miHno2tdyiSPAV0X5YlTO4PrFDmxTXlQfCs"
     },
     {
         "id": "1013",
@@ -725,11 +715,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSa5EZh-4zx5Gb0SBj2m9jl-3UNt6Ktbv1sI6jLWz_Cmb505bBqF36yzBxz5mSHyd76JHOVPwFxFNIuEitj3-kE"
     },
     {
-        "id": "1023",
-        "name": "Operation Phoenix Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYURX-m5jp5R1L7uG9JqFrc_LHXz_AxLsktLNtGyjnlh8l6juHn939J3-TblQhX8d4E-de4UGm0oqwIX_d1W4"
-    },
-    {
         "id": "1024",
         "name": "Operation Phoenix Challenge Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYURX-m5jp5R1Z_f2gcqEjcaTDVzHFwu8m6LU7Tn_iwUV-sj6DmNmsJ3mXPAIiC5ZxF-EJthPtksqnab3zOSmaAA"
@@ -743,11 +728,6 @@
         "id": "1026",
         "name": "Gold Operation Phoenix Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYURX-m5jp5R1c4P6qJqI6JPLGCDCSwugv6LM7Gi3qzUp_52_Sw9qoI3vFa1QnX5RxQuQP4Bim0oqwHnYZUHk"
-    },
-    {
-        "id": "1027",
-        "name": "Operation Breakout All Access Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYQw_0n53v6DZk__O9e-o_I6jHCDXHmetzs7QwGXjilBsht2XTzI6vdS6VawN0DMR2QbUC4xS8jJS5YIKIqeEY"
     },
     {
         "id": "1028",
@@ -1060,11 +1040,6 @@
         "image": "https://cdn.steamstatic.com/apps/730/icons/econ/status_icons/maptoken_chalice.48c968987f8f842c3327b7fd036dcb004a4580bf.png"
     },
     {
-        "id": "1315",
-        "name": "Operation Vanguard Access Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYVxz_mYPh7yZk__O9e-o5JPKVXDCWk7l147NrSn_qlBhw5zvUyYmvICrGbAZ0W5dyFLICsxK-jJS5YPaIOpIm"
-    },
-    {
         "id": "1316",
         "name": "Operation Vanguard Challenge Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYVxz_mYPh7yZk7eChZr5obvTLXzGRx70ntrQ8Gyqylkp16z-AnIz6JXuXbVN0X5B2QbID4xfpxtH5d7S1oMQnXZI"
@@ -1078,11 +1053,6 @@
         "id": "1318",
         "name": "Gold Operation Vanguard Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYVxz_mYPh7yZk6P2ibOo8dKmSDTGRx7on4bM9H3jkzBxy5DiByI78d3jGawZyApd4RLUMs0W4jJS5YNV8getu"
-    },
-    {
-        "id": "1326",
-        "name": "Operation Bloodhound Access Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYFyLhn4Xzs3RYvaT4OvQ1dqfGD2LIwrp3tLU4TXC2lhl36mjVyImuIy2XOFIpDcduBbldnjOjnbg"
     },
     {
         "id": "1327",
@@ -1108,11 +1078,6 @@
         "id": "1332",
         "name": "2015 Service Medal",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSE4ERj_YTx1VTiRRz9ocSwrHdkvbz-MPA9IqfBXmXHkrtwtrRrTnHjwk9_4mXdntb6cX_Dbw4pX8QjTbMMrFDmxcJUQ5Gx"
-    },
-    {
-        "id": "1335",
-        "name": "Operation Wildfire Access Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYFiLhn4XzsyAIvfT4Oac7JaPDV2HDwLlz5rRoSXjll0t-sW_RzdapeC3EOgZzCsBuBbld-Suze98"
     },
     {
         "id": "1336",
@@ -1158,11 +1123,6 @@
         "id": "1344",
         "name": "2016 Service Medal",
         "image": "https://cdn.steamstatic.com/apps/730/icons/econ/status_icons/service_medal_2016_lvl6.8ed43330da99f67344a7a875ac95e810b03ecae3.png"
-    },
-    {
-        "id": "1352",
-        "name": "Operation Hydra Access Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYGSLhn4Xzs3QKt6L2OqI6JqjDV2PExL4vtLE7Hi3mxkglsG-Em4yrdCiSZlV2XMZuBbld-pBZqVM"
     },
     {
         "id": "1357",
@@ -1280,11 +1240,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYGSLhkpf09CxO4rz6O_w-IfbBXGXBx-ov4Lc4TH7hxBsh6jjUzougeHOSOlUoCZZ4QbQIrFDmxX9Ak8jk"
     },
     {
-        "id": "4549",
-        "name": "Operation Shattered Web Premium Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYGCLhn4Xzs3IC7qSqOPZrJKfFVjPFxOwk4LloSnviwkgm4GTTzYmsci_COlNyD5VuBbldtMAjHj8"
-    },
-    {
         "id": "4550",
         "name": "Operation Shattered Web Challenge Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYGCLzjJnu5ycV7fb8Mac5ePXHVj-Rx70u6bU7HHHhlkklsD-DyouvJHyVPQ52DpQiFvlK7EdFW91jbg"
@@ -1303,11 +1258,6 @@
         "id": "4553",
         "name": "Diamond Operation Shattered Web Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYGCLhkpf09CxO4ryvO_M5IvbHWGOWk74i47BoHn7qxktzsDmAyNirInnBO1B1CJR3E7YKrFDmxSb9cnMh"
-    },
-    {
-        "id": "4554",
-        "name": "Katowice 2019 Viewer Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSc5EJ6447372b3SB76m5vfr3IKts2-abd-bqfLX2bHkb0ktbIwFnixx050sm6Gwtyocy7DaFd0XsB2RrUL5hDswYX5d7S14eSvCp4"
     },
     {
         "id": "4555",
@@ -1330,11 +1280,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSc5EJ6447372b3SB76m5vfr3IKts2ter1-NPGfQGXEkOgn4OMxSnjll0l_tWjUm9r7c33DaFQkW5B5E7QL5xnql4LkY-z8p1uJcTL4R6U"
     },
     {
-        "id": "4622",
-        "name": "Berlin 2019 Viewer Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSE8Vdn-Ibw7lz1fg34nZ3l8B0Jv6P3V7RsM-PdXmGSk70h4LI7TnixwU5zt22Gz474cS6RaAMjA5Z4EeYCtRO7lNHhP_SiuVJGD-N1_A"
-    },
-    {
         "id": "4623",
         "name": "Berlin 2019 Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSE8Vdn-Ibw7lz1fg34nZ3l8B0Jv6P3V6Z_L_6JCymSw-hztbUxSX3qx0gl5G-By9qqc3PBbFMnCcZ1ReMOtRO_kdbvNL7m-UWA3FqvBZj4"
@@ -1353,31 +1298,6 @@
         "id": "4626",
         "name": "Berlin 2019 Diamond Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSE8Vdn-Ibw7lz1fg34nZ3l8B0Jv6P3V6d_OeOHD2vekbdzsrg6GXrhl0gitm7QmN2ucXrFZg8oWZR5Q7QLtBGxkYbiNuLhsxue1dxIBFeQHQ"
-    },
-    {
-        "id": "4627",
-        "name": "Berlin 2019 Viewer Pass + 3 Souvenir Tokens",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSE8Vdn-Ibw7lz1fg34nZ3l8B0Jv6P3V7RsM-OsHmaTyqAktLJvTnjklkUktmnUy4mrcy_DOFMhAsQkR-Bb5ES5mobvMe7ntgbZlcsbmrBSrkhl"
-    },
-    {
-        "id": "4628",
-        "name": "Berlin 2019 Souvenir Token",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSE8Vdn-Ibw7lz1fg34nZ3l8B0Jv6P3V7RsM-OsDW-R0-lz_rY_GC23lERy5G-Dz9auJH3EOwJxXJMmQuQKtRPtmtDjYrjktlSLidlbjXKpoEDlkMU"
-    },
-    {
-        "id": "4671",
-        "name": "1 Star for Operation Shattered Web",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYGCLhkoPz7jZa_eH_JqI4cfTCVjOSk7sutLQ5F363kxh25WTcyYygdX7DbAZxW8NwFrII4Bam0oqwGfujKFw"
-    },
-    {
-        "id": "4672",
-        "name": "10 Stars for Operation Shattered Web",
-        "image": "https://cdn.steamstatic.com/apps/730/icons/econ/status_icons/operation_9_plusstars10.62009cee8e90e5db45b557189d0984542fa85369.png"
-    },
-    {
-        "id": "4673",
-        "name": "100 Stars for Operation Shattered Web",
-        "image": "https://cdn.steamstatic.com/apps/730/icons/econ/status_icons/operation_9_plusstars100.8875736d46373218bdee2fa1d8071d73d877c83d.png"
     },
     {
         "id": "4674",
@@ -1465,11 +1385,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSU6lp58YTg41vrRCLhl5jf_C5C983_OepvI_PADGLCx7Zw6bY7FijlzU0h4GzTmdb4JHufPFMgWMAlRe8I4RK5jJS5YKPJo3vd"
     },
     {
-        "id": "4699",
-        "name": "Operation Broken Fang Premium Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYEE3Ojpfz7mwO7aqva6VvcKnAWj7Cxbsh4eA7THuyzBtw5zyDzd6pcy_EawR2DpJ5W6dU5fjXvhDG"
-    },
-    {
         "id": "4700",
         "name": "Operation Broken Fang Challenge Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYEE3OnITv8zheoaSva_w-I6PGXzOTwu90s-A_S3CyzRh3sW3VyNqsdHvFZgcgApV1F7EU8k7v2fC54KA"
@@ -1488,21 +1403,6 @@
         "id": "4703",
         "name": "Diamond Operation Broken Fang Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYEE3Ojprh6StV-v_gavVueKjGWT_Axbgk5uA6TXu3xR8kt23dw46rIy6QbQdxX5dzQ-FesA74zIOsL8CSiQ"
-    },
-    {
-        "id": "4704",
-        "name": "1 Star for Operation Broken Fang",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYEE3Ojpr17jFP7uC9Oeo7dPKXXjfIlr534eQ5GnDmkEt042vXmdz9IH_GOlAkX5MjF7INtxGxjJS5YONsHspJ"
-    },
-    {
-        "id": "4705",
-        "name": "10 Stars for Operation Broken Fang",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYEE3Ojpr17jFP7uC9OfQjIaCQCjLEkuxyteM4Gnnmx05w5Djdwtqrdi7GPFd0XMdyFOYIt0G9lcqnab2VNasoig"
-    },
-    {
-        "id": "4706",
-        "name": "100 Stars for Operation Broken Fang",
-        "image": "https://cdn.steamstatic.com/apps/730/icons/econ/status_icons/operation_10_plusstars100.5b0ac9bbc809d742fc02c353ac2403e598c9aa4f.png"
     },
     {
         "id": "4737",
@@ -1535,11 +1435,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSE4ERj_YTx1VTiRRz9ocSwr3Nk4-SiPuo1JfHCCzHGk-h16bZtGCjllEp3sjjWzN-qeX7CbQUiWJcmQuBZshjqjJS5YBFpNNZl"
     },
     {
-        "id": "4758",
-        "name": "Operation Riptide Premium Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYEEzOjpfz7mwLt6f3a_M6eKXDDGXJw78j4rU_GXjnwEh04GWGyoygdXPDPAEkCpQmW6dU5dnU9YXO"
-    },
-    {
         "id": "4759",
         "name": "Operation Riptide Challenge Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYEEzOnITv8zheoaP_OfZocvSSXDCVkr0j4-NoTiy2kUpy427VzIr8I3vCagYoDcR5Q-AU8k7vfbpaGxU"
@@ -1560,26 +1455,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYEEzOjprh6StV-v_gP6Y9eabLWmKRlLom6eAwSn3jwElx6jmAzNuodX-QbQR1DZIiQuUNtA74zIOo-DDEGw"
     },
     {
-        "id": "4763",
-        "name": "1 Star for Operation Riptide",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSY9VNn9ZP95VfYEEzOjpr17jFP7uC9Oeo6cqGXWGbBw7sj6bM9HyzmkR9-4GmBzYn9eSjFOwFxXsAhRuAK4EK8jJS5YBUBkF_-"
-    },
-    {
-        "id": "4764",
-        "name": "10 Stars for Operation Riptide",
-        "image": "https://cdn.steamstatic.com/apps/730/icons/econ/status_icons/operation_11_plusstars10.c28849501791a7c9f73d211870e212868e5e2559.png"
-    },
-    {
-        "id": "4765",
-        "name": "100 Stars for Operation Riptide",
-        "image": "https://cdn.steamstatic.com/apps/730/icons/econ/status_icons/operation_11_plusstars100.ad3aaffed8ab2fbe1c222ff4a8120bd8d54e57f9.png"
-    },
-    {
-        "id": "4796",
-        "name": "Stockholm 2021 Viewer Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMff7SNI_LytP_Fsc6XLVmKRl7pw57Y8G3nklxkisT_cmImtICqVaAUoXMAmQ7JZrFDmxTugqiSb"
-    },
-    {
         "id": "4797",
         "name": "Stockholm 2021 Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMff_zBU4eirJvBscfXBXTXEx71157U9FnDhxkp24zmEmdn4IiiROFIlX5IkE-YD5hOm0oqwQRMD2wQ"
@@ -1598,16 +1473,6 @@
         "id": "4800",
         "name": "Stockholm 2021 Diamond Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMff_jBC_OavZOo6I6WSDWXAkOggtrc5Gi_rw01_tmnUmYmudC-SbFd0WJAkQ-4CthC7jJS5YOcVE9dL"
-    },
-    {
-        "id": "4801",
-        "name": "Stockholm 2021 Viewer Pass + 3 Souvenir Tokens",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMff7SNI_M2-aadmbqLHVjLJlrd16ONvSXjlwElzsWnQydqvIH7FbAJxW5t3RbEItkO9m9f5d7S1GOVU988"
-    },
-    {
-        "id": "4802",
-        "name": "Stockholm 2021 Souvenir Token",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMff7SNI_M2tYKV_J_XdWTHHxep36bQ-HS_mzEoi5T6Azo7_cC2QbQYnCcd4QeNf4Bbpw4HlZfSiuVLSm_wzqg"
     },
     {
         "id": "4819",
@@ -1640,11 +1505,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSE4ERj_YTx1VTiRRz9ocSwr3Bk4-SiPuo7dPTGC2HDlLp06eI4H3G2x0h2sG3WwtegIinEPQAkXpdzFrFY5kWxjJS5YDvAhcTv"
     },
     {
-        "id": "4825",
-        "name": "Antwerp 2022 Viewer Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMTf7SNI_Lz_afw-IvLCWzOUwOoh4rk6HXjgxxh-6mvQwov7cS6fbwBzXpJ5FrNYrFDmxdJOWSZW"
-    },
-    {
         "id": "4826",
         "name": "Antwerp 2022 Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMTf_zBU4eirJqVoJPSVXDLIxewjsrlsGCqxkUkhsj7Qwt6vdyqWPFQnA5B5TO9e4BKm0oqwanwQCi4"
@@ -1665,21 +1525,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMTf_jBC_OavZOo6JfSWWDSTlrkl5rA5Gi3mzRhy62nSz9n4c3yWawYnA5EkRrUNtBfrjJS5YK-hnhAq"
     },
     {
-        "id": "4830",
-        "name": "Antwerp 2022 Viewer Pass + 3 Souvenir Tokens",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMTf7SNI_M2-aadmbvOQXz_Jleh14edoSSvll0xy6m7RzNivdS2ebFMlWJQiRbFcu0W6wdz5d7S10gC2XpE"
-    },
-    {
-        "id": "4831",
-        "name": "Antwerp 2022 Souvenir Token",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMTf7SNI_M2tYKV_J_XdWTHHxep36bQ-HS_mzEoi5T6Azo7_cC2QbQYnCcd4QeNf4Bbpw4HlZfSiuVLGKKd6BA"
-    },
-    {
-        "id": "4850",
-        "name": "Rio 2022 Viewer Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSe4FtK5I734Vzqfk-hzMTf7SNI_Lz-PaU0I6PLWWaUxehw5-RrF3Cxxxl2tWuEmYn9c3meagV2WJEjQbMOrFDmxcGFXKaI"
-    },
-    {
         "id": "4851",
         "name": "Rio 2022 Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSe4FtK5I734Vzqfk-hzMTf_zBU4eirJqVod6TCVjeSwLYisbRoGizrzRsksjvRyIuuciiXZ1UoCpZ3FO8L40am0oqwWroFi_w"
@@ -1698,16 +1543,6 @@
         "id": "4854",
         "name": "Rio 2022 Diamond Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSe4FtK5I734Vzqfk-hzMTf_jBC_OavZOo8daDFV2PHkLd3sbY_Fi-3kxt_5z-Hy9mpIyjBawZ0C5ohRuNesUaxjJS5YGg0dZ0y"
-    },
-    {
-        "id": "4855",
-        "name": "Rio 2022 Viewer Pass + 3 Souvenir Tokens",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSe4FtK5I734Vzqfk-hzMTf7SNI_M2-aadmbqKSWzWVwu0v5rg6GSrlxkgmtmXWno6od37Gb1UiDcd0RrIL50Lul4L5d7S1IXU7D38"
-    },
-    {
-        "id": "4856",
-        "name": "Rio 2022 Souvenir Token",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSe4FtK5I734Vzqfk-hzMTf7SNI_M2tYKV_J_XdWTHHxep36bQ-HS_mzEoi5T6Azo7_cC2QbQYnCcd4QeNf4Bbpw4HlZfSiuVIOdYC_SQ"
     },
     {
         "id": "4873",
@@ -1740,11 +1575,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSE4ERj_YTx1VTiRRz9ocSwr3Fk4-SiPupsIqHHV2bElOgl5uQ7S3DrkRgk5WXWyd_9dH2fblUkWMAhFLYKsEPpjJS5YFiR8hq8"
     },
     {
-        "id": "4883",
-        "name": "Paris 2023 Viewer Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSV6Vdm4Ljk41rsRBDOzMayrh1L7uG9JqU_cfHCWWLGkegm57Y4GS_kwk904TzRzdiheXrDbAMkCMBzQ-AMsBCm0oqwQzOcunk"
-    },
-    {
         "id": "4884",
         "name": "Paris 2023 Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSV6Vdm4Ljk41rsRBDOzMayrh1Z_f2gcqEjefGRCjLImewv5LlqGnmywRxwtj6AmNmgJS7Ea1NzWJN0RuMJs0W6w8qnab1_6vtL_w"
@@ -1763,16 +1593,6 @@
         "id": "4887",
         "name": "Paris 2023 Diamond Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSV6Vdm4Ljk41rsRBDOzMayrh1Y_eu9fKVhbvHHWDfCw-1ytbg7Tn6wwERysD7WyI2udy6SalcgWZpyEeZesBPul9b5d7S15PkOq-g"
-    },
-    {
-        "id": "4888",
-        "name": "Paris 2023 Viewer Pass + 3 Souvenir Tokens",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSV6Vdm4Ljk41rsRBDOzMayrh1L7uG9V7RsI_vdWGTAxe8g6LQ-HnHiwx51523WmY2vcS2WagEhApUkTOBfthTqxN22YfSiuVJ4G_HlrA"
-    },
-    {
-        "id": "4889",
-        "name": "Paris 2023 Souvenir Token",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSV6Vdm4Ljk41rsRBDOzMayrh1L7uG9V6dlIeKUCynHl7lytOAwGn7hk0h-5DjTmYqtIC2WOAEjCpVzEO8OtkXqlIW2Yuiw-UWA3Ahnnxuk"
     },
     {
         "id": "4906",
@@ -1805,11 +1625,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSE4ERj_YTx1VTiRRz9ocSwr3Zk4-SiPuo5efLDWTLBk7gl57RqG33mlk9x4jzQydz4c33GbQIpCcRwQeNf4UK7jJS5YPfU6zlo"
     },
     {
-        "id": "4916",
-        "name": "Copenhagen 2024 Viewer Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMLf7SNI_LyqO_U9d6HDXTfCwOhzs7NtTHq3wE106mjVw9-oIHqSZgAiCZF0F-IKrFDmxR2kSOc3"
-    },
-    {
         "id": "4917",
         "name": "Copenhagen 2024 Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMLf_zBU4eirJvVrePKQXDXBl7Yh57Q5G3njw0ojt2nVyY78JS7FPFMjX5pyQrRbtBGm0oqwmKrsroo"
@@ -1828,16 +1643,6 @@
         "id": "4920",
         "name": "Copenhagen 2024 Diamond Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMLf_jBC_OavZOo4cqbCDWSUl-gu6LJoSX-wxUki5G7Wy9mpIHyWPFMnDcN2ReIK5hK6jJS5YMKAOHa2"
-    },
-    {
-        "id": "4921",
-        "name": "Copenhagen 2024 Viewer Pass + 3 Souvenir Tokens",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH4lpK5I734Vzqfk-hzMLf7SNI_M2-aadmbvKXWDORx7wj4OJqGHDikxt2sm2Az934cC2RbVd1XpRwE7Je4xi8kNf5d7S1ODPhXPw"
-    },
-    {
-        "id": "4922",
-        "name": "Copenhagen 2024 Souvenir Package",
-        "image": "https://cdn.steamstatic.com/apps/730/icons/econ/status_icons/pgl_pickem_2024_pass_charge.77da255c4b80d47157b887ff38dc8f217c453d76.png"
     },
     {
         "id": "4933",
@@ -1915,11 +1720,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSE4ERj_YTx1VTiRRz9ocSwr3dk4-SiPuppcKHHWzfFxbty5bE7HXuxwEoh5zvSwt-qJyrEawEmXJsmTbENthG7jJS5YFX5AcHM"
     },
     {
-        "id": "4957",
-        "name": "Shanghai 2024 Viewer Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH8mll_YT_71TYE02jyqnw_DFIoautMfBpIfSSCDPBlbkl6bRvH3y3wEVy4T7WmIyueXyRbAQjX5omFLEU8k7v8X20jCo"
-    },
-    {
         "id": "4958",
         "name": "Shanghai 2024 Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH8mll_YT_71TYE02jyqni7y1V9ffgMfE5d6XBDzLJk74j5LI6THCxwh9z5GnSwo2reHvCaVciDZYlQrILtw74zIMe_Y1tAw"
@@ -1938,16 +1738,6 @@
         "id": "4961",
         "name": "Shanghai 2024 Diamond Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH8mll_YT_71TYE02jyqnj7ztI-_OiJvY0I6mRDD7AxLpy5rg8GXrrkE115W7Uyd6geHzFPwQjDZIhTLMIuxGm0oqwL1pz5fY"
-    },
-    {
-        "id": "4962",
-        "name": "Shanghai 2024 Viewer Pass + 3 Souvenir Tokens",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSH8mll_YT_71TYE02jyqnw_DFI0OKva68jdqHAWGXIlbZ0tOM6GnznzU5z62mGnt-scXufZwcpApEjTLEI4Re7k8qnab2WYMX53Q"
-    },
-    {
-        "id": "4963",
-        "name": "Shanghai 2024 Souvenir Package",
-        "image": "https://cdn.steamstatic.com/apps/730/icons/econ/status_icons/pw_pickem_2024_pass_charge.767dda9572f597e6ce4af1f73073e844eb6aae2b.png"
     },
     {
         "id": "4974",
@@ -2175,11 +1965,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJWk3ka5VeTr0M-gJnSZ9hll5oL541z1fg70n4Xv8x0J0PGhYapSd6XdX2TBxeojteRoHCu1kBgj5WzQwt2odH_DblMiXJdxE-JZtxLtloexZvSiuVImfOkDMA"
     },
     {
-        "id": "5110",
-        "name": "Austin 2025 Viewer Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJG5zlm-UfvRzd6yenqC9gQlptK760z0E02jy6nw_DFIoaf4P_08I6DAXDaUkbcj6LJoHiqwxht1sG7VmY6geH-WOFQpW8N1ReAU8k7vEeyWaG4"
-    },
-    {
         "id": "5111",
         "name": "Austin 2025 Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJG5zlm-UfvRzd6yenqC9gQlptK760z0E02jy6nj8itV0PC8Z6p3Jb7LVjLIlr5y6LVtG3vix09y5GqBmN78dXyRaAQpC5RyTeRc5ETrlNbjKaq8sBKkzPn2"
@@ -2198,16 +1983,6 @@
         "id": "5114",
         "name": "Austin 2025 Diamond Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJG5zlm-UfvRzd6yenqC9gQlptK760z0E02jy6nj8itV0PG8cbd5IfzdXj6Tlrgjs7cxGHuxlk4jtj_cmIuvIy6UPwd2A5V5QuZbtUO7k9LnP_SiuVImaF0ksw"
-    },
-    {
-        "id": "5115",
-        "name": "Austin 2025 Viewer Pass + 3 Souvenir Tokens",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJG5zlm-UfvRzd6yenqC9gQlptK760z0E02jy6nw_DFI0OKva68jIfGXXTGSw7wh4LI_SnyxwR5wtjvdzYmgJ33CZ1UpCcMmQuNYtBKxlsqnab2J7tioNw"
-    },
-    {
-        "id": "5116",
-        "name": "Austin 2025 Souvenir Package",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSE8Vdn-Ibw7lz1fg34nZ3l8B0Jv6P3V7RsM-OsDW-R0-lz_rY_GC23lERy5G-Dz9auJH3EOwJxXJMmQuQKtRPtmtDjYrjktlSLidlbjXKpoEDlkMU"
     },
     {
         "id": "5127",
@@ -2450,11 +2225,6 @@
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSa5EZh-4zx5Gb3QBHwnZ_vs3MDv_H3PPxscKTEXTSRk-t05udoSyy2kE1-422HyN-oeC6SOFclDMNuBbldgODXGpM"
     },
     {
-        "id": "5209",
-        "name": "Budapest 2025 Viewer Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJG5zlm-UfvRzd6yenmC4QQlptK76EzjE02jy6nw_DFIofGqbPVpdPbBXzLIlbsgtrkwGijixxx2tmrTyt36dXmQPw4nAsR3E-4U8k7vpcj7x8Y"
-    },
-    {
         "id": "5210",
         "name": "Budapest 2025 Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJG5zlm-UfvRzd6yenmC4QQlptK76EzjE02jy6nj8itV0PC8Z6p3Jb7LDzfClu1zsrU8Fii1lxlx5GXQwt2heS-Ua1clC8N0RuMN4Re8w9O0Kaq8sIqkFsjX"
@@ -2473,16 +2243,6 @@
         "id": "5213",
         "name": "Budapest 2025 Diamond Coin",
         "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJG5zlm-UfvRzd6yenmC4QQlptK76EzjE02jy6nj8itV0PG8cbd5IfzdDDGSwrwm47ZrHCvml00hsTjSn4z_IH3DO1RxC5F3FLRY5xC4loXjY_SiuVKZBAinZw"
-    },
-    {
-        "id": "5214",
-        "name": "Budapest 2025 Viewer Pass + 3 Souvenir Tokens",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJG5zlm-UfvRzd6yenmC4QQlptK76EzjE02jy6nw_DFI0OKva68jeaXLXTPJkL0n6bRqS3HixklxtW6Em479J36TZw8mApJ4Q-ZZuxKxw8qnab16gCmPBg"
-    },
-    {
-        "id": "5215",
-        "name": "Budapest 2025 Souvenir Package",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai2l-lQ8ndwMWvJjSE8Vdn-Ibw7lz1fg34nZ3l8B0Jv6P3V7RsM-OsDW-R0-lz_rY_GC23lERy5G-Dz9auJH3EOwJxXJMmQuQKtRPtmtDjYrjktlSLidlbjXKpoEDlkMU"
     },
     {
         "id": "5226",
@@ -2763,16 +2523,6 @@
         "id": "5285",
         "name": "El Dorado Map Coin",
         "image": "https://cdn.steamstatic.com/apps/730/icons/econ/status_icons/maptoken_eldorado.799368ade8e2e3e365c2eaba2cafab15e4643926.png"
-    },
-    {
-        "id": "5310",
-        "name": "Cologne 2026 Viewer Pass",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJG5zlm-UfvRzd6yeniY6Vly-oKmuguxDh7-kpnn8ycJv6D4V7RsM-PdDGTIwu1wtbNoSnzkzBtz42nVw934IHuSZlIpDJFzF7UNuhTqxNDhYvSiuVJifxvo1Q"
-    },
-    {
-        "id": "5311",
-        "name": "Cologne 2026 Viewer Pass + 900 Tokens",
-        "image": "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJG5zlm-UfvRzd6yeniY6Vly-oKmuguxDh7-kpnn8ycJv6D4V7RsM-OsHmaTyqAv57M8GnDqwB9z5jyGw9n9InPCag4oA5MjF-8P5EO7k9G1Nrvr7wCKlcsbmmZ3zYjS"
     },
     {
         "id": "5312",
