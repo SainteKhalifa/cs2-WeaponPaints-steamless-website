@@ -1,0 +1,51 @@
+# Toutes les valeurs propres à l'hébergement vivent dans .env, qui n'est pas
+# suivi par git. Partir de .env.example pour le créer.
+
+services:
+  cs2-loadout-web:
+    build: .
+    image: cs2-loadout-web
+    container_name: ${CONTAINER_NAME:-cs2-loadout-web}
+    restart: unless-stopped
+
+    # Édition à chaud du code. À commenter pour ne servir que ce qui a été
+    # copié dans l'image au moment du build.
+    volumes:
+      - ./:/var/www/html
+
+    # class/config.php lit ces variables ; aucun identifiant n'est écrit
+    # dans un fichier suivi par git.
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-en}
+      SITE_ACCESS_PASSWORD: ${SITE_ACCESS_PASSWORD:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      WEB_STYLE_DARK: ${WEB_STYLE_DARK:-true}
+
+    networks:
+      - cs2
+      - traefik
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK}"
+      - "traefik.http.routers.${TRAEFIK_ROUTER}.entrypoints=${TRAEFIK_ENTRYPOINT}"
+      - "traefik.http.routers.${TRAEFIK_ROUTER}.middlewares=${TRAEFIK_MIDDLEWARES}"
+      - "traefik.http.routers.${TRAEFIK_ROUTER}.rule=Host(`${SITE_DOMAIN}`)"
+      - "traefik.http.routers.${TRAEFIK_ROUTER}.tls=true"
+      - "traefik.http.routers.${TRAEFIK_ROUTER}.tls.options=${TRAEFIK_TLS_OPTIONS}"
+      - "traefik.http.routers.${TRAEFIK_ROUTER}.tls.certresolver=${TRAEFIK_CERTRESOLVER}"
+      - "traefik.http.services.${TRAEFIK_ROUTER}.loadbalancer.server.port=80"
+
+networks:
+  cs2:
+    external: true
+    name: ${CS2_NETWORK}
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK}

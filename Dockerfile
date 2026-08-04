@@ -1,0 +1,73 @@
+FROM php:8.2-fpm-alpine
+
+# Extensions réellement utilisées par le site :
+#   pdo_mysql  class/database.php
+#   mbstring   longueur des noms personnalisés en UTF-8 (sinon comptés en octets)
+#   curl       tools/update_cs2_data.php
+#   opcache    les données CS2 sont volumineuses, le gain est net
+# gd, mysqli et les bibliothèques d'images ne servent à rien ici.
+#
+# libcurl et oniguruma sont installés hors du paquet virtuel : les en-têtes
+# -dev partent après la compilation, mais les bibliothèques d'exécution doivent
+# rester, sinon les extensions compilées ne se chargent plus.
+#
+# `php --ri` sert de sonde : elle sort en 0 quand l'extension est présente.
+# opcache est une extension Zend, elle se nomme « Zend OPcache », pas
+# « opcache » : la chercher sous ce dernier nom ferait échouer la vérification.
+RUN set -eux; \
+    apk add --no-cache nginx tzdata libcurl oniguruma; \
+    apk add --no-cache --virtual .build-deps $PHPIZE_DEPS curl-dev oniguruma-dev; \
+    for ext in pdo_mysql mbstring curl; do \
+        php --ri "$ext" >/dev/null 2>&1 || docker-php-ext-install -j"$(nproc)" "$ext"; \
+    done; \
+    php --ri "Zend OPcache" >/dev/null 2>&1 || docker-php-ext-install -j"$(nproc)" opcache; \
+    apk del --no-network .build-deps; \
+    rm -rf /tmp/* /var/cache/apk/*; \
+    for ext in pdo_mysql mbstring curl "Zend OPcache"; do \
+        php --ri "$ext" >/dev/null 2>&1 \
+            || { echo "extension absente apres construction : $ext" >&2; exit 1; }; \
+    done
+
+# php-fpm efface l'environnement par défaut : sans clear_env, getenv() ne
+# verrait aucune variable passée par docker-compose et class/config.php
+# retomberait silencieusement sur ses valeurs de repli.
+# ping.path sert au HEALTHCHECK.
+RUN printf '[www]\nclear_env = no\nping.path = /healthz\nping.response = pong\n' \
+        > /usr/local/etc/php-fpm.d/zz-env.conf
+
+# memory_limit : le décodage de data/stickers_*.json (près de 4 Mo) dépasse la
+# limite de 128 Mo par défaut sur certaines configurations.
+# validate_timestamps reste actif pour que le montage du dépôt en volume
+# reflète les modifications sans reconstruire l'image.
+RUN printf '%s\n' \
+        'expose_php=0' \
+        'memory_limit=256M' \
+        'opcache.enable=1' \
+        'opcache.memory_consumption=128' \
+        'opcache.max_accelerated_files=10000' \
+        'opcache.validate_timestamps=1' \
+        'opcache.revalidate_freq=2' \
+        > /usr/local/etc/php/conf.d/zz-app.ini
+
+COPY nginx.conf /etc/nginx/http.d/default.conf
+
+# Copié pour que l'image tourne seule ; monter le dépôt en volume le recouvre
+# simplement, si l'on préfère éditer à chaud.
+COPY --chown=www-data:www-data . /var/www/html
+
+RUN set -eux; \
+    mkdir -p /run/nginx; \
+    chown -R www-data:www-data /var/www/html /run/nginx
+
+EXPOSE 80
+
+# Interroge le ping de php-fpm : vérifie nginx et PHP sans toucher ni à
+# l'application ni à la base de données.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget -qO- http://127.0.0.1/healthz 2>/dev/null | grep -q pong || exit 1
+
+# La timezone est écrite au démarrage et non à la construction, pour que TZ
+# reste pilotable depuis le .env sans reconstruire l'image.
+# php-fpm passe en arrière-plan, nginx devient le processus principal ; si
+# php-fpm ne démarre pas, le conteneur s'arrête au lieu de servir des 502.
+CMD ["sh", "-c", "printf 'date.timezone=%s\\n' \"${TZ:-UTC}\" > /usr/local/etc/php/conf.d/zz-timezone.ini && php-fpm -D && exec nginx -g 'daemon off;'"]

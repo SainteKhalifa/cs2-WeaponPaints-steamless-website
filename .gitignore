@@ -1,2 +1,5 @@
 data/backups/
 data/.source_cache/
+
+# Réglages d'hébergement : domaine, certresolver, identifiants de base.
+.env

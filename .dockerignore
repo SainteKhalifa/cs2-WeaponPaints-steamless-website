@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+.env.example
+.dockerignore
+Dockerfile
+docker-compose.yml
+README.md
+README_cn.md
+LICENSE
+data/backups/
+data/.source_cache/
