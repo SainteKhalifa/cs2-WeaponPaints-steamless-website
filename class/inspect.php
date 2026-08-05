@@ -253,18 +253,24 @@ class InspectLink
 
         $slotCount = max(0, min(5, (int)($reference['slots'] ?? 5)));
         $knownStickers = $reference['stickers'] ?? [];
+
+        // Un visualiseur peut annoncer deux stickers sur le même emplacement,
+        // ou un numéro hors des bornes de l'arme. Ranger aveuglément par
+        // numéro en perdrait un : ceux qui ne peuvent pas garder le leur sont
+        // replacés dans le premier emplacement libre.
         $stickers = [];
+        $displaced = [];
         foreach ($item['stickers'] ?? [] as $sticker) {
-            $slot = (int)($sticker['slot'] ?? 0);
             $id = (int)($sticker['id'] ?? 0);
-            if ($slot < 0 || $slot >= $slotCount || $id <= 0) {
+            if ($id <= 0) {
                 continue;
             }
             if ($knownStickers && !array_key_exists($id, $knownStickers)) {
                 continue;
             }
-            $stickers[$slot] = [
-                'slot' => $slot,
+
+            $entry = [
+                'slot' => 0,
                 'id' => $id,
                 'x' => self::clamp($sticker['x'] ?? 0, -1, 1, 0),
                 'y' => self::clamp($sticker['y'] ?? 0, -1, 1, 0),
@@ -272,6 +278,24 @@ class InspectLink
                 'scale' => self::clamp($sticker['scale'] ?? 1, 0.2, 5, 1),
                 'rotation' => self::normalizeRotation($sticker['rotation'] ?? 0),
             ];
+
+            $slot = (int)($sticker['slot'] ?? 0);
+            if ($slot >= 0 && $slot < $slotCount && !isset($stickers[$slot])) {
+                $entry['slot'] = $slot;
+                $stickers[$slot] = $entry;
+            } else {
+                $displaced[] = $entry;
+            }
+        }
+
+        foreach ($displaced as $entry) {
+            for ($slot = 0; $slot < $slotCount; $slot++) {
+                if (!isset($stickers[$slot])) {
+                    $entry['slot'] = $slot;
+                    $stickers[$slot] = $entry;
+                    break;
+                }
+            }
         }
         ksort($stickers);
 
