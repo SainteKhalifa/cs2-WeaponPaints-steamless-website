@@ -1,20 +1,19 @@
 <?php
 
 /**
- * Encodage et décodage des liens d'inspection CS2 (CEconItemPreviewDataBlock).
+ * CS2 inspect link encoder and decoder (CEconItemPreviewDataBlock).
  *
- * Sert de pont entre une ligne `wp_player_skins` et un visualiseur 3D externe :
- * on encode le loadout en lien d'inspection, le joueur place ses stickers et son
- * charm dans le visualiseur, puis on redécode le lien qu'il rapporte.
+ * Bridges a `wp_player_skins` row and an external 3D viewer: the loadout is
+ * encoded into an inspect link, the player arranges stickers and charm in the
+ * viewer, and the link they bring back is decoded here.
  *
- * Le protobuf est encodé et décodé à la main : aucune dépendance externe.
+ * The protobuf is written and parsed by hand, so the class has no dependency.
  */
 class InspectLink
 {
     public const VIEWER_URL = 'https://skincraft.gg/i/';
-    public const VIEWER_EMBED_URL = 'https://skincraft.gg/embed/inspect/';
 
-    /** Champs de CEconItemPreviewDataBlock. */
+    /** CEconItemPreviewDataBlock fields. */
     private const F_DEFINDEX = 3;
     private const F_PAINTINDEX = 4;
     private const F_QUALITY = 6;
@@ -26,7 +25,7 @@ class InspectLink
     private const F_STICKERS = 12;
     private const F_KEYCHAINS = 20;
 
-    /** Champs du sous-message Sticker (réutilisé pour les charms). */
+    /** Fields of the Sticker sub-message, reused for keychains. */
     private const S_SLOT = 1;
     private const S_STICKER_ID = 2;
     private const S_WEAR = 3;
@@ -42,28 +41,32 @@ class InspectLink
     private const WIRE_BYTES = 2;
     private const WIRE_FIXED32 = 5;
 
-    /** Quality 9 = Strange, la représentation canonique du StatTrak. */
+    /** Quality 9 is Strange, the canonical way an item carries StatTrak. */
     private const QUALITY_STRANGE = 9;
 
-    /** Longueur minimale plausible pour l'enveloppe hexadécimale d'un lien. */
+    /** Shortest hexadecimal envelope that could plausibly hold an item. */
     private const MIN_HEX_LENGTH = 32;
+
+    /**
+     * Range allowed for keychain offsets.
+     *
+     * Stickers sit in a unit square, but a charm is positioned in world units:
+     * a genuine inspect link routinely carries values around 10. Clamping those
+     * to 1 would drag every imported charm back to the same wrong spot.
+     */
+    private const KEYCHAIN_OFFSET_LIMIT = 100;
 
     public static function viewerUrl(string $hex): string
     {
         return self::VIEWER_URL . strtoupper($hex);
     }
 
-    public static function embedUrl(string $hex): string
-    {
-        return self::VIEWER_EMBED_URL . strtoupper($hex);
-    }
-
     /**
-     * Construit un item normalisé à partir d'une ligne `wp_player_skins`.
+     * Builds a normalised item from a `wp_player_skins` row.
      *
-     * @param array $row      Ligne de base (weapon_defindex, weapon_paint_id, ...).
-     * @param array $stickers Liste de slots ['id','x','y','wear','scale','rotation'].
-     * @param array|null $keychain ['id','x','y','z','seed'] ou null.
+     * @param array      $row      Database row (weapon_defindex, weapon_paint_id, ...).
+     * @param array      $stickers Slot-indexed ['id','x','y','wear','scale','rotation'].
+     * @param array|null $keychain ['id','x','y','z','seed'], or null for none.
      */
     public static function itemFromParts(array $row, array $stickers, ?array $keychain): array
     {
@@ -101,7 +104,7 @@ class InspectLink
     }
 
     /**
-     * Encode un item normalisé en enveloppe hexadécimale.
+     * Encodes a normalised item into its hexadecimal envelope.
      */
     public static function encode(array $item): string
     {
@@ -113,12 +116,12 @@ class InspectLink
             $body .= self::putVarint(self::F_QUALITY, self::QUALITY_STRANGE);
         }
 
-        // paintwear est un uint32 qui transporte les bits du float, pas un entier.
+        // paintwear is a uint32 carrying the bits of a float, not an integer.
         $body .= self::putVarint(self::F_PAINTWEAR, self::floatToBits((float)($item['paintwear'] ?? 0)));
         $body .= self::putVarint(self::F_PAINTSEED, max(0, (int)($item['paintseed'] ?? 0)));
 
         if (!empty($item['stattrak'])) {
-            // Le compteur ne s'affiche que si killeaterscoretype est présent, même à 0.
+            // The counter only shows when killeaterscoretype is present, even at zero.
             $body .= self::putVarint(self::F_KILLEATERSCORETYPE, 0);
             $body .= self::putVarint(self::F_KILLEATERVALUE, max(0, (int)($item['stattrak_count'] ?? 0)));
         }
@@ -144,9 +147,9 @@ class InspectLink
     }
 
     /**
-     * Décode un lien d'inspection en item normalisé.
+     * Decodes an inspect link into a normalised item.
      *
-     * Accepte l'URL complète du visualiseur, un lien `steam://` ou le hex brut.
+     * Accepts a full viewer URL, a `steam://` link, or the bare hex payload.
      *
      * @return array{ok:bool,error:?string,item:?array}
      */
@@ -162,7 +165,7 @@ class InspectLink
             return self::failure('invalid');
         }
 
-        // Certains liens sont masqués : le premier octet sert de clé de XOR.
+        // Some links are masked, in which case the leading byte is the XOR key.
         $mask = ord($raw[0]);
         if ($mask !== 0) {
             $length = strlen($raw);
@@ -224,17 +227,17 @@ class InspectLink
     }
 
     /**
-     * Valide un item décodé contre les données de référence du site.
+     * Checks a decoded item against the site's own reference data.
      *
-     * Un joueur peut forger un lien arbitraire : rien de ce qui sort du décodeur
-     * ne doit atteindre la base sans être recoupé ici.
+     * A player can forge any link they like, so nothing that leaves the decoder
+     * may reach the database without being cross-checked here.
      *
      * @param array $reference [
-     *     'defindex' => int,   arme en cours d'édition
-     *     'paints'   => array, paint_id autorisés pour cette arme
-     *     'stickers' => array, ids de stickers connus
-     *     'keychains'=> array, ids de charms connus
-     *     'slots'    => int,   nombre de slots stickers de l'arme
+     *     'defindex'  => int,   weapon currently being edited
+     *     'paints'    => array, paint ids allowed for that weapon
+     *     'stickers'  => array, known sticker ids
+     *     'keychains' => array, known charm ids
+     *     'slots'     => int,   sticker slots the weapon accepts
      * ]
      * @return array{ok:bool,error:?string,item:?array}
      */
@@ -251,21 +254,50 @@ class InspectLink
             return self::failure('unknown_paint');
         }
 
-        $slotCount = max(0, min(5, (int)($reference['slots'] ?? 5)));
-        $knownStickers = $reference['stickers'] ?? [];
+        return [
+            'ok' => true,
+            'error' => null,
+            'item' => [
+                'defindex' => $expectedDefindex > 0 ? $expectedDefindex : (int)($item['defindex'] ?? 0),
+                'paintindex' => $paintIndex,
+                'paintwear' => self::clamp($item['paintwear'] ?? 0, 0, 1, 0),
+                'paintseed' => max(0, min(1000, (int)($item['paintseed'] ?? 0))),
+                'stattrak' => !empty($item['stattrak']),
+                'stattrak_count' => max(0, min(999999, (int)($item['stattrak_count'] ?? 0))),
+                'customname' => self::sanitizeName($item['customname'] ?? ''),
+                'stickers' => self::sanitizeStickers(
+                    $item['stickers'] ?? [],
+                    $reference['stickers'] ?? [],
+                    max(0, min(5, (int)($reference['slots'] ?? 5)))
+                ),
+                'keychain' => self::sanitizeKeychain(
+                    $item['keychain'] ?? null,
+                    $reference['keychains'] ?? []
+                ),
+            ],
+        ];
+    }
 
-        // Un visualiseur peut annoncer deux stickers sur le même emplacement,
-        // ou un numéro hors des bornes de l'arme. Ranger aveuglément par
-        // numéro en perdrait un : ceux qui ne peuvent pas garder le leur sont
-        // replacés dans le premier emplacement libre.
-        $stickers = [];
+    /**
+     * Keeps every known sticker and settles the slot each one ends up in.
+     *
+     * A viewer may announce two stickers on the same slot, or a slot number the
+     * weapon does not have. Indexing blindly by slot would silently drop one, so
+     * whatever cannot keep its announced slot moves to the first free one.
+     *
+     * @return array<int,array> Ordered list, each entry carrying its final slot.
+     */
+    private static function sanitizeStickers(array $stickers, array $known, int $slotCount): array
+    {
+        $placed = [];
         $displaced = [];
-        foreach ($item['stickers'] ?? [] as $sticker) {
+
+        foreach ($stickers as $sticker) {
             $id = (int)($sticker['id'] ?? 0);
             if ($id <= 0) {
                 continue;
             }
-            if ($knownStickers && !array_key_exists($id, $knownStickers)) {
+            if ($known && !array_key_exists($id, $known)) {
                 continue;
             }
 
@@ -280,9 +312,9 @@ class InspectLink
             ];
 
             $slot = (int)($sticker['slot'] ?? 0);
-            if ($slot >= 0 && $slot < $slotCount && !isset($stickers[$slot])) {
+            if ($slot >= 0 && $slot < $slotCount && !isset($placed[$slot])) {
                 $entry['slot'] = $slot;
-                $stickers[$slot] = $entry;
+                $placed[$slot] = $entry;
             } else {
                 $displaced[] = $entry;
             }
@@ -290,68 +322,66 @@ class InspectLink
 
         foreach ($displaced as $entry) {
             for ($slot = 0; $slot < $slotCount; $slot++) {
-                if (!isset($stickers[$slot])) {
+                if (!isset($placed[$slot])) {
                     $entry['slot'] = $slot;
-                    $stickers[$slot] = $entry;
+                    $placed[$slot] = $entry;
                     break;
                 }
             }
         }
-        ksort($stickers);
 
-        $keychain = null;
-        $rawKeychain = $item['keychain'] ?? null;
-        if (is_array($rawKeychain)) {
-            $id = (int)($rawKeychain['id'] ?? 0);
-            $knownKeychains = $reference['keychains'] ?? [];
-            if ($id > 0 && (!$knownKeychains || array_key_exists($id, $knownKeychains))) {
-                $keychain = [
-                    'id' => $id,
-                    'x' => self::clamp($rawKeychain['x'] ?? 0, -100, 100, 0),
-                    'y' => self::clamp($rawKeychain['y'] ?? 0, -100, 100, 0),
-                    'z' => self::clamp($rawKeychain['z'] ?? 0, -100, 100, 0),
-                    'seed' => max(0, min(100000, (int)($rawKeychain['seed'] ?? 0))),
-                ];
-            }
+        ksort($placed);
+
+        return array_values($placed);
+    }
+
+    private static function sanitizeKeychain($keychain, array $known): ?array
+    {
+        if (!is_array($keychain)) {
+            return null;
         }
 
-        $customName = (string)($item['customname'] ?? '');
-        if ($customName !== '') {
-            // Le nom vient d'un lien arbitraire : on écarte l'UTF-8 invalide,
-            // qui ferait échouer les fonctions mb_* et la requête.
-            if (preg_match('//u', $customName) !== 1) {
-                $customName = '';
-            } else {
-                $customName = trim((string)preg_replace('/[\x00-\x1F\x7F]/', '', $customName));
-                if (function_exists('mb_substr')) {
-                    $customName = mb_substr($customName, 0, 20);
-                } elseif (preg_match('/^.{0,20}/us', $customName, $cut) === 1) {
-                    // Sans mbstring, `.` en mode /u découpe sur des caractères
-                    // entiers plutôt qu'au milieu d'une séquence UTF-8.
-                    $customName = $cut[0];
-                }
-            }
+        $id = (int)($keychain['id'] ?? 0);
+        if ($id <= 0 || ($known && !array_key_exists($id, $known))) {
+            return null;
         }
+
+        $limit = self::KEYCHAIN_OFFSET_LIMIT;
 
         return [
-            'ok' => true,
-            'error' => null,
-            'item' => [
-                'defindex' => $expectedDefindex > 0 ? $expectedDefindex : (int)($item['defindex'] ?? 0),
-                'paintindex' => $paintIndex,
-                'paintwear' => self::clamp($item['paintwear'] ?? 0, 0, 1, 0),
-                'paintseed' => max(0, min(1000, (int)($item['paintseed'] ?? 0))),
-                'stattrak' => !empty($item['stattrak']),
-                'stattrak_count' => max(0, min(999999, (int)($item['stattrak_count'] ?? 0))),
-                'customname' => $customName,
-                'stickers' => array_values($stickers),
-                'keychain' => $keychain,
-            ],
+            'id' => $id,
+            'x' => self::clamp($keychain['x'] ?? 0, -$limit, $limit, 0),
+            'y' => self::clamp($keychain['y'] ?? 0, -$limit, $limit, 0),
+            'z' => self::clamp($keychain['z'] ?? 0, -$limit, $limit, 0),
+            'seed' => max(0, min(100000, (int)($keychain['seed'] ?? 0))),
         ];
     }
 
     /**
-     * Isole la charge hexadécimale d'une saisie utilisateur.
+     * Trims a custom name down to something safe to store.
+     *
+     * The name arrives from an arbitrary link, so invalid UTF-8 is discarded
+     * rather than passed on to the mb_* functions and the database.
+     */
+    private static function sanitizeName($name): string
+    {
+        $name = (string)$name;
+        if ($name === '' || preg_match('//u', $name) !== 1) {
+            return '';
+        }
+
+        $name = trim((string)preg_replace('/[\x00-\x1F\x7F]/', '', $name));
+        if (function_exists('mb_substr')) {
+            return mb_substr($name, 0, 20);
+        }
+
+        // Without mbstring, `.` under /u still cuts on whole characters rather
+        // than in the middle of a UTF-8 sequence.
+        return preg_match('/^.{0,20}/us', $name, $cut) === 1 ? $cut[0] : '';
+    }
+
+    /**
+     * Picks the hexadecimal payload out of whatever the player pasted.
      */
     public static function extractHex(string $input): ?string
     {
@@ -360,12 +390,12 @@ class InspectLink
             return null;
         }
 
-        // Un séparateur encodé colle ses chiffres au début de la charge utile
-        // (`..._preview%20001807...` donnerait `20001807...`).
+        // An encoded separator would glue its own digits to the front of the
+        // payload: `..._preview%20001807...` would yield `20001807...`.
         $input = (string)preg_replace('/%[0-9A-Fa-f]{2}/', ' ', $input);
 
-        // Les liens de marché / inventaire (S...A...D...M...) référencent un item
-        // Steam : leur contenu n'est pas transporté par le lien, rien à décoder.
+        // Market and inventory links (S...A...D...M...) point at a Steam item;
+        // the link carries no item data, so there is nothing to decode.
         if (preg_match('/(?:^|[^0-9A-Za-z])S\d{6,}A\d+D\d+/i', $input)) {
             return null;
         }
@@ -374,7 +404,7 @@ class InspectLink
             return null;
         }
 
-        // La charge utile est de loin la plus longue suite hexadécimale du lien.
+        // The payload is by far the longest run of hex digits in the link.
         $hex = '';
         foreach ($matches[0] as $candidate) {
             if (strlen($candidate) > strlen($hex)) {
@@ -390,7 +420,7 @@ class InspectLink
     }
 
     /**
-     * Enveloppe le protobuf : préfixe nul, puis checksum CRC32 en big-endian.
+     * Wraps the protobuf: null prefix, then a big-endian CRC32 checksum.
      */
     private static function wrap(string $body): string
     {
@@ -406,8 +436,8 @@ class InspectLink
         $out = self::putVarint(self::S_SLOT, max(0, (int)($sticker['slot'] ?? 0)));
         $out .= self::putVarint(self::S_STICKER_ID, max(0, (int)($sticker['id'] ?? 0)));
         $out .= self::putFloat(self::S_WEAR, (float)($sticker['wear'] ?? 0));
-        // Une échelle absente rend le sticker invisible dans le visualiseur :
-        // on l'écrit systématiquement, même à la valeur par défaut.
+        // A missing scale leaves the sticker invisible in the viewer, so it is
+        // always written, even at its default value.
         $out .= self::putFloat(self::S_SCALE, self::clamp($sticker['scale'] ?? 1, 0.2, 5, 1));
         $out .= self::putFloat(self::S_ROTATION, (float)($sticker['rotation'] ?? 0));
         $out .= self::putFloat(self::S_OFFSET_X, (float)($sticker['x'] ?? 0));
@@ -446,8 +476,8 @@ class InspectLink
             'x' => self::readFloat($fields, self::S_OFFSET_X) ?? 0.0,
             'y' => self::readFloat($fields, self::S_OFFSET_Y) ?? 0.0,
             'wear' => self::readFloat($fields, self::S_WEAR) ?? 0.0,
-            // Champ omis côté encodeur quand il vaut zéro : sans ce repli,
-            // le sticker serait réappliqué avec une échelle nulle.
+            // Encoders omit this field when it is zero. Without the fallback the
+            // sticker would come back with no scale at all, hence invisible.
             'scale' => self::readFloat($fields, self::S_SCALE) ?? 1.0,
             'rotation' => self::readFloat($fields, self::S_ROTATION) ?? 0.0,
         ];
@@ -475,9 +505,9 @@ class InspectLink
     }
 
     /**
-     * Découpe un buffer protobuf en champs bruts.
+     * Splits a protobuf buffer into its raw fields.
      *
-     * @return array<int,array<int,array{wire:int,value:mixed}>>|null
+     * @return array<int,array<int,array{wire:int,value:mixed}>>|null Null on malformed input.
      */
     private static function parse(string $buffer): ?array
     {
@@ -561,7 +591,7 @@ class InspectLink
     }
 
     /**
-     * Lit un float, qu'il soit transporté en fixed32 ou en bits dans un varint.
+     * Reads a float, whether it arrived as fixed32 or as bits inside a varint.
      */
     private static function readFloat(array $fields, int $field): ?float
     {

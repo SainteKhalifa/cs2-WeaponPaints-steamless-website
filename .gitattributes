@@ -1,9 +1,9 @@
-# Ces fichiers sont consommés par Docker et nginx sous Linux. Un retour
-# chariot en fin de ligne casserait les continuations « \ » du Dockerfile et
-# les directives nginx, avec des erreurs peu parlantes.
-Dockerfile      text eol=lf
+# These files are consumed by Docker and nginx on Linux. A carriage return at
+# the end of a line would break the Dockerfile's "\" continuations and the nginx
+# directives, with errors that say very little about the real cause.
+Dockerfile         text eol=lf
 docker-compose.yml text eol=lf
-nginx.conf      text eol=lf
-.dockerignore   text eol=lf
-.env.example    text eol=lf
-*.sh            text eol=lf
+nginx.conf         text eol=lf
+.dockerignore      text eol=lf
+.env.example       text eol=lf
+*.sh               text eol=lf

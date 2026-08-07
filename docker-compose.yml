@@ -1,5 +1,5 @@
-# Toutes les valeurs propres à l'hébergement vivent dans .env, qui n'est pas
-# suivi par git. Partir de .env.example pour le créer.
+# Everything specific to a deployment lives in .env, which git ignores.
+# Start from .env.example to create it.
 
 services:
   cs2-loadout-web:
@@ -8,13 +8,12 @@ services:
     container_name: ${CONTAINER_NAME:-cs2-loadout-web}
     restart: unless-stopped
 
-    # Édition à chaud du code. À commenter pour ne servir que ce qui a été
-    # copié dans l'image au moment du build.
+    # Live editing of the code. Comment this out to serve only what was copied
+    # into the image at build time.
     volumes:
       - ./:/var/www/html
 
-    # class/config.php lit ces variables ; aucun identifiant n'est écrit
-    # dans un fichier suivi par git.
+    # class/config.php reads these, so no credential ends up in a tracked file.
     environment:
       TZ: ${TZ:-Europe/Paris}
       DB_HOST: ${DB_HOST}

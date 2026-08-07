@@ -1,5 +1,5 @@
 data/backups/
 data/.source_cache/
 
-# Réglages d'hébergement : domaine, certresolver, identifiants de base.
+# Deployment settings: domain, certificate resolver, database credentials.
 .env

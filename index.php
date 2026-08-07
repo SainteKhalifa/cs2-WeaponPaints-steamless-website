@@ -155,6 +155,8 @@ $uiText = [
 		'inspect_step_paste' => '回到本页，把链接粘贴到下方并导入。',
 		'inspect_import_placeholder' => '粘贴检视链接或十六进制代码',
 		'inspect_paste' => '从剪贴板粘贴',
+		'inspect_keep_placement' => '保留精细的贴纸位置',
+		'inspect_keep_placement_hint' => '游戏插件目前无法还原精细位置：勾选后贴纸会挤在武器中央。取消勾选则使用默认位置，五张贴纸会正常分布。',
 		'inspect_import_apply' => '导入',
 		'inspect_preview_unavailable' => '请先选择皮肤，然后才能使用 3D 预览。',
 		'inspect_imported' => '检视链接导入成功，请在游戏中重新执行 !ws 或重生以生效。',
@@ -287,6 +289,8 @@ $uiText = [
 		'inspect_step_paste' => 'Come back here, paste the link below and import it.',
 		'inspect_import_placeholder' => 'Paste an inspect link or hex payload',
 		'inspect_paste' => 'Paste from clipboard',
+		'inspect_keep_placement' => 'Keep the fine sticker placement',
+		'inspect_keep_placement_hint' => 'The game plugin cannot reproduce fine placement yet: with this ticked, stickers end up piled in the middle of the weapon. Leave it off to use the default positions, where all five spread out properly.',
 		'inspect_import_apply' => 'Import',
 		'inspect_preview_unavailable' => 'Choose a skin first to use the 3D preview.',
 		'inspect_imported' => 'Inspect link imported. Run !ws again or respawn in game to apply it.',
@@ -791,12 +795,11 @@ function readStickerAdvancedParamsFromPost()
 }
 
 /**
- * Amplitude des décalages d'un charm.
+ * Range allowed for keychain offsets.
  *
- * Contrairement aux stickers, qui se placent dans un carré unitaire, le
- * pendentif est positionné en unités de monde : un lien d'inspection réel
- * porte couramment des valeurs de l'ordre de 10. Les borner à 1 replacerait
- * le charm au mauvais endroit à chaque enregistrement.
+ * Stickers sit in a unit square, but a charm is positioned in world units: a
+ * genuine inspect link routinely carries values around 10. Clamping those to 1
+ * would drag the charm back to the same wrong spot on every save.
  */
 const KEYCHAIN_OFFSET_LIMIT = 100;
 
@@ -945,10 +948,10 @@ function stickerAliasDataFile()
 }
 
 /**
- * Construit l'item normalisé attendu par InspectLink à partir d'une ligne.
+ * Builds the normalised item InspectLink expects from a database row.
  *
- * Le charm est nommé `template` ici et `seed` dans le protobuf d'inspection :
- * c'est le même champ, la traduction se fait dans les deux sens.
+ * The charm field is called `template` here and `seed` in the inspect protobuf;
+ * it is the same value, translated in both directions.
  */
 function inspectItemFromRow($row, $defindex, $keychainValue = null)
 {
@@ -981,7 +984,7 @@ function inspectItemFromRow($row, $defindex, $keychainValue = null)
 }
 
 /**
- * Encode une pièce du loadout en lien d'inspection, ou '' si rien à montrer.
+ * Encodes one loadout piece into an inspect link, or "" when there is nothing to show.
  */
 function inspectHexFromValues($defindex, $paint, $wear, $seed, $stattrak, $stattrakCount, $nameTag, $stickerValues = null, $keychainValue = null)
 {
@@ -1007,7 +1010,7 @@ function inspectHexFromValues($defindex, $paint, $wear, $seed, $stattrak, $statt
 }
 
 /**
- * Données de référence contre lesquelles un lien importé est recoupé.
+ * Reference data an imported link is checked against.
  */
 function inspectReference($defindex, $skins, $stickers, $keychains)
 {
@@ -1021,8 +1024,8 @@ function inspectReference($defindex, $skins, $stickers, $keychains)
 }
 
 /**
- * Bouton « 3D » d'une carte. Identique pour les armes, les couteaux et les
- * gants : il ne transporte que de quoi ouvrir la fenêtre partagée.
+ * The "3D" button on a card. Identical for weapons, knives and gloves: it only
+ * carries what the shared window needs to open.
  */
 function inspectButton($defindex, $hex, $label)
 {
@@ -1589,7 +1592,8 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 			go("{$fallbackUrl}&error=inspect_{$decoded['error']}");
 		}
 
-		// Le lien vient du joueur : tout est recoupé avec les données du site.
+		// The link comes from the player, so everything is cross-checked against
+		// the site data before it can reach the database.
 		$sanitized = InspectLink::sanitize(
 			$decoded['item'],
 			inspectReference($defindex, $skins, stickersFromJson(), keychainsFromJson())
@@ -1603,8 +1607,17 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$knifes = UtilsClass::getKnifeTypes();
 		$gloves = glovesFromJson();
 
+		// The plugin overwrites a sticker slot's base position as soon as an
+		// offset is non-zero, which piles every sticker in the middle of the
+		// weapon. Dropping the offsets restores the default layout, so that is
+		// what we do unless the player explicitly asks to keep them.
+		$keepPlacement = array_key_exists('inspect_keep_placement', $_POST);
 		$stickerValues = defaultStickerValues();
 		foreach ($item['stickers'] as $sticker) {
+			if (!$keepPlacement) {
+				$sticker['x'] = 0;
+				$sticker['y'] = 0;
+			}
 			$stickerValues[(int)$sticker['slot']] = buildStickerValueFromParts($sticker['id'], $sticker['id'], $sticker);
 		}
 		$keychainValue = $item['keychain'] !== null
@@ -1627,9 +1640,9 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$isGloveSkin = in_array($defindex, gloveDefindexes($gloves), true);
 
 		foreach (writeTeams($team) as $targetTeam) {
-			// Couteaux et gants ont leur propre table de sélection : le lien ne
-			// peut concerner que la pièce déjà équipée, mais la ligne peut
-			// manquer si le joueur n'a encore rien enregistré.
+			// Knives and gloves have their own selection table. The link can only
+			// describe the piece already equipped, but the row may be missing if
+			// the player has never saved anything yet.
 			if ($isKnifeSkin && isset($knifes[$defindex])) {
 				$db->query("INSERT INTO `wp_player_knife` (`steamid`, `knife`, `weapon_team`)
 					VALUES(:steamid, :knife, :team)
@@ -2681,8 +2694,8 @@ $returnTo = safeReturnUrl($returnTo);
 							<?= h(t('edit')) ?>
 						</button>
 						<?php
-						// Les gants n'ont ni sticker, ni charm, ni StatTrak, ni nom
-						// personnalisé : seuls la peinture, l'usure et le motif comptent.
+						// Gloves carry no sticker, charm, StatTrak or custom name: only the
+						// paint, the wear and the pattern matter.
 						$gloveInspectHex = inspectHexFromValues($actualGloveDefindex, $currentGlovePaintId, $currentGloveWear, $currentGloveSeed, 0, 0, null, null, null);
 						$gloveInspectLabel = ($actualGlove['weapon_name'] ?? '') . ' — ' . ($currentGloveSkin['paint_name'] ?? '');
 						?>
@@ -3017,10 +3030,9 @@ $returnTo = safeReturnUrl($returnTo);
 							$initialWearValue = $cachedSkinSetting['weapon_wear'];
 							$initialSeedValue = $cachedSkinSetting['weapon_seed'];
 							$initialStatTrakValue = (int)$cachedSkinSetting['weapon_stattrak'];
-							// Le compteur de frags est un état de jeu vivant que le plugin
-							// incrémente : on garde celui de la ligne enregistrée. Reprendre
-							// celui du cache réafficherait une valeur périmée, que
-							// l'enregistrement suivant graverait.
+							// The kill counter is live game state the plugin keeps incrementing,
+							// so the stored row wins. Taking the cached value would show a stale
+							// number that the next save would then write back.
 							if (!$initialStatTrakValue) {
 								$initialStatTrakCountValue = 0;
 							}
@@ -3298,6 +3310,13 @@ $returnTo = safeReturnUrl($returnTo);
 						<button type="button" class="btn btn-outline-light" data-inspect-paste hidden><?= h(t('inspect_paste')) ?></button>
 					</div>
 					<input type="text" name="inspect_link" class="form-control inspect-input" placeholder="<?= h(t('inspect_import_placeholder')) ?>" autocomplete="off" spellcheck="false" required data-inspect-input>
+					<label class="inspect-placement">
+						<input type="checkbox" name="inspect_keep_placement" value="1">
+						<span>
+							<strong><?= h(t('inspect_keep_placement')) ?></strong>
+							<small><?= h(t('inspect_keep_placement_hint')) ?></small>
+						</span>
+					</label>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('cancel')) ?></button>

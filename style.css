@@ -1937,3 +1937,31 @@ label {
 	display: grid;
 	gap: 4px;
 }
+
+.inspect-placement {
+	display: flex;
+	gap: 10px;
+	align-items: flex-start;
+	margin-top: 12px;
+	cursor: pointer;
+}
+
+.inspect-placement input {
+	margin-top: 3px;
+	flex: 0 0 auto;
+}
+
+.inspect-placement strong {
+	display: block;
+	color: var(--text);
+	font-size: .9rem;
+	font-weight: 600;
+}
+
+.inspect-placement small {
+	display: block;
+	color: var(--muted);
+	font-size: .8rem;
+	line-height: 1.35;
+	margin-top: 2px;
+}

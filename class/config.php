@@ -1,23 +1,23 @@
 <?php
 
 /**
- * Configuration du site.
+ * Site configuration.
  *
- * Chaque réglage peut provenir d'une variable d'environnement, ce qui permet
- * de déployer via Docker et un fichier .env sans écrire le moindre secret dans
- * un fichier suivi par git. Les valeurs de repli ci-dessous couvrent une
- * installation classique sur un hébergement PHP, où l'on édite ce fichier.
+ * Every setting can come from an environment variable, which makes it possible
+ * to deploy through Docker and a .env file without writing a single secret into
+ * a tracked file. The fallbacks below cover a plain PHP hosting install, where
+ * this file is edited directly.
  *
- * En conteneur, php-fpm efface l'environnement par défaut : l'image du projet
- * pose `clear_env = no` pour que getenv() voie ces variables.
+ * php-fpm clears the environment by default, so the project image sets
+ * `clear_env = no` for getenv() to see these variables inside a container.
  */
 
 function config_value(string $name, string $fallback): string
 {
     $value = getenv($name);
 
-    // Une variable définie mais vide est une valeur voulue (mot de passe
-    // désactivé, par exemple) et non une absence de réglage.
+    // A variable that is defined but empty is a deliberate choice, such as a
+    // disabled password, rather than an absent setting.
     return $value === false ? $fallback : $value;
 }
 
