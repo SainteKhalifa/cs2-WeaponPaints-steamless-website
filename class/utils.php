@@ -79,6 +79,11 @@ class UtilsClass
         return self::sortSkinsByWeaponOrder($skins);
     }
 
+    public static function paintKitsFromJson(): array
+    {
+        return self::dataFromJson(self::languageFile('paint_kits', 'paint_kits_en'), 'paint_kits_en');
+    }
+
     public static function agentsFromJson(): array
     {
         return self::dataFromJson(self::languageFile('agents', defined('AGENT_LANGUAGE') ? AGENT_LANGUAGE : 'agents_en'), 'agents_en');

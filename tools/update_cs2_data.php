@@ -13,6 +13,7 @@
  *
  * This script backs up existing files, then rewrites:
  *   data/skins_zh-CN.json / data/skins_en.json
+ *   data/paint_kits_zh-CN.json / data/paint_kits_en.json
  *   data/gloves_zh-CN.json / data/gloves_en.json
  *   data/agents_zh-CN.json / data/agents_en.json
  *   data/music_zh-CN.json / data/music_en.json
@@ -56,6 +57,7 @@ $sources = [
 $targets = [
     'zh-CN' => [
         'skins' => $dataDir . DIRECTORY_SEPARATOR . 'skins_zh-CN.json',
+        'paint_kits' => $dataDir . DIRECTORY_SEPARATOR . 'paint_kits_zh-CN.json',
         'gloves' => $dataDir . DIRECTORY_SEPARATOR . 'gloves_zh-CN.json',
         'agents' => $dataDir . DIRECTORY_SEPARATOR . 'agents_zh-CN.json',
         'music' => $dataDir . DIRECTORY_SEPARATOR . 'music_zh-CN.json',
@@ -68,6 +70,7 @@ $targets = [
     ],
     'en' => [
         'skins' => $dataDir . DIRECTORY_SEPARATOR . 'skins_en.json',
+        'paint_kits' => $dataDir . DIRECTORY_SEPARATOR . 'paint_kits_en.json',
         'gloves' => $dataDir . DIRECTORY_SEPARATOR . 'gloves_en.json',
         'agents' => $dataDir . DIRECTORY_SEPARATOR . 'agents_en.json',
         'music' => $dataDir . DIRECTORY_SEPARATOR . 'music_en.json',
@@ -702,6 +705,83 @@ function buildSkinAndGloveRows(array $items, array $defaultSkinRows, array $defa
     return [$skins, $gloves, $skipped, $warnings];
 }
 
+function buildPaintKitRows(array $items): array
+{
+    $rowsByPaint = [];
+    $skipped = [];
+
+    foreach ($items as $item) {
+        if (isGlove($item)) {
+            continue;
+        }
+
+        $paint = (int)($item['paint_index'] ?? 0);
+        $pattern = $item['pattern'] ?? null;
+        $name = is_array($pattern) ? trim((string)($pattern['name'] ?? '')) : '';
+        $sourceName = trim((string)($item['name'] ?? ''));
+        $sourceWeapon = trim((string)($item['weapon']['id'] ?? ''));
+        $sourceDefindex = (int)($item['weapon']['weapon_id'] ?? 0);
+        $image = trim((string)($item['image'] ?? ''));
+
+        if ($paint <= 0 || !is_array($pattern)) {
+            continue;
+        }
+        if ($name === '' || $sourceName === '' || !str_starts_with($sourceWeapon, 'weapon_') || $sourceDefindex <= 0 || $image === '') {
+            $skipped[] = $sourceName !== '' ? $sourceName : "paint {$paint}";
+            continue;
+        }
+        if (!isset($rowsByPaint[$paint])) {
+            $rowsByPaint[$paint] = [
+                'paint' => $paint,
+                'name' => $name,
+                'sources' => [],
+                '_source_keys' => [],
+            ];
+        }
+
+        $sourceKey = $sourceDefindex . '|' . $sourceWeapon . '|' . $sourceName . '|' . $image;
+        if (isset($rowsByPaint[$paint]['_source_keys'][$sourceKey])) {
+            continue;
+        }
+        $rowsByPaint[$paint]['_source_keys'][$sourceKey] = true;
+        $rowsByPaint[$paint]['sources'][] = [
+            'source_name' => $sourceName,
+            'source_weapon' => $sourceWeapon,
+            'source_defindex' => $sourceDefindex,
+            'image' => $image,
+        ];
+    }
+
+    $rows = [];
+    foreach ($rowsByPaint as $row) {
+        usort($row['sources'], static function (array $a, array $b): int {
+            $rankOrder = weaponSortRank((int)$a['source_defindex']) <=> weaponSortRank((int)$b['source_defindex']);
+            if ($rankOrder !== 0) {
+                return $rankOrder;
+            }
+            $defindexOrder = (int)$a['source_defindex'] <=> (int)$b['source_defindex'];
+            return $defindexOrder !== 0 ? $defindexOrder : strnatcasecmp((string)$a['source_name'], (string)$b['source_name']);
+        });
+        $representative = $row['sources'][0];
+        $rows[] = [
+            'paint' => $row['paint'],
+            'name' => $row['name'],
+            'source_name' => $representative['source_name'],
+            'source_weapon' => $representative['source_weapon'],
+            'source_defindex' => $representative['source_defindex'],
+            'image' => $representative['image'],
+            'source_count' => count($row['sources']),
+            'sources' => $row['sources'],
+        ];
+    }
+    usort($rows, static function (array $a, array $b): int {
+        $nameOrder = strnatcasecmp((string)$a['name'], (string)$b['name']);
+        return $nameOrder !== 0 ? $nameOrder : ((int)$a['paint'] <=> (int)$b['paint']);
+    });
+
+    return [$rows, $skipped];
+}
+
 function buildAgentRows(array $items, array $defaultRows): array
 {
     $rows = $defaultRows;
@@ -909,6 +989,7 @@ try {
         foreach ($skinWarnings as $warning) {
             echo $warning . "\n";
         }
+        [$paintKits, $paintKitSkipped] = buildPaintKitRows($skinItems);
         $skinsSourceCount = count($skinItems);
         unset($skinItems);
 
@@ -953,12 +1034,13 @@ try {
         }
 
         if (!$dryRun) {
-            $kinds = $only === 'skins' ? ['skins', 'gloves'] : ['skins', 'gloves', 'agents', 'music', 'stickers', 'keychains', 'collectibles'];
+            $kinds = $only === 'skins' ? ['skins', 'paint_kits', 'gloves'] : ['skins', 'paint_kits', 'gloves', 'agents', 'music', 'stickers', 'keychains', 'collectibles'];
             foreach ($kinds as $kind) {
                 backupFile($target[$kind], $backupDir, $timestamp);
             }
 
             writeJsonFile($target['skins'], $skins);
+            writeJsonFile($target['paint_kits'], $paintKits);
             writeJsonFile($target['gloves'], $gloves);
             if ($only !== 'skins') {
                 writeJsonFile($target['agents'], $agents);
@@ -978,6 +1060,7 @@ try {
             'keychains_source' => $keychainSourceCount,
             'collectibles_source' => $collectiblesSourceCount,
             'skins_written' => count($skins),
+            'paint_kits_written' => count($paintKits),
             'gloves_written' => count($gloves),
             'agents_written' => count($agents),
             'music_written' => count($music),
@@ -985,15 +1068,15 @@ try {
             'keychains_written' => count($keychains),
             'collectibles_written' => count($collectibles),
             'collectibles_filtered' => count($collectiblesFiltered),
-            'skipped' => count($skinSkipped) + count($agentSkipped) + count($musicSkipped) + count($stickerSkipped) + count($keychainSkipped) + count($collectibleSkipped),
+            'skipped' => count($skinSkipped) + count($paintKitSkipped) + count($agentSkipped) + count($musicSkipped) + count($stickerSkipped) + count($keychainSkipped) + count($collectibleSkipped),
         ];
 
-        unset($skins, $gloves, $agents, $music, $stickers, $keychains, $collectibles, $skinSkipped, $agentSkipped, $musicSkipped, $stickerSkipped, $keychainSkipped, $collectibleSkipped, $collectiblesFiltered);
+        unset($skins, $paintKits, $gloves, $agents, $music, $stickers, $keychains, $collectibles, $skinSkipped, $paintKitSkipped, $agentSkipped, $musicSkipped, $stickerSkipped, $keychainSkipped, $collectibleSkipped, $collectiblesFiltered);
     }
 
     echo $dryRun ? "\nDry run complete. No files were changed.\n" : "\nUpdate complete.\n";
     foreach ($summary as $row) {
-        echo "{$row['language']}: skinsSource={$row['skins_source']}, agentsSource={$row['agents_source']}, musicSource={$row['music_source']}, stickersSource={$row['stickers_source']}, keychainsSource={$row['keychains_source']}, collectiblesSource={$row['collectibles_source']}, skins={$row['skins_written']}, gloves={$row['gloves_written']}, agents={$row['agents_written']}, music={$row['music_written']}, stickers={$row['stickers_written']}, keychains={$row['keychains_written']}, collectibles={$row['collectibles_written']}, collectiblesFiltered={$row['collectibles_filtered']}, skipped={$row['skipped']}\n";
+        echo "{$row['language']}: skinsSource={$row['skins_source']}, agentsSource={$row['agents_source']}, musicSource={$row['music_source']}, stickersSource={$row['stickers_source']}, keychainsSource={$row['keychains_source']}, collectiblesSource={$row['collectibles_source']}, skins={$row['skins_written']}, paintKits={$row['paint_kits_written']}, gloves={$row['gloves_written']}, agents={$row['agents_written']}, music={$row['music_written']}, stickers={$row['stickers_written']}, keychains={$row['keychains_written']}, collectibles={$row['collectibles_written']}, collectiblesFiltered={$row['collectibles_filtered']}, skipped={$row['skipped']}\n";
     }
     if (!$dryRun) {
         echo "Backups: {$backupDir}\n";

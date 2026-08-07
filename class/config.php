@@ -52,6 +52,8 @@ define('AUTH_RATE_LIMIT_ATTEMPTS', config_int('AUTH_RATE_LIMIT_ATTEMPTS', 5)); /
 define('AUTH_RATE_LIMIT_WINDOW_SECONDS', config_int('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800)); // Failure tracking window: 30 minutes
 define('AUTH_RATE_LIMIT_LOCK_SECONDS', config_int('AUTH_RATE_LIMIT_LOCK_SECONDS', 60)); // Lock duration: 1 minute
 
+define('ENABLE_SKIN_FUSION', config_flag('ENABLE_SKIN_FUSION', true)); // Allow cross-weapon paint combinations
+
 define('DB_HOST', config_value('DB_HOST', '127.0.0.1'));
 define('DB_PORT', config_value('DB_PORT', '3306'));
 define('DB_NAME', config_value('DB_NAME', 'your_db_name'));
