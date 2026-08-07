@@ -47,7 +47,21 @@ $uiText = [
 		'choose_skin' => '皮肤',
 		'choose_type_title' => '选择类别',
 		'choose_skin_title' => '选择皮肤',
+		'choose_skin_for' => "为 %s 选择皮肤",
 		'search_skin' => '搜索皮肤',
+		'skin_fusion' => "融合",
+		'fusion_finish_entry' => "融合涂装",
+		'choose_fusion_finish' => "选择融合涂装",
+		'choose_fusion_finish_for' => "为 %s 选择融合涂装",
+		'search_fusion_finish' => "搜索融合涂装",
+		'fusion_experimental_hint' => "实验性功能：实际效果以游戏内为准。",
+		'fusion_source_count' => "%d 个来源",
+		'fusion_sources_title' => "涂装来源",
+		'fusion_native_finish' => "该武器原有涂装",
+		'doppler_ruby_badge' => "红宝石",
+		'doppler_sapphire_badge' => "蓝宝石",
+		'doppler_black_pearl_badge' => "黑珍珠",
+		'gamma_emerald_badge' => "绿宝石",
 		'delete' => '删除',
 		'delete_permission_hint' => '只有管理员模式下才能删除配置',
 		'save' => '保存',
@@ -164,7 +178,21 @@ $uiText = [
 		'choose_skin' => 'Skin',
 		'choose_type_title' => 'Choose Category',
 		'choose_skin_title' => 'Choose Skin',
+		'choose_skin_for' => 'Choose Skin for %s',
 		'search_skin' => 'Search skins',
+		'skin_fusion' => 'Fusion',
+		'fusion_finish_entry' => 'Fusion Finish',
+		'choose_fusion_finish' => 'Choose Fusion Finish',
+		'choose_fusion_finish_for' => 'Choose Fusion Finish for %s',
+		'search_fusion_finish' => 'Search fusion finishes',
+		'fusion_experimental_hint' => 'Experimental feature: actual results may vary in game.',
+		'fusion_source_count' => '%d Sources',
+		'fusion_sources_title' => 'Paint Sources',
+		'fusion_native_finish' => 'Native Finish',
+		'doppler_ruby_badge' => 'Ruby',
+		'doppler_sapphire_badge' => 'Sapphire',
+		'doppler_black_pearl_badge' => 'Black Pearl',
+		'gamma_emerald_badge' => 'Emerald',
 		'delete' => 'Delete',
 		'delete_permission_hint' => 'Loadouts can only be deleted in administrator mode.',
 		'save' => 'Save',
@@ -651,6 +679,109 @@ function keychainsFromJson()
 	return $keychains;
 }
 
+function skinFusionEnabled()
+{
+	return defined('ENABLE_SKIN_FUSION') && ENABLE_SKIN_FUSION === true;
+}
+
+function paintKitFinishBadges()
+{
+	static $badges = null;
+	if ($badges !== null) {
+		return $badges;
+	}
+	$badges = [
+		415 => ['label' => t('doppler_ruby_badge'), 'class' => 'ruby'],
+		416 => ['label' => t('doppler_sapphire_badge'), 'class' => 'sapphire'],
+		417 => ['label' => t('doppler_black_pearl_badge'), 'class' => 'black-pearl'],
+		418 => ['label' => 'P1', 'class' => 'doppler-p1'],
+		419 => ['label' => 'P2', 'class' => 'doppler-p2'],
+		420 => ['label' => 'P3', 'class' => 'doppler-p3'],
+		421 => ['label' => 'P4', 'class' => 'doppler-p4'],
+		568 => ['label' => t('gamma_emerald_badge'), 'class' => 'emerald'],
+		569 => ['label' => 'P1', 'class' => 'gamma-p1'],
+		570 => ['label' => 'P2', 'class' => 'gamma-p2'],
+		571 => ['label' => 'P3', 'class' => 'gamma-p3'],
+		572 => ['label' => 'P4', 'class' => 'gamma-p4'],
+		617 => ['label' => t('doppler_black_pearl_badge'), 'class' => 'black-pearl'],
+		618 => ['label' => 'P2', 'class' => 'doppler-p2'],
+		619 => ['label' => t('doppler_sapphire_badge'), 'class' => 'sapphire'],
+		852 => ['label' => 'P1', 'class' => 'doppler-p1'],
+		853 => ['label' => 'P2', 'class' => 'doppler-p2'],
+		854 => ['label' => 'P3', 'class' => 'doppler-p3'],
+		855 => ['label' => 'P4', 'class' => 'doppler-p4'],
+		1119 => ['label' => t('gamma_emerald_badge'), 'class' => 'emerald'],
+		1120 => ['label' => 'P1', 'class' => 'gamma-p1'],
+		1121 => ['label' => 'P2', 'class' => 'gamma-p2'],
+		1122 => ['label' => 'P3', 'class' => 'gamma-p3'],
+		1123 => ['label' => 'P4', 'class' => 'gamma-p4'],
+	];
+	return $badges;
+}
+
+function paintKitFinishBadge($paint)
+{
+	$badges = paintKitFinishBadges();
+	return $badges[(int)$paint] ?? null;
+}
+
+function paintKitFinishBadgeHtml($paint)
+{
+	$badge = paintKitFinishBadge($paint);
+	if (!$badge) {
+		return '';
+	}
+	return '<span class="paint-variant-badge paint-variant-' . h($badge['class']) . '">' . h($badge['label']) . '</span>';
+}
+
+function paintKitsFromJson()
+{
+	$paintKits = [];
+	foreach (UtilsClass::paintKitsFromJson() as $paintKit) {
+		$paint = (int)($paintKit['paint'] ?? 0);
+		if ($paint <= 0) {
+			continue;
+		}
+		$paintKits[$paint] = [
+			'paint' => $paint,
+			'name' => (string)($paintKit['name'] ?? ''),
+			'source_name' => (string)($paintKit['source_name'] ?? ''),
+			'source_weapon' => (string)($paintKit['source_weapon'] ?? ''),
+			'source_defindex' => (int)($paintKit['source_defindex'] ?? 0),
+			'image' => (string)($paintKit['image'] ?? ''),
+		];
+	}
+	return $paintKits;
+}
+
+function fusionTargetName($skin, $fallback = '')
+{
+	$name = trim(explode('|', (string)($skin['paint_name'] ?? ''), 2)[0]);
+	$name = preg_replace('/^(?:\x{4F7F}\x{7528}\x{5E93}\x{5B58}|Use inventory)\s*/u', '', $name);
+	return $name !== '' ? $name : (string)$fallback;
+}
+
+function fusionSkinData($targetSkin, $paintKit, $fallbackName = '')
+{
+	$targetName = fusionTargetName($targetSkin, $fallbackName);
+	$finishName = trim((string)($paintKit['name'] ?? ''));
+	return [
+		'weapon_name' => (string)($targetSkin['weapon_name'] ?? $fallbackName),
+		'paint_name' => trim($targetName . ' | ' . $finishName, ' |'),
+		'image_url' => '',
+	];
+}
+
+function isFusionPaint($defindex, $paint, $skins, $paintKits)
+{
+	$defindex = (int)$defindex;
+	$paint = (int)$paint;
+	return $defindex > 0
+		&& $paint > 0
+		&& !isset($skins[$defindex][$paint])
+		&& isset($paintKits[$paint]);
+}
+
 function defaultStickerValue()
 {
 	return '0;0;0;0;0;0;0';
@@ -921,6 +1052,25 @@ function keychainAliasDataFile()
 		return '';
 	}
 	return $english;
+}
+
+function paintKitDataFile()
+{
+	$currentLanguage = UtilsClass::currentLanguage();
+	$language = in_array($currentLanguage, ['zh-CN', 'en'], true) ? "paint_kits_{$currentLanguage}" : 'paint_kits_en';
+	if (!is_file(__DIR__ . "/data/{$language}.json")) {
+		$language = 'paint_kits_en';
+	}
+	return "data/{$language}.json";
+}
+
+function paintKitAliasDataFile()
+{
+	$current = paintKitDataFile();
+	$alias = $current === 'data/paint_kits_en.json'
+		? 'data/paint_kits_zh-CN.json'
+		: 'data/paint_kits_en.json';
+	return is_file(__DIR__ . '/' . $alias) ? $alias : '';
 }
 
 function glovesFromJson()
@@ -1453,6 +1603,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$steamid = $preset['steamid'];
 		$weapons = UtilsClass::getWeaponsFromArray();
 		$skins = UtilsClass::skinsFromJson();
+		$paintKits = paintKitsFromJson();
 		$knifes = UtilsClass::getKnifeTypes();
 		$gloves = glovesFromJson();
 		$stickers = stickersFromJson();
@@ -1641,7 +1792,10 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 				saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, $paint, $wear, $seed, 0, 0, null);
 			}
 
-		} elseif (isset($ex[0], $ex[1]) && array_key_exists((int)$ex[0], $weapons) && array_key_exists((int)$ex[1], $skins[(int)$ex[0]] ?? [])) {
+		} elseif (isset($ex[0], $ex[1])
+			&& array_key_exists((int)$ex[0], $weapons)
+			&& (array_key_exists((int)$ex[1], $skins[(int)$ex[0]] ?? [])
+				|| (skinFusionEnabled() && (int)$ex[1] > 0 && isset($paintKits[(int)$ex[1]])))) {
 			$defindex = (int)$ex[0];
 			$paint = (int)$ex[1];
 			$hasExplicitWear = array_key_exists('wear', $_POST);
@@ -1878,6 +2032,7 @@ if ($action === 'edit') {
 	$steamid = $currentPreset['steamid'];
 	$weapons = UtilsClass::getWeaponsFromArray();
 	$skins = UtilsClass::skinsFromJson();
+	$paintKits = paintKitsFromJson();
 	$gloves = glovesFromJson();
 	$stickers = stickersFromJson();
 	$keychains = keychainsFromJson();
@@ -2144,7 +2299,10 @@ $returnTo = safeReturnUrl($returnTo);
 					$knifeSkinOptions = $actualKnifeKey > 0 ? ($skins[$actualKnifeKey] ?? []) : [];
 					$selectedKnifeSkin = $selectedSkins[$actualKnifeKey] ?? null;
 					$currentKnifePaintId = $selectedKnifeSkin ? (int)$selectedKnifeSkin['weapon_paint_id'] : 0;
-					$currentKnifeSkin = $actualKnifeKey > 0 && isset($knifeSkinOptions[$currentKnifePaintId]) ? $knifeSkinOptions[$currentKnifePaintId] : $actualKnife;
+					$currentKnifeIsFusion = $selectedKnifeSkin && isFusionPaint($actualKnifeKey, $currentKnifePaintId, $skins, $paintKits);
+					$currentKnifeSkin = $actualKnifeKey > 0 && isset($knifeSkinOptions[$currentKnifePaintId])
+						? $knifeSkinOptions[$currentKnifePaintId]
+						: ($currentKnifeIsFusion ? fusionSkinData($actualKnife, $paintKits[$currentKnifePaintId], $actualKnife['paint_name'] ?? '') : $actualKnife);
 					$currentKnifeWear = $selectedKnifeSkin['weapon_wear'] ?? 0.0;
 					$currentKnifeSeed = $selectedKnifeSkin['weapon_seed'] ?? 0;
 					$currentKnifeStatTrak = (int)($selectedKnifeSkin['weapon_stattrak'] ?? 0);
@@ -2161,9 +2319,12 @@ $returnTo = safeReturnUrl($returnTo);
 						}
 					}
 					$currentKnifeNameTagEnabled = $currentKnifeNameTag !== null && $currentKnifeNameTag !== '';
+					$currentKnifeFinishBadge = paintKitFinishBadge($currentKnifePaintId);
 					?>
-					<?php if ($currentKnifeNameTagEnabled || $currentKnifeStatTrak) : ?>
+					<?php if ($currentKnifeIsFusion || $currentKnifeFinishBadge || $currentKnifeNameTagEnabled || $currentKnifeStatTrak) : ?>
 						<div class="card-status-badges">
+							<?php if ($currentKnifeIsFusion) : ?><span class="fusion-badge"><?= h(t('skin_fusion')) ?></span><?php endif; ?>
+							<?= paintKitFinishBadgeHtml($currentKnifePaintId) ?>
 							<?php if ($currentKnifeNameTagEnabled) : ?><span class="nametag-badge"><?= h(t('name_tag')) ?></span><?php endif; ?>
 							<?php if ($currentKnifeStatTrak) : ?><span class="stattrak-badge">StatTrak™</span><?php endif; ?>
 						</div>
@@ -2251,7 +2412,7 @@ $returnTo = safeReturnUrl($returnTo);
 							<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
 								<div class="modal-content">
 									<div class="modal-header">
-										<h5 class="modal-title"><?= h(t('choose_skin_title')) ?></h5>
+										<h5 class="modal-title"><?= h(sprintf(t('choose_skin_for'), fusionTargetName($actualKnife, t('knife')))) ?></h5>
 										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
 									</div>
 									<div class="modal-body picker-modal-body">
@@ -2261,20 +2422,34 @@ $returnTo = safeReturnUrl($returnTo);
 											<div class="picker-search-bar">
 												<input type="search" class="form-control picker-search" placeholder="<?= h(t('search_skin')) ?>" autocomplete="off" data-picker-search>
 											</div>
-											<div class="skin-picker-grid picker-results-scroll">
-												<?php foreach ($knifeSkinOptions as $paintKey => $paint) : ?>
+										<div class="skin-picker-grid picker-results-scroll">
+											<?php $knifeSkinPosition = 0; ?>
+											<?php foreach ($knifeSkinOptions as $paintKey => $paint) : ?>
 													<?php $knifeSkinImage = (string)($paint['image_url'] ?? ''); ?>
 													<button type="submit" name="skin_forma" value="<?= (int)$actualKnifeKey ?>-<?= (int)$paintKey ?>" class="skin-result <?= $currentKnifePaintId === (int)$paintKey ? 'active' : '' ?>" data-picker-result data-search="<?= h($paint['paint_name'] ?? '') ?>">
 														<?php if ($knifePlaceholder !== '') : ?>
 															<img src="<?= h($knifePlaceholder) ?>" data-picker-remote-src="<?= h($knifeSkinImage) ?>" alt="">
 														<?php elseif ($knifeSkinImage !== '') : ?>
 															<img src="<?= h($knifeSkinImage) ?>" alt="">
-														<?php else : ?>
-															<div class="empty-image"><?= h($paint['paint_name']) ?></div>
-														<?php endif; ?>
-														<span><?= h($paint['paint_name']) ?></span>
-													</button>
-												<?php endforeach; ?>
+												<?php else : ?>
+													<div class="empty-image"><?= h($paint['paint_name']) ?></div>
+												<?php endif; ?>
+												<?= paintKitFinishBadgeHtml($paintKey) ?>
+										<span><?= h($paint['paint_name']) ?></span>
+											</button>
+											<?php if ($knifeSkinPosition === 0 && skinFusionEnabled()) : ?>
+												<button type="button" class="skin-result fusion-result" data-picker-result data-search="<?= h(t('fusion_finish_entry')) ?>" data-fusion-open data-fusion-defindex="<?= (int)$actualKnifeKey ?>" data-fusion-weapon="<?= h($actualKnife['weapon_name'] ?? '') ?>" data-fusion-target-name="<?= h(fusionTargetName($actualKnife, t('knife'))) ?>" data-fusion-official-paints="<?= h(implode(',', array_map('intval', array_keys($knifeSkinOptions)))) ?>">
+													<?php if ($knifePlaceholder !== '') : ?>
+														<img src="<?= h($knifePlaceholder) ?>" alt="">
+													<?php else : ?>
+													<div class="empty-image"><?= h(t('fusion_finish_entry')) ?></div>
+													<?php endif; ?>
+													<span class="fusion-badge fusion-picker-badge"><?= h(t('skin_fusion')) ?></span>
+												<span><?= h(t('fusion_finish_entry')) ?></span>
+												</button>
+											<?php endif; ?>
+											<?php $knifeSkinPosition++; ?>
+										<?php endforeach; ?>
 											</div>
 										<?php endif; ?>
 									</div>
@@ -2458,7 +2633,7 @@ $returnTo = safeReturnUrl($returnTo);
 							<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
 								<div class="modal-content">
 									<div class="modal-header">
-										<h5 class="modal-title"><?= h(t('choose_skin_title')) ?></h5>
+										<h5 class="modal-title"><?= h(sprintf(t('choose_skin_for'), fusionTargetName($actualGlove, t('gloves')))) ?></h5>
 										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
 									</div>
 									<div class="modal-body picker-modal-body">
@@ -2476,10 +2651,11 @@ $returnTo = safeReturnUrl($returnTo);
 															<img src="<?= h($glovePlaceholder) ?>" data-picker-remote-src="<?= h($gloveSkinImage) ?>" alt="">
 														<?php elseif ($gloveSkinImage !== '') : ?>
 															<img src="<?= h($gloveSkinImage) ?>" alt="">
-														<?php else : ?>
-															<div class="empty-image"><?= h($paint['paint_name']) ?></div>
-														<?php endif; ?>
-														<span><?= h($paint['paint_name']) ?></span>
+												<?php else : ?>
+													<div class="empty-image"><?= h($paint['paint_name']) ?></div>
+												<?php endif; ?>
+												<?= paintKitFinishBadgeHtml($paintKey) ?>
+												<span><?= h($paint['paint_name']) ?></span>
 													</button>
 												<?php endforeach; ?>
 											</div>
@@ -2722,7 +2898,10 @@ $returnTo = safeReturnUrl($returnTo);
 					$hasSkin = array_key_exists($defindex, $selectedSkins);
 					$currentPaintId = $hasSkin ? (int)$selectedSkins[$defindex]['weapon_paint_id'] : 0;
 					$usesInventorySkin = $currentPaintId === 0;
-					$currentSkin = $hasSkin && isset($skins[$defindex][$currentPaintId]) ? $skins[$defindex][$currentPaintId] : $default;
+					$currentIsFusion = $hasSkin && isFusionPaint($defindex, $currentPaintId, $skins, $paintKits);
+					$currentSkin = $hasSkin && isset($skins[$defindex][$currentPaintId])
+						? $skins[$defindex][$currentPaintId]
+						: ($currentIsFusion ? fusionSkinData($default, $paintKits[$currentPaintId], $default['weapon_name'] ?? '') : $default);
 					$initialWearValue = $hasSkin ? $selectedSkins[$defindex]['weapon_wear'] : 0.0;
 					$initialSeedValue = $hasSkin ? $selectedSkins[$defindex]['weapon_seed'] : 0;
 					$initialStatTrakValue = $hasSkin ? (int)($selectedSkins[$defindex]['weapon_stattrak'] ?? 0) : 0;
@@ -2745,13 +2924,16 @@ $returnTo = safeReturnUrl($returnTo);
 						}
 					}
 					$initialNameTagEnabled = $initialNameTagValue !== null && $initialNameTagValue !== '';
+					$currentFinishBadge = paintKitFinishBadge($currentPaintId);
 					$initialStickerIds = array_map('stickerIdFromValue', $initialStickerValues);
 					$modalId = "weaponModal{$defindex}";
 					$skinPickerId = "skinPicker{$defindex}";
 					?>
 					<div class="skin-card weapon-card">
-						<?php if ($initialNameTagEnabled || $initialStatTrakValue) : ?>
+						<?php if ($currentIsFusion || $currentFinishBadge || $initialNameTagEnabled || $initialStatTrakValue) : ?>
 							<div class="card-status-badges">
+								<?php if ($currentIsFusion) : ?><span class="fusion-badge"><?= h(t('skin_fusion')) ?></span><?php endif; ?>
+								<?= paintKitFinishBadgeHtml($currentPaintId) ?>
 								<?php if ($initialNameTagEnabled) : ?><span class="nametag-badge"><?= h(t('name_tag')) ?></span><?php endif; ?>
 								<?php if ($initialStatTrakValue) : ?><span class="stattrak-badge">StatTrak™</span><?php endif; ?>
 							</div>
@@ -2817,7 +2999,7 @@ $returnTo = safeReturnUrl($returnTo);
 								<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
 									<div class="modal-content">
 										<div class="modal-header">
-											<h5 class="modal-title"><?= h(t('choose_skin_title')) ?></h5>
+											<h5 class="modal-title"><?= h(sprintf(t('choose_skin_for'), fusionTargetName($default, $default['weapon_name'] ?? ''))) ?></h5>
 											<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
 										</div>
 										<div class="modal-body picker-modal-body">
@@ -2825,6 +3007,7 @@ $returnTo = safeReturnUrl($returnTo);
 												<input type="search" class="form-control picker-search" placeholder="<?= h(t('search_skin')) ?>" autocomplete="off" data-picker-search>
 											</div>
 											<div class="skin-picker-grid picker-results-scroll">
+												<?php $skinPosition = 0; ?>
 												<?php foreach ($skins[$defindex] as $paintKey => $paint) : ?>
 													<?php $paintImage = (string)($paint['image_url'] ?? ''); ?>
 													<button type="submit" name="skin_forma" value="<?= (int)$defindex ?>-<?= (int)$paintKey ?>" class="skin-result <?= $currentPaintId === (int)$paintKey ? 'active' : '' ?>" data-picker-result data-search="<?= h($paint['paint_name'] ?? '') ?>">
@@ -2832,12 +3015,25 @@ $returnTo = safeReturnUrl($returnTo);
 															<img src="<?= h($weaponPlaceholder) ?>" data-picker-remote-src="<?= h($paintImage) ?>" alt="">
 														<?php elseif ($paintImage !== '') : ?>
 															<img src="<?= h($paintImage) ?>" alt="">
+												<?php else : ?>
+													<div class="empty-image"><?= h($paint['paint_name']) ?></div>
+												<?php endif; ?>
+												<?= paintKitFinishBadgeHtml($paintKey) ?>
+											<span><?= h($paint['paint_name']) ?></span>
+												</button>
+												<?php if ($skinPosition === 0 && skinFusionEnabled()) : ?>
+											<button type="button" class="skin-result fusion-result" data-picker-result data-search="<?= h(t('fusion_finish_entry')) ?>" data-fusion-open data-fusion-defindex="<?= (int)$defindex ?>" data-fusion-weapon="<?= h($default['weapon_name'] ?? '') ?>" data-fusion-target-name="<?= h(fusionTargetName($default, $default['weapon_name'] ?? '')) ?>" data-fusion-official-paints="<?= h(implode(',', array_map('intval', array_keys($skins[$defindex] ?? [])))) ?>">
+														<?php if ($weaponPlaceholder !== '') : ?>
+															<img src="<?= h($weaponPlaceholder) ?>" alt="">
 														<?php else : ?>
-															<div class="empty-image"><?= h($paint['paint_name']) ?></div>
+													<div class="empty-image"><?= h(t('fusion_finish_entry')) ?></div>
 														<?php endif; ?>
-														<span><?= h($paint['paint_name']) ?></span>
+														<span class="fusion-badge fusion-picker-badge"><?= h(t('skin_fusion')) ?></span>
+												<span><?= h(t('fusion_finish_entry')) ?></span>
 													</button>
-												<?php endforeach; ?>
+												<?php endif; ?>
+												<?php $skinPosition++; ?>
+											<?php endforeach; ?>
 											</div>
 										</div>
 									</div>
@@ -2987,7 +3183,7 @@ $returnTo = safeReturnUrl($returnTo);
 			</div>
 		<?php endif; ?>
 	<div class="modal fade sticker-picker-modal" id="stickerPickerModal" tabindex="-1" aria-hidden="true">
-		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h5 class="modal-title"><?= h(t('choose_sticker')) ?></h5>
@@ -3060,6 +3256,52 @@ $returnTo = safeReturnUrl($returnTo);
 			</div>
 		</div>
 	</div>
+	<?php if (skinFusionEnabled() && $action === 'edit' && $currentPreset) : ?>
+		<div class="modal fade fusion-picker-modal" id="fusionPickerModal" tabindex="-1" aria-hidden="true">
+			<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<div>
+							<h5 class="modal-title" data-fusion-picker-title><?= h(t('choose_fusion_finish')) ?></h5>
+							<div class="modal-subtitle"><?= h(t('fusion_experimental_hint')) ?></div>
+						</div>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
+					</div>
+					<div class="modal-body picker-modal-body">
+						<div class="picker-search-bar">
+							<input type="search" class="form-control fusion-search" placeholder="<?= h(t('search_fusion_finish')) ?>" autocomplete="off">
+						</div>
+						<div class="fusion-picker-grid picker-results-scroll" data-fusion-results></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade fusion-source-modal" id="fusionSourceModal" tabindex="-1" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<div>
+							<h5 class="modal-title"><?= h(t('fusion_sources_title')) ?></h5>
+							<div class="modal-subtitle" data-fusion-source-paint-name></div>
+						</div>
+					</div>
+					<div class="modal-body">
+						<div class="fusion-source-grid" data-fusion-source-results></div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('back')) ?></button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<form method="post" id="fusionSkinForm" class="d-none">
+			<?= csrfInput() ?>
+			<input type="hidden" name="action" value="save_skin">
+			<input type="hidden" name="id" value="<?= h($currentPreset['steamid']) ?>">
+			<input type="hidden" name="team" value="<?= h((string)$team) ?>">
+			<input type="hidden" name="skin_forma" value="" data-fusion-forma>
+		</form>
+	<?php endif; ?>
 	<?php if ($accessGranted) : ?>
 		<div class="modal fade" id="loadoutPasswordModal" tabindex="-1" aria-hidden="true">
 			<div class="modal-dialog modal-dialog-centered modal-sm">
@@ -3164,7 +3406,36 @@ $returnTo = safeReturnUrl($returnTo);
 		window.cs2StickerAliasDataUrl = <?= json_encode(stickerAliasDataFile() !== '' ? dataFileUrl(stickerAliasDataFile()) : '', JSON_UNESCAPED_SLASHES) ?>;
 		window.cs2KeychainDataUrl = <?= json_encode(dataFileUrl(keychainDataFile()), JSON_UNESCAPED_SLASHES) ?>;
 		window.cs2KeychainAliasDataUrl = <?= json_encode(keychainAliasDataFile() !== '' ? dataFileUrl(keychainAliasDataFile()) : '', JSON_UNESCAPED_SLASHES) ?>;
+		window.cs2PaintKitDataUrl = <?= json_encode(dataFileUrl(paintKitDataFile()), JSON_UNESCAPED_SLASHES) ?>;
+		window.cs2PaintKitAliasDataUrl = <?= json_encode(paintKitAliasDataFile() !== '' ? dataFileUrl(paintKitAliasDataFile()) : '', JSON_UNESCAPED_SLASHES) ?>;
+		window.cs2PaintKitFinishBadges = <?= json_encode(paintKitFinishBadges(), JSON_UNESCAPED_SLASHES) ?>;
 		(function () {
+			var indicatorFitFrame = null;
+			var fitStatusIndicatorRows = function () {
+				document.querySelectorAll('.card-status-badges, .fusion-result-indicators').forEach(function (row) {
+					row.style.transform = '';
+					var parent = row.parentElement;
+					if (!parent || parent.clientWidth <= 0) return;
+					var rightInset = parseFloat(window.getComputedStyle(row).right) || 0;
+					var availableWidth = Math.max(0, parent.clientWidth - (rightInset * 2));
+					var requiredWidth = row.scrollWidth;
+					if (requiredWidth > availableWidth && availableWidth > 0) {
+						row.style.transform = 'scale(' + (availableWidth / requiredWidth) + ')';
+					}
+				});
+			};
+			var scheduleStatusIndicatorFit = function () {
+				if (indicatorFitFrame !== null) window.cancelAnimationFrame(indicatorFitFrame);
+				indicatorFitFrame = window.requestAnimationFrame(function () {
+					indicatorFitFrame = null;
+					fitStatusIndicatorRows();
+				});
+			};
+			scheduleStatusIndicatorFit();
+			window.addEventListener('resize', scheduleStatusIndicatorFit);
+			if (document.fonts && document.fonts.ready) {
+				document.fonts.ready.then(scheduleStatusIndicatorFit);
+			}
 			document.querySelectorAll('[data-loadout-password-toggle]').forEach(function (toggle) {
 				var form = toggle.closest('form');
 				var wrap = form ? form.querySelector('[data-loadout-password-input-wrap]') : null;
@@ -3226,7 +3497,7 @@ $returnTo = safeReturnUrl($returnTo);
 				if (!remoteSrc || remoteSrc === image.src) return;
 				var probe = new Image();
 				probe.onload = function () {
-					image.src = remoteSrc;
+					if (image.dataset.remoteSrc === remoteSrc) image.src = remoteSrc;
 				};
 				probe.src = remoteSrc;
 			};
@@ -3298,6 +3569,7 @@ $returnTo = safeReturnUrl($returnTo);
 			var picker = pickerEl && window.bootstrap ? new bootstrap.Modal(pickerEl) : null;
 			var searchInput = pickerEl ? pickerEl.querySelector('.sticker-search') : null;
 			var resultsEl = pickerEl ? pickerEl.querySelector('[data-sticker-results]') : null;
+			var stickerSearchTimer = null;
 			var activeAdvancedSlot = null;
 			var advancedEl = document.getElementById('stickerAdvancedModal');
 			var advancedModal = advancedEl && window.bootstrap ? new bootstrap.Modal(advancedEl) : null;
@@ -3474,6 +3746,38 @@ $returnTo = safeReturnUrl($returnTo);
 					activeStickerUnderlay.classList.add('sticker-underlay-active');
 				}
 			};
+			var modalPageOriginalPaddingRight = null;
+			var modalPageLockedPaddingRight = null;
+			var syncModalPageScrollLock = function () {
+				var hasOpenModal = !!document.querySelector('.modal.show');
+				document.documentElement.classList.toggle('modal-stack-open', hasOpenModal);
+				document.body.classList.toggle('modal-stack-open', hasOpenModal);
+				if (hasOpenModal) {
+					document.body.classList.add('modal-open');
+					if (modalPageLockedPaddingRight === null) {
+						modalPageLockedPaddingRight = document.body.style.paddingRight;
+					} else {
+						document.body.style.paddingRight = modalPageLockedPaddingRight;
+					}
+					return;
+				}
+				if (modalPageOriginalPaddingRight !== null) {
+					document.body.style.paddingRight = modalPageOriginalPaddingRight;
+				}
+				modalPageOriginalPaddingRight = null;
+				modalPageLockedPaddingRight = null;
+			};
+			document.addEventListener('show.bs.modal', function () {
+				if (!document.querySelector('.modal.show')) {
+					modalPageOriginalPaddingRight = document.body.style.paddingRight;
+					modalPageLockedPaddingRight = null;
+				}
+			}, true);
+			document.addEventListener('shown.bs.modal', syncModalPageScrollLock, true);
+			document.addEventListener('hidden.bs.modal', function () {
+				syncModalPageScrollLock();
+				window.requestAnimationFrame(syncModalPageScrollLock);
+			}, true);
 
 			var markStickerBackdrop = function () {
 				var backdrops = document.querySelectorAll('.modal-backdrop');
@@ -3492,6 +3796,12 @@ $returnTo = safeReturnUrl($returnTo);
 
 			document.addEventListener('keydown', function (event) {
 				if (event.key !== 'Escape') return;
+				if (fusionSourceEl && fusionSourceEl.classList.contains('show')) {
+					event.preventDefault();
+					event.stopPropagation();
+					if (fusionSourceModal) fusionSourceModal.hide();
+					return;
+				}
 				if (advancedEl && advancedEl.classList.contains('show')) {
 					event.preventDefault();
 					event.stopPropagation();
@@ -3508,6 +3818,12 @@ $returnTo = safeReturnUrl($returnTo);
 					event.preventDefault();
 					event.stopPropagation();
 					if (keychainPicker) keychainPicker.hide();
+					return;
+				}
+				if (fusionPickerEl && fusionPickerEl.classList.contains('show')) {
+					event.preventDefault();
+					event.stopPropagation();
+					if (fusionPicker) fusionPicker.hide();
 				}
 			}, true);
 			var fetchJson = function (url) {
@@ -3515,6 +3831,387 @@ $returnTo = safeReturnUrl($returnTo);
 				return fetch(url, { cache: 'no-cache' })
 					.then(function (response) { return response.ok ? response.json() : []; });
 			};
+
+			var fusionData = null;
+			var fusionTargetDefindex = 0;
+			var fusionTargetWeapon = '';
+			var fusionOfficialPaints = {};
+			var fusionParentModal = null;
+			var fusionPickerEl = document.getElementById('fusionPickerModal');
+			var fusionPicker = fusionPickerEl && window.bootstrap ? new bootstrap.Modal(fusionPickerEl) : null;
+			var fusionPickerTitle = fusionPickerEl ? fusionPickerEl.querySelector('[data-fusion-picker-title]') : null;
+			var fusionSearchInput = fusionPickerEl ? fusionPickerEl.querySelector('.fusion-search') : null;
+			var fusionResultsEl = fusionPickerEl ? fusionPickerEl.querySelector('[data-fusion-results]') : null;
+			var fusionSourceEl = document.getElementById('fusionSourceModal');
+			var fusionSourceModal = fusionSourceEl && window.bootstrap ? new bootstrap.Modal(fusionSourceEl) : null;
+			var fusionSourcePaintName = fusionSourceEl ? fusionSourceEl.querySelector('[data-fusion-source-paint-name]') : null;
+			var fusionSourceResults = fusionSourceEl ? fusionSourceEl.querySelector('[data-fusion-source-results]') : null;
+			var fusionSourceCountTemplate = <?= json_encode(t('fusion_source_count'), JSON_UNESCAPED_UNICODE) ?>;
+			var fusionNativeFinishLabel = <?= json_encode(t('fusion_native_finish'), JSON_UNESCAPED_UNICODE) ?>;
+			var fusionPickerTitleTemplate = <?= json_encode(t('choose_fusion_finish_for'), JSON_UNESCAPED_UNICODE) ?>;
+			var fusionSearchTimer = null;
+			var fusionCarouselTimer = null;
+			var fusionCarouselGeneration = 0;
+			var fusionImagePreloads = {};
+			var fusionImageQueuedTasks = {};
+			var fusionImageHighPriorityQueue = [];
+			var fusionImageBackgroundQueue = [];
+			var fusionImageActiveLoads = 0;
+			var fusionImageMaxConcurrentLoads = 6;
+			var fusionForm = document.getElementById('fusionSkinForm');
+			var fusionFormaInput = fusionForm ? fusionForm.querySelector('[data-fusion-forma]') : null;
+			var fusionPlaceholder = function () {
+				return 'img/skins/sticker.png';
+			};
+			var createPaintKitFinishBadge = function (paint) {
+				var badge = window.cs2PaintKitFinishBadges && window.cs2PaintKitFinishBadges[String(paint)];
+				if (!badge) return null;
+				var element = document.createElement('span');
+				element.className = 'paint-variant-badge paint-variant-' + badge.class;
+				element.textContent = badge.label;
+				return element;
+			};
+			var runFusionImageQueue = function () {
+				while (fusionImageActiveLoads < fusionImageMaxConcurrentLoads) {
+					var task = fusionImageHighPriorityQueue.shift() || fusionImageBackgroundQueue.shift();
+					if (!task) return;
+					if (fusionImageQueuedTasks[task.url] === task) delete fusionImageQueuedTasks[task.url];
+					fusionImageActiveLoads++;
+					(function (currentTask) {
+						var image = new Image();
+						var settled = false;
+						var finish = function (loaded) {
+							if (settled) return;
+							settled = true;
+							fusionImageActiveLoads--;
+							currentTask.resolve(loaded);
+							runFusionImageQueue();
+						};
+						image.onload = function () {
+							if (typeof image.decode !== 'function') {
+								finish(true);
+								return;
+							}
+							image.decode().then(function () { finish(true); }).catch(function () { finish(true); });
+						};
+						image.onerror = function () { finish(false); };
+						image.src = currentTask.url;
+						setTimeout(function () { finish(false); }, 10000);
+					})(task);
+				}
+			};
+			var preloadFusionImage = function (url, highPriority) {
+				if (!url) return Promise.resolve(false);
+				if (fusionImagePreloads[url]) {
+					var queuedTask = fusionImageQueuedTasks[url];
+					if (highPriority && queuedTask && !queuedTask.highPriority) {
+						var queuedIndex = fusionImageBackgroundQueue.indexOf(queuedTask);
+						if (queuedIndex !== -1) fusionImageBackgroundQueue.splice(queuedIndex, 1);
+						queuedTask.highPriority = true;
+						fusionImageHighPriorityQueue.push(queuedTask);
+					}
+					return fusionImagePreloads[url];
+				}
+				var promise = new Promise(function (resolve) {
+					var task = { url: url, resolve: resolve, highPriority: !!highPriority };
+					fusionImageQueuedTasks[url] = task;
+					(highPriority ? fusionImageHighPriorityQueue : fusionImageBackgroundQueue).push(task);
+					runFusionImageQueue();
+				});
+				fusionImagePreloads[url] = promise;
+				promise.then(function (loaded) {
+					if (!loaded && fusionImagePreloads[url] === promise) delete fusionImagePreloads[url];
+				});
+				return promise;
+			};
+			var normalizeFusionSources = function (item) {
+				var sources = Array.isArray(item.sources) ? item.sources : [];
+				if (!sources.length && (item.source_name || item.image)) {
+					sources = [{
+						source_name: item.source_name || item.name || '',
+						source_weapon: item.source_weapon || '',
+						source_defindex: parseInt(item.source_defindex, 10) || 0,
+						image: item.image || ''
+					}];
+				}
+				return sources.map(function (source) {
+					return {
+						sourceName: source.source_name || item.name || '',
+						sourceWeapon: source.source_weapon || '',
+						sourceDefindex: parseInt(source.source_defindex, 10) || 0,
+						image: source.image || ''
+					};
+				});
+			};
+			var fusionAliasText = function (item) {
+				return [item.name || ''].concat(normalizeFusionSources(item).map(function (source) {
+					return source.sourceName + ' ' + source.sourceWeapon;
+				})).join(' ').trim();
+			};
+			var fusionFinishName = function (name) {
+				var parts = String(name || '').split('|');
+				return (parts.length > 1 ? parts.slice(1).join('|') : parts[0]).trim();
+			};
+			var loadFusionPaintKits = function () {
+				if (fusionData) return Promise.resolve(fusionData);
+				return Promise.all([
+					fetchJson(window.cs2PaintKitDataUrl),
+					fetchJson(window.cs2PaintKitAliasDataUrl)
+				]).then(function (payloads) {
+					var items = payloads[0] || [];
+					var aliases = payloads[1] || [];
+					var aliasByPaint = {};
+					var seen = {};
+					aliases.forEach(function (item) {
+						aliasByPaint[parseInt(item.paint, 10) || 0] = fusionAliasText(item);
+					});
+					fusionData = items.map(function (item) {
+						var paint = parseInt(item.paint, 10) || 0;
+						var sources = normalizeFusionSources(item);
+						seen[paint] = true;
+						return {
+							paint: paint,
+							name: item.name || '',
+							sources: sources,
+							searchText: (fusionAliasText(item) + ' ' + (aliasByPaint[paint] || '')).trim()
+						};
+					}).filter(function (item) { return item.paint > 0 && item.sources.length; });
+					aliases.forEach(function (item) {
+						var paint = parseInt(item.paint, 10) || 0;
+						if (!paint || seen[paint]) return;
+						fusionData.push({ paint: paint, name: item.name || '', sources: normalizeFusionSources(item), searchText: fusionAliasText(item) });
+					});
+					fusionData.sort(function (a, b) {
+						var aHasMultipleSources = a.sources.length > 1;
+						var bHasMultipleSources = b.sources.length > 1;
+						if (aHasMultipleSources !== bHasMultipleSources) return aHasMultipleSources ? -1 : 1;
+						return a.paint - b.paint;
+					});
+					return fusionData;
+				});
+			};
+			var preloadFusionWindow = function (card, sourceIndex) {
+				var sources = card._fusionSources || [];
+				var pending = [];
+				var seenUrls = {};
+				for (var offset = 0; offset < 5 && offset < sources.length; offset++) {
+					var source = sources[(sourceIndex + offset) % sources.length];
+					if (!source.image || seenUrls[source.image]) continue;
+					seenUrls[source.image] = true;
+					pending.push(preloadFusionImage(source.image, false));
+				}
+				return Promise.all(pending);
+			};
+			var setFusionCardSource = function (card, sourceIndex, animate) {
+				var sources = card._fusionSources || [];
+				if (!sources.length) return Promise.resolve();
+				sourceIndex = sourceIndex % sources.length;
+				var source = sources[sourceIndex];
+				var image = card.querySelector('img');
+				card._fusionPendingIndex = sourceIndex;
+				if (!animate) {
+					card._fusionSourceIndex = sourceIndex;
+					if (image) {
+						image.src = fusionPlaceholder();
+						image.dataset.remoteSrc = source.image || '';
+					}
+					preloadFusionImage(source.image, true).then(function (loaded) {
+						if (loaded && card._fusionPendingIndex === sourceIndex && image && source.image) image.src = source.image;
+						preloadFusionWindow(card, sourceIndex + 1);
+					});
+					return Promise.resolve();
+				}
+				return preloadFusionImage(source.image, true).then(function (loaded) {
+					if (card._fusionPendingIndex !== sourceIndex) return;
+					var applySource = function () {
+						if (card._fusionPendingIndex !== sourceIndex) return;
+						card._fusionSourceIndex = sourceIndex;
+						var reveal = Promise.resolve();
+						if (image) {
+							image.dataset.remoteSrc = source.image || '';
+							image.src = loaded && source.image ? source.image : fusionPlaceholder();
+							if (typeof image.decode === 'function') reveal = image.decode().catch(function () {});
+						}
+						preloadFusionWindow(card, sourceIndex + 1);
+						reveal.then(function () {
+							if (card._fusionPendingIndex !== sourceIndex) return;
+							requestAnimationFrame(function () {
+								if (card._fusionPendingIndex === sourceIndex) card.classList.remove('is-changing');
+							});
+						});
+					};
+					card.classList.add('is-changing');
+					setTimeout(applySource, 180);
+				});
+			};
+			var startFusionCarousel = function () {
+				if (fusionCarouselTimer) clearInterval(fusionCarouselTimer);
+				var generation = ++fusionCarouselGeneration;
+				if (!fusionResultsEl) return;
+				var cards = Array.prototype.slice.call(fusionResultsEl.querySelectorAll('.fusion-finish-result.has-multiple-sources'));
+				if (!cards.length) return;
+				if (generation !== fusionCarouselGeneration) return;
+				fusionCarouselTimer = setInterval(function () {
+					cards.forEach(function (card) {
+						if (!card.isConnected) return;
+						setFusionCardSource(card, (card._fusionSourceIndex || 0) + 1, true);
+					});
+				}, 3000);
+			};
+			var renderFusionResults = function () {
+				if (!fusionResultsEl || !fusionData) return;
+				var query = (fusionSearchInput ? fusionSearchInput.value : '').trim().toLowerCase();
+				var terms = query ? query.split(/\s+/).filter(Boolean) : [];
+				var shown = fusionData.filter(function (item) {
+					var searchText = (item.searchText || '').toLowerCase();
+					return !query || String(item.paint) === query || terms.every(function (term) { return searchText.indexOf(term) !== -1; });
+				}).slice(0, 80);
+				fusionResultsEl.innerHTML = '';
+				shown.forEach(function (item) {
+					var card = document.createElement('div');
+					card.className = 'skin-result fusion-finish-result' + (item.sources.length > 1 ? ' has-multiple-sources' : '');
+					card.dataset.fusionPaint = String(item.paint);
+					card.tabIndex = 0;
+					card.setAttribute('role', 'button');
+					card._fusionItem = item;
+					card._fusionSources = item.sources;
+					card._fusionSourceIndex = 0;
+					if (fusionOfficialPaints[item.paint]) card.classList.add('is-native-finish');
+					var image = document.createElement('img');
+					image.src = fusionPlaceholder();
+					image.alt = '';
+					card.appendChild(image);
+					var indicators = document.createElement('div');
+					indicators.className = 'fusion-result-indicators';
+					if (item.sources.length > 1) {
+						var sourceCount = document.createElement('button');
+						sourceCount.type = 'button';
+						sourceCount.className = 'fusion-source-count';
+						sourceCount.dataset.fusionSourceOpen = '1';
+						sourceCount.textContent = fusionSourceCountTemplate.replace('%d', String(item.sources.length));
+						indicators.appendChild(sourceCount);
+					}
+					var finishBadge = createPaintKitFinishBadge(item.paint);
+					if (finishBadge) indicators.appendChild(finishBadge);
+					var paintId = document.createElement('span');
+					paintId.className = 'fusion-paint-id';
+					paintId.textContent = 'ID ' + String(item.paint);
+					indicators.appendChild(paintId);
+					card.appendChild(indicators);
+					if (fusionOfficialPaints[item.paint]) {
+						var nativeFinish = document.createElement('span');
+						nativeFinish.className = 'fusion-native-finish';
+						nativeFinish.textContent = fusionNativeFinishLabel;
+						card.appendChild(nativeFinish);
+					}
+					var name = document.createElement('span');
+					name.textContent = fusionFinishName(item.name);
+					card.appendChild(name);
+					setFusionCardSource(card, 0, false);
+					fusionResultsEl.appendChild(card);
+				});
+				scheduleStatusIndicatorFit();
+				startFusionCarousel();
+			};
+			var renderFusionSources = function (item) {
+				if (!fusionSourceResults || !item) return;
+				if (fusionSourcePaintName) fusionSourcePaintName.textContent = item.name || '';
+				fusionSourceResults.innerHTML = '';
+				item.sources.forEach(function (source) {
+					var card = document.createElement('div');
+					card.className = 'fusion-source-result';
+					var finishBadge = createPaintKitFinishBadge(item.paint);
+					if (finishBadge) card.appendChild(finishBadge);
+					var image = document.createElement('img');
+					image.src = fusionPlaceholder();
+					image.dataset.remoteSrc = source.image || '';
+					image.alt = '';
+					card.appendChild(image);
+					loadRemoteImage(image);
+					var name = document.createElement('span');
+					name.className = 'fusion-source-name';
+					name.textContent = source.sourceName;
+					card.appendChild(name);
+					fusionSourceResults.appendChild(card);
+				});
+			};
+			var scheduleFusionResultsRender = function () {
+				if (fusionSearchTimer) clearTimeout(fusionSearchTimer);
+				fusionSearchTimer = setTimeout(renderFusionResults, 100);
+			};
+			if (fusionPickerEl) {
+				fusionPickerEl.addEventListener('shown.bs.modal', function () {
+					markStickerBackdrop();
+					scheduleStatusIndicatorFit();
+					if (fusionSearchInput) fusionSearchInput.focus();
+				});
+				fusionPickerEl.addEventListener('hidden.bs.modal', function () {
+					if (fusionCarouselTimer) clearInterval(fusionCarouselTimer);
+					fusionCarouselTimer = null;
+					fusionCarouselGeneration++;
+					setStickerUnderlay(null);
+				});
+			}
+			if (fusionSourceEl) {
+				fusionSourceEl.addEventListener('shown.bs.modal', function () {
+					if (fusionCarouselTimer) clearInterval(fusionCarouselTimer);
+					fusionCarouselTimer = null;
+					fusionCarouselGeneration++;
+					markStickerBackdrop();
+				});
+				fusionSourceEl.addEventListener('hidden.bs.modal', function () {
+					setStickerUnderlay(fusionParentModal);
+					startFusionCarousel();
+				});
+			}
+			if (fusionSearchInput) fusionSearchInput.addEventListener('input', scheduleFusionResultsRender);
+			var submitFusionPaint = function (card) {
+				if (!card || !fusionTargetDefindex || !fusionForm || !fusionFormaInput) return;
+				var paint = parseInt(card.dataset.fusionPaint, 10) || 0;
+				if (!paint) return;
+				fusionFormaInput.value = String(fusionTargetDefindex) + '-' + String(paint);
+				window.rememberScrollPosition();
+				fusionForm.submit();
+			};
+			document.addEventListener('click', function (event) {
+				var fusionOpenButton = event.target.closest('[data-fusion-open]');
+				if (fusionOpenButton) {
+					fusionTargetDefindex = parseInt(fusionOpenButton.dataset.fusionDefindex, 10) || 0;
+					fusionTargetWeapon = fusionOpenButton.dataset.fusionWeapon || '';
+					if (fusionPickerTitle) fusionPickerTitle.textContent = fusionPickerTitleTemplate.replace('%s', fusionOpenButton.dataset.fusionTargetName || fusionTargetWeapon);
+					fusionOfficialPaints = {};
+					String(fusionOpenButton.dataset.fusionOfficialPaints || '').split(',').forEach(function (paint) {
+						paint = parseInt(paint, 10) || 0;
+						if (paint > 0) fusionOfficialPaints[paint] = true;
+					});
+					fusionParentModal = fusionOpenButton.closest('.modal');
+					setStickerUnderlay(fusionParentModal);
+					loadFusionPaintKits().then(function () {
+						if (fusionSearchInput) fusionSearchInput.value = '';
+						renderFusionResults();
+						if (fusionPicker) fusionPicker.show();
+					});
+					return;
+				}
+				var fusionSourceOpen = event.target.closest('[data-fusion-source-open]');
+				if (fusionSourceOpen) {
+					var sourceCard = fusionSourceOpen.closest('[data-fusion-paint]');
+					if (sourceCard && sourceCard._fusionItem) {
+						renderFusionSources(sourceCard._fusionItem);
+						setStickerUnderlay(fusionPickerEl);
+						if (fusionSourceModal) fusionSourceModal.show();
+					}
+					return;
+				}
+				submitFusionPaint(event.target.closest('[data-fusion-paint]'));
+			});
+			document.addEventListener('keydown', function (event) {
+				if (event.target.closest('[data-fusion-source-open]')) return;
+				var card = event.target.closest('[data-fusion-paint]');
+				if (!card || (event.key !== 'Enter' && event.key !== ' ')) return;
+				event.preventDefault();
+				submitFusionPaint(card);
+			});
 
 			var loadStickers = function () {
 				if (stickerData) return Promise.resolve(stickerData);
@@ -3581,6 +4278,16 @@ $returnTo = safeReturnUrl($returnTo);
 					button.appendChild(name);
 					resultsEl.appendChild(button);
 				});
+			};
+
+			var scheduleStickerResultsRender = function () {
+				if (stickerSearchTimer !== null) {
+					window.clearTimeout(stickerSearchTimer);
+				}
+				stickerSearchTimer = window.setTimeout(function () {
+					stickerSearchTimer = null;
+					renderStickerResults();
+				}, 100);
 			};
 
 			var stickerSlotsIn = function (scope) {
@@ -3688,6 +4395,10 @@ $returnTo = safeReturnUrl($returnTo);
 					activeStickerSlot = openButton.closest('.sticker-slot');
 					setStickerUnderlay(openButton.closest('.modal'));
 					loadStickers().then(function () {
+						if (stickerSearchTimer !== null) {
+							window.clearTimeout(stickerSearchTimer);
+							stickerSearchTimer = null;
+						}
 						if (searchInput) searchInput.value = '';
 						renderStickerResults();
 						if (picker) {
@@ -4075,7 +4786,7 @@ $returnTo = safeReturnUrl($returnTo);
 				}
 			});
 			if (searchInput) {
-				searchInput.addEventListener('input', renderStickerResults);
+				searchInput.addEventListener('input', scheduleStickerResultsRender);
 			}
 
 			document.querySelectorAll('[data-skin-param-row]').forEach(function (row) {

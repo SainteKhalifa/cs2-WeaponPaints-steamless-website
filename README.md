@@ -23,6 +23,11 @@ This project is intended for private servers and trusted player groups. It is no
     <img src="./preview/img/4.png" width="45%">
 </p>
 
+<p align="center">
+    <img src="./preview/img/5.png" width="45%">
+    <img src="./preview/img/6.png" width="45%">
+</p>
+
 ## Features
 
 * Steam64 ID-based loadouts without Steam login
@@ -32,6 +37,7 @@ This project is intended for private servers and trusted player groups. It is no
 * Five sticker slots per weapon, with fill-all, clear-all, and per-slot wear/position/scale/rotation settings
 * Keychain pattern template and X/Y offset settings
 * Searchable skin, sticker, keychain, music kit, and collectible pin pickers
+* Searchable experimental skin fusion for applying a paint kit to a different weapon or knife
 * Optional website password and per-loadout PIN protection
 * Administrator mode for unrestricted loadout management and deletion
 * English and Simplified Chinese UI
@@ -58,6 +64,7 @@ Enabling PHP cURL and mbstring is recommended. The database account should have 
    define('SITE_NAME_ZH_CN', 'CS2 WeaponPaints 配置管理器');
    define('SITE_ACCESS_PASSWORD', ''); // Optional website password
    define('ADMIN_PASSWORD', ''); // Optional administrator password
+   define('ENABLE_SKIN_FUSION', true); // Experimental cross-weapon paint combinations
 
    define('DB_HOST', '127.0.0.1');
    define('DB_PORT', '3306');
@@ -84,6 +91,10 @@ The website automatically creates its helper tables and adds missing helper colu
 
 Global mode writes supported team-based settings to both T and CT. Music kits are managed globally, while agents are selected separately for T and CT.
 
+### Skin Fusion (Experimental)
+
+Set `ENABLE_SKIN_FUSION` to `true`, open a weapon's **Skin** picker, then choose **Fusion Finish** to apply another paint kit to the current weapon or knife. The actual result depends on the installed WeaponPaints version and CS2 behavior.
+
 ### Loadout PINs
 
 * A protected loadout asks for its PIN before opening.
@@ -102,7 +113,7 @@ Set `ADMIN_PASSWORD` in `class/config.php` to enable the administrator button. A
 
 ## Updating CS2 Data
 
-The updater refreshes skins, gloves, agents, music kits, stickers, keychains, and collectible pins from [ByMykel/CSGO-API](https://github.com/ByMykel/CSGO-API).
+The updater refreshes skins, gloves, agents, music kits, stickers, keychains, collectible pins, and the fusion paint-kit catalog from [ByMykel/CSGO-API](https://github.com/ByMykel/CSGO-API). The generated `data/paint_kits_en.json` and `data/paint_kits_zh-CN.json` files preserve paint-kit source names and images used by the fusion picker.
 
 ### First Run
 
@@ -112,17 +123,7 @@ Right-click the project folder and copy its path. Open Command Prompt or PowerSh
 cd "PROJECT FOLDER PATH"
 ```
 
-Check whether PHP is available:
-
-```shell
-php -v
-```
-
-If the command is not recognized, install PHP 8.0 or newer or locate the PHP installation provided by your web server package. Add the directory containing the PHP executable to the system `Path`, then reopen the terminal and run `php -v` again.
-
-No additional PHP package or Composer installation is required.
-
-Run:
+Run the full update:
 
 ```bash
 php tools/update_cs2_data.php
@@ -134,13 +135,13 @@ Preview without writing output files:
 php tools/update_cs2_data.php --dry-run
 ```
 
-Update only skins and gloves:
+Update only skins, gloves, and the fusion paint-kit catalog:
 
 ```bash
 php tools/update_cs2_data.php --only=skins
 ```
 
-Downloaded source files are cached in `data/.source_cache/`, which is excluded by `.gitignore`. A valid cache is reused without requesting GitHub again. Delete the relevant cache file when you want to fetch fresh upstream data. Existing output files are backed up in `data/backups/` before replacement.
+Downloaded source files are cached in `data/.source_cache/`. A valid cache is reused without requesting GitHub again. Delete the relevant cache file when you want to fetch fresh upstream data. Existing output files are backed up in `data/backups/` before replacement.
 
 If GitHub returns HTTP 429, wait before retrying. Failed downloads do not overwrite valid cached or generated data.
 
@@ -159,12 +160,6 @@ It also creates:
 
 * `wp_presets` for the loadout list, nicknames, and hashed loadout PINs
 * `wp_skin_settings_cache` for remembering per-skin website settings
-
-If an existing `wp_presets` table cannot be upgraded automatically, run:
-
-```sql
-ALTER TABLE `wp_presets` ADD `loadout_password_hash` VARCHAR(255) NULL AFTER `nickname`;
-```
 
 ## Security
 

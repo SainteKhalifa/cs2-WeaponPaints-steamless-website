@@ -7,6 +7,7 @@ define('ADMIN_PASSWORD', ''); // Leave empty to disable administrator mode
 define('AUTH_RATE_LIMIT_ATTEMPTS', 5); // Failed attempts allowed within the time window
 define('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800); // Failure tracking window: 30 minutes
 define('AUTH_RATE_LIMIT_LOCK_SECONDS', 60); // Lock duration: 1 minute
+define('ENABLE_SKIN_FUSION', true); // Allow cross-weapon paint combinations
 
 define('DB_HOST', '127.0.0.1');
 define('DB_PORT', '3306');

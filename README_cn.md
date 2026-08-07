@@ -23,6 +23,11 @@
     <img src="./preview/img/4.png" width="45%">
 </p>
 
+<p align="center">
+    <img src="./preview/img/5.png" width="45%">
+    <img src="./preview/img/6.png" width="45%">
+</p>
+
 ## 主要功能
 
 * 通过 Steam64 ID 管理配置，无需 Steam 登录
@@ -32,6 +37,7 @@
 * 每把武器提供 5 个贴纸槽位，支持全部覆盖、全部清除和单槽位磨损、位置、缩放、旋转设置
 * 支持挂件模板和 X/Y 偏移设置
 * 支持搜索皮肤、贴纸、挂件、音乐盒和徽章
+* 支持可搜索的实验性皮肤融合，可将涂装应用到其他武器或匕首
 * 支持网站访问密码、单配置 PIN 和管理员模式
 * 管理员可以管理和删除所有配置
 * 支持英语和简体中文
@@ -58,6 +64,7 @@
    define('SITE_NAME_ZH_CN', 'CS2 WeaponPaints 配置管理器');
    define('SITE_ACCESS_PASSWORD', ''); // 可选的网站访问密码
    define('ADMIN_PASSWORD', ''); // 可选的管理员密码
+   define('ENABLE_SKIN_FUSION', true); // 实验性的跨武器涂装组合
 
    define('DB_HOST', '127.0.0.1');
    define('DB_PORT', '3306');
@@ -84,6 +91,10 @@
 
 全局模式会将支持阵营区分的设置同时写入 T 和 CT。音乐盒只在全局模式下管理，探员则分别在 T 和 CT 模式下选择。
 
+### 融合涂装（实验性）
+
+将 `ENABLE_SKIN_FUSION` 设置为 `true`，打开武器的“皮肤”选择弹窗，再选择“融合涂装”，即可为当前武器或匕首选择其他涂装。融合后的实际效果取决于 WeaponPaints 插件版本和 CS2 的游戏行为。
+
 ### 配置 PIN
 
 * 进入受保护的配置前需要输入 PIN。
@@ -102,7 +113,7 @@
 
 ## 更新 CS2 数据
 
-更新工具从 [ByMykel/CSGO-API](https://github.com/ByMykel/CSGO-API) 获取皮肤、手套、探员、音乐盒、贴纸、挂件和徽章数据。
+更新工具从 [ByMykel/CSGO-API](https://github.com/ByMykel/CSGO-API) 获取皮肤、手套、探员、音乐盒、贴纸、挂件、徽章和融合涂装目录。生成的 `data/paint_kits_en.json` 与 `data/paint_kits_zh-CN.json` 会保存融合选择器使用的涂装来源名称和图片。
 
 ### 首次运行
 
@@ -111,16 +122,6 @@
 ```shell
 cd "项目文件夹地址"
 ```
-
-检查 PHP 命令是否可用：
-
-```shell
-php -v
-```
-
-如果系统提示无法识别 `php` 命令，请安装 PHP 8.0 或更高版本，或者找到网页服务器套件自带的 PHP。将 PHP 可执行文件所在目录添加到系统 `Path`，重新打开终端后再次运行 `php -v`。
-
-更新工具不需要额外安装 PHP 软件包或 Composer 依赖。
 
 运行完整更新：
 
@@ -134,13 +135,13 @@ php tools/update_cs2_data.php
 php tools/update_cs2_data.php --dry-run
 ```
 
-只更新皮肤和手套：
+只更新皮肤、手套和融合涂装目录：
 
 ```bash
 php tools/update_cs2_data.php --only=skins
 ```
 
-下载的源文件会保存在 `data/.source_cache/`，该目录已被 `.gitignore` 排除。存在有效缓存时，工具不会再次请求 GitHub；如需获取上游最新数据，请删除对应缓存文件。替换数据前，旧文件会备份到 `data/backups/`。
+下载的源文件会保存在 `data/.source_cache/`。存在有效缓存时，工具不会再次请求 GitHub；如需获取上游最新数据，请删除对应缓存文件。替换数据前，旧文件会备份到 `data/backups/`。
 
 如果 GitHub 返回 HTTP 429，请等待一段时间后重试。下载失败不会覆盖已有的有效缓存或数据文件。
 
@@ -159,12 +160,6 @@ php tools/update_cs2_data.php --only=skins
 
 * `wp_presets`：保存配置列表、备注用户名和配置 PIN 哈希
 * `wp_skin_settings_cache`：记住不同皮肤在网页侧的独立设置
-
-如果已有的 `wp_presets` 无法被网站自动升级，请手动执行：
-
-```sql
-ALTER TABLE `wp_presets` ADD `loadout_password_hash` VARCHAR(255) NULL AFTER `nickname`;
-```
 
 ## 安全说明
 
