@@ -2399,7 +2399,12 @@ $returnTo = 'index.php' . (!empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QU
 $returnTo = safeReturnUrl($returnTo);
 ?>
 <!DOCTYPE html>
-<html lang="<?= h($currentLanguage) ?>" data-bs-theme="dark">
+<?php
+// The accent colour follows the side being edited. Anywhere else, including the
+// loadout list, there is no side to reflect and the default blue stands.
+$themeTeam = $action === 'edit' && isset($team) ? (int)$team : 0;
+?>
+<html lang="<?= h($currentLanguage) ?>" data-bs-theme="dark"<?= $themeTeam ? ' data-team="' . $themeTeam . '"' : '' ?>>
 
 <head>
 	<meta charset="utf-8">

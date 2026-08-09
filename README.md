@@ -122,6 +122,16 @@ side, in the settings dialog and in the inspect link import alike: a forged
 request or a link carrying its own count is discarded and the stored value is
 kept. The StatTrak toggle itself stays editable either way.
 
+### The accent follows the side
+
+Editing the T side turns the interface orange, the CT side blue. Pages without a
+side, such as the loadout list, keep the default blue.
+
+The whole theme derives from two custom properties, `--primary` and
+`--primary-rgb`, switched by a `data-team` attribute on the `html` element. Every
+tint in the stylesheet now reads from them, so a third palette is a four-line
+addition rather than a search through hard-coded colours.
+
 ### Sides only, no global tab
 
 Loadouts are edited per side, T or CT. The former *Global* tab, which wrote to
@@ -367,6 +377,16 @@ appliqué côté serveur, dans la fenêtre de réglages comme à l'import d'un l
 d'inspection : une requête forgée ou un lien portant son propre compteur est
 écarté et la valeur enregistrée est conservée. L'interrupteur StatTrak lui-même
 reste modifiable dans les deux cas.
+
+### La couleur suit le camp
+
+Éditer le camp T passe l'interface en orange, le camp CT en bleu. Les pages sans
+camp, comme la liste des loadouts, gardent le bleu par défaut.
+
+Tout le thème découle de deux propriétés personnalisées, `--primary` et
+`--primary-rgb`, basculées par un attribut `data-team` sur l'élément `html`.
+Chaque teinte de la feuille de style les lit désormais, si bien qu'une troisième
+palette tient en quatre lignes au lieu d'une chasse aux couleurs codées en dur.
 
 ### Uniquement T et CT, plus d'onglet global
 

@@ -6,6 +6,9 @@
 	--text: #eef2f8;
 	--muted: #9aa5b5;
 	--primary: #4f8cff;
+	/* Same colour as --primary, kept separately so the rgba() blends across the
+	   stylesheet can vary their alpha without hard-coding the hue again. */
+	--primary-rgb: 79, 140, 255;
 	--ruby: #EF4444;
 	--sapphire: #3B82F6;
 	--black-pearl: #5C546C;
@@ -28,7 +31,7 @@ body {
 	min-height: 100vh;
 	margin: 0;
 	background:
-		radial-gradient(circle at 18% 14%, rgba(79, 140, 255, 0.16), transparent 28%),
+		radial-gradient(circle at 18% 14%, rgba(var(--primary-rgb), 0.16), transparent 28%),
 		radial-gradient(circle at 82% 8%, rgba(96, 124, 168, 0.12), transparent 24%),
 		linear-gradient(180deg, #121722 0%, var(--bg) 42%, #0d0f14 100%);
 	color: var(--text);
@@ -63,7 +66,7 @@ body::after {
 	width: 420px;
 	height: 420px;
 	border-radius: 50%;
-	background: rgba(79, 140, 255, 0.1);
+	background: rgba(var(--primary-rgb), 0.1);
 	filter: blur(26px);
 }
 
@@ -277,7 +280,7 @@ body::after {
     gap: 18px;
 
     background:
-        radial-gradient(circle at top right, rgba(79, 140, 255, .18), transparent 34%),
+        radial-gradient(circle at top right, rgba(var(--primary-rgb), .18), transparent 34%),
         linear-gradient(180deg, rgba(255, 255, 255, .045), transparent 48%),
         var(--panel);
 
@@ -374,8 +377,8 @@ body::after {
 }
 
 .access-panel input:focus {
-    border-color: rgba(79, 140, 255, .75);
-    box-shadow: 0 0 0 4px rgba(79, 140, 255, .14);
+    border-color: rgba(var(--primary-rgb), .75);
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), .14);
     background: rgba(0, 0, 0, .28);
 }
 
@@ -395,10 +398,10 @@ body::after {
 
     color: #fff;
     background:
-        linear-gradient(135deg, rgba(79, 140, 255, 1), rgba(64, 116, 220, 1));
+        linear-gradient(135deg, rgba(var(--primary-rgb), 1), rgba(64, 116, 220, 1));
 
     box-shadow:
-        0 12px 30px rgba(79, 140, 255, .26),
+        0 12px 30px rgba(var(--primary-rgb), .26),
         inset 0 1px 0 rgba(255, 255, 255, .2);
 
     cursor: pointer;
@@ -412,7 +415,7 @@ body::after {
     transform: translateY(-1px);
     filter: brightness(1.04);
     box-shadow:
-        0 16px 36px rgba(79, 140, 255, .32),
+        0 16px 36px rgba(var(--primary-rgb), .32),
         inset 0 1px 0 rgba(255, 255, 255, .24);
 }
 
@@ -491,7 +494,7 @@ label {
 	background-color: #0d1016;
 	color: var(--text);
 	border-color: var(--primary);
-	box-shadow: 0 0 0 .2rem rgba(79, 140, 255, .2);
+	box-shadow: 0 0 0 .2rem rgba(var(--primary-rgb), .2);
 }
 
 .preset-list {
@@ -518,7 +521,7 @@ label {
 	position: absolute;
 	inset: 0;
 	pointer-events: none;
-	background: radial-gradient(circle at 85% 10%, rgba(79, 140, 255, .14), transparent 38%);
+	background: radial-gradient(circle at 85% 10%, rgba(var(--primary-rgb), .14), transparent 38%);
 }
 
 .preset-card-body,
@@ -554,9 +557,9 @@ label {
 	gap: 5px;
 	margin-top: 10px;
 	padding: 4px 7px;
-	border: 1px solid rgba(79, 140, 255, .35);
+	border: 1px solid rgba(var(--primary-rgb), .35);
 	border-radius: 6px;
-	background: rgba(79, 140, 255, .1);
+	background: rgba(var(--primary-rgb), .1);
 	color: #b8d0ff;
 	font-size: 11px;
 	line-height: 1;
@@ -619,9 +622,9 @@ label {
 .loadout-info-panel {
 	position: relative;
 	padding: 22px;
-	border-color: rgba(79, 140, 255, .28);
+	border-color: rgba(var(--primary-rgb), .28);
 	background:
-		radial-gradient(circle at 92% 8%, rgba(79, 140, 255, .12), transparent 32%),
+		radial-gradient(circle at 92% 8%, rgba(var(--primary-rgb), .12), transparent 32%),
 		linear-gradient(180deg, rgba(255, 255, 255, .025), transparent 48%),
 		var(--panel);
 	overflow: hidden;
@@ -672,8 +675,8 @@ label {
 }
 
 .identity-status.active {
-	border-color: rgba(79, 140, 255, .42);
-	background: rgba(79, 140, 255, .12);
+	border-color: rgba(var(--primary-rgb), .42);
+	background: rgba(var(--primary-rgb), .12);
 	color: #c4d8ff;
 }
 
@@ -805,7 +808,7 @@ label {
 }
 
 .skin-card.featured {
-	border-color: rgba(79, 140, 255, .65);
+	border-color: rgba(var(--primary-rgb), .65);
 }
 
 .skin-card > form {
@@ -1047,9 +1050,9 @@ label {
 }
 
 .nametag-row:has([data-nametag-toggle]:checked) {
-	border-color: rgba(79, 140, 255, .42);
-	background: rgba(79, 140, 255, .07);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035), 0 0 0 1px rgba(79, 140, 255, .05);
+	border-color: rgba(var(--primary-rgb), .42);
+	background: rgba(var(--primary-rgb), .07);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035), 0 0 0 1px rgba(var(--primary-rgb), .05);
 }
 
 .stattrak-row:has([data-stattrak-toggle]:checked) {
@@ -1179,7 +1182,7 @@ label {
 .weapon-option-card .check-line input[type="checkbox"]:checked {
 	border-color: var(--primary);
 	background: var(--primary);
-	box-shadow: 0 0 0 3px rgba(79, 140, 255, .12);
+	box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .12);
 }
 
 .stattrak-row .check-line input[type="checkbox"]:checked {
@@ -1617,7 +1620,7 @@ label {
 
 .agent-result.active,
 .skin-result.active {
-	box-shadow: 0 0 0 1px rgba(79, 140, 255, .35);
+	box-shadow: 0 0 0 1px rgba(var(--primary-rgb), .35);
 }
 
 .agent-result img,
@@ -2279,4 +2282,17 @@ label {
 	font-size: .8rem;
 	line-height: 1.35;
 	margin-top: 2px;
+}
+
+/* The accent follows the side being edited: orange for T, blue for CT. Only the
+   two custom properties change, and every tint across the stylesheet derives
+   from them. Pages without a side keep the default blue. */
+html[data-team="2"] {
+	--primary: #f97316;
+	--primary-rgb: 249, 115, 22;
+}
+
+html[data-team="3"] {
+	--primary: #4f8cff;
+	--primary-rgb: 79, 140, 255;
 }
