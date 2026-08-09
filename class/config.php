@@ -54,6 +54,11 @@ define('AUTH_RATE_LIMIT_LOCK_SECONDS', config_int('AUTH_RATE_LIMIT_LOCK_SECONDS'
 
 define('ENABLE_SKIN_FUSION', config_flag('ENABLE_SKIN_FUSION', true)); // Allow cross-weapon paint combinations
 
+// The StatTrak kill counter is game state the plugin increments on its own.
+// Letting players type it in is an open invitation to fake their record, so it
+// is read-only unless a server owner deliberately opens it up.
+define('ALLOW_STATTRAK_COUNT', config_flag('ALLOW_STATTRAK_COUNT', false));
+
 define('DB_HOST', config_value('DB_HOST', '127.0.0.1'));
 define('DB_PORT', config_value('DB_PORT', '3306'));
 define('DB_NAME', config_value('DB_NAME', 'your_db_name'));

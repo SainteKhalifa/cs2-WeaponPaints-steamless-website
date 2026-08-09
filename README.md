@@ -111,6 +111,25 @@ ALTER TABLE `wp_player_skins` ADD COLUMN `weapon_keychain` VARCHAR(64) NOT NULL 
 Charm offsets are stored in world units, where a genuine inspect link routinely
 carries values around 10, so they are not restricted to a unit range.
 
+### Read-only StatTrak counter
+
+The kill count is game state the plugin maintains. An editable field is an easy
+way for a player to award themselves a record they never earned, so the counter
+is **read-only by default**.
+
+Set `ALLOW_STATTRAK_COUNT=true` to open it up. The check is enforced server side,
+in the settings dialog and in the inspect link import alike: a forged request or
+a link carrying its own count is discarded and the stored value is kept. The
+StatTrak toggle itself stays editable either way.
+
+### Sides only, no global tab
+
+Loadouts are edited per side, T or CT. The former *Global* tab, which wrote to
+both sides at once, is gone; an old link carrying `team=1` lands on the T side.
+
+Music kits and collectible pins used to appear on that tab alone. They are stored
+per side in the database, so they now show on both, like everything else.
+
 ### Container deployment
 
 The repository ships a complete stack for running behind an existing reverse
@@ -335,6 +354,28 @@ ALTER TABLE `wp_player_skins` ADD COLUMN `weapon_keychain` VARCHAR(64) NOT NULL 
 Les décalages de charm sont exprimés en unités de monde, où un lien d'inspection
 réel porte couramment des valeurs de l'ordre de 10 : ils ne sont donc pas
 restreints à un intervalle unitaire.
+
+### Compteur StatTrak en lecture seule
+
+Le nombre de frags est un état de jeu que le plugin entretient. Un champ
+modifiable est un moyen commode de s'attribuer un palmarès qu'on n'a jamais fait,
+le compteur est donc **en lecture seule par défaut**.
+
+Passe `ALLOW_STATTRAK_COUNT=true` pour l'ouvrir. Le contrôle est appliqué côté
+serveur, dans la fenêtre de réglages comme à l'import d'un lien d'inspection :
+une requête forgée ou un lien portant son propre compteur est écarté et la valeur
+enregistrée est conservée. L'interrupteur StatTrak lui-même reste modifiable dans
+les deux cas.
+
+### Uniquement T et CT, plus d'onglet global
+
+Les loadouts s'éditent par camp, T ou CT. L'ancien onglet *Global*, qui écrivait
+dans les deux à la fois, a disparu ; un ancien lien portant `team=1` arrive du
+côté T.
+
+Les kits musicaux et les pin's n'apparaissaient que sur cet onglet. Ils sont
+stockés par camp en base, ils s'affichent donc désormais des deux côtés, comme le
+reste.
 
 ### Déploiement en conteneur
 

@@ -28,7 +28,7 @@ $siteNameFallback = 'CS2 WeaponPaints Loadout Manager';
 $siteName = $siteNames[$currentLanguage] !== ''
 	? $siteNames[$currentLanguage]
 	: ($siteNames['en'] !== '' ? $siteNames['en'] : $siteNameFallback);
-$teams = $currentLanguage === 'en' ? [1 => 'Global', 2 => 'T', 3 => 'CT'] : [1 => '全局', 2 => 'T 阵营', 3 => 'CT 阵营'];
+$teams = $currentLanguage === 'en' ? [2 => 'T', 3 => 'CT'] : [2 => 'T 阵营', 3 => 'CT 阵营'];
 
 $uiText = [
 	'zh-CN' => [
@@ -169,6 +169,7 @@ $uiText = [
 		'inspect_step_paste' => '回到本页，把链接粘贴到下方并导入。',
 		'inspect_import_placeholder' => '粘贴检视链接或十六进制代码',
 		'inspect_paste' => '从剪贴板粘贴',
+		'stattrak_count_locked' => '击杀数由服务器插件维护，无法在此修改。',
 		'inspect_keep_placement' => '保留精细的贴纸位置',
 		'inspect_keep_placement_hint' => '游戏插件目前无法还原精细位置：勾选后贴纸会挤在武器中央。取消勾选则使用默认位置，五张贴纸会正常分布。',
 		'inspect_import_apply' => '导入',
@@ -317,6 +318,7 @@ $uiText = [
 		'inspect_step_paste' => 'Come back here, paste the link below and import it.',
 		'inspect_import_placeholder' => 'Paste an inspect link or hex payload',
 		'inspect_paste' => 'Paste from clipboard',
+		'stattrak_count_locked' => 'The kill count is maintained by the server plugin and cannot be changed here.',
 		'inspect_keep_placement' => 'Keep the fine sticker placement',
 		'inspect_keep_placement_hint' => 'The game plugin cannot reproduce fine placement yet: with this ticked, stickers end up piled in the middle of the weapon. Leave it off to use the default positions, where all five spread out properly.',
 		'inspect_import_apply' => 'Import',
@@ -586,20 +588,35 @@ function authRateLimit($scope, $subject = '', $operation = 'check')
 	return max(0, $state['blocked_until'] - $now);
 }
 
+/**
+ * Whether players may set the StatTrak kill count themselves.
+ *
+ * The counter is game state the plugin maintains, so it stays read-only unless
+ * a server owner opens it up on purpose.
+ */
+function stattrakCountEditable()
+{
+	return defined('ALLOW_STATTRAK_COUNT') && ALLOW_STATTRAK_COUNT === true;
+}
+
+/**
+ * Loadouts are edited per side. Team 1 used to mean "both sides at once" and no
+ * longer exists, so an old link carrying it lands on the T side.
+ */
 function selectedTeam()
 {
-	$team = (int)($_GET['team'] ?? $_POST['team'] ?? 1);
-	return in_array($team, [1, 2, 3], true) ? $team : 1;
+	$team = (int)($_GET['team'] ?? $_POST['team'] ?? 2);
+	return in_array($team, [2, 3], true) ? $team : 2;
 }
 
 function readTeam($team)
 {
-	return $team === 1 ? 2 : $team;
+	return (int)$team;
 }
 
 function writeTeams($team)
 {
-	return $team === 1 ? [2, 3] : [$team];
+	return [(int)$team];
 }
 
 function cleanSteamId($steamid)
@@ -1840,12 +1857,21 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 				"team" => $targetTeam,
 			];
 
-			$existing = $db->select("SELECT `weapon_defindex` FROM `wp_player_skins`
+			$existing = $db->select("SELECT `weapon_defindex`, `weapon_stattrak_count` FROM `wp_player_skins`
 				WHERE `steamid` = :steamid AND `weapon_defindex` = :weapon_defindex AND `weapon_team` = :team LIMIT 1", [
 				"steamid" => $steamid,
 				"weapon_defindex" => $defindex,
 				"team" => $targetTeam,
 			]);
+
+			// An inspect link carries a kill count of its own. Locked, it is
+			// discarded like any other player-supplied value and the stored
+			// counter is carried over untouched.
+			$appliedStatTrakCount = $stattrakCount;
+			if (!stattrakCountEditable()) {
+				$appliedStatTrakCount = $stattrak ? (int)($existing[0]['weapon_stattrak_count'] ?? 0) : 0;
+				$bindings['weapon_stattrak_count'] = $appliedStatTrakCount;
+			}
 
 			if ($existing) {
 				$db->query("UPDATE `wp_player_skins`
@@ -1857,7 +1883,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					VALUES (:steamid, :weapon_defindex, :weapon_paint_id, :weapon_wear, :weapon_seed, :weapon_stattrak, :weapon_stattrak_count, :weapon_nametag, :weapon_sticker_0, :weapon_sticker_1, :weapon_sticker_2, :weapon_sticker_3, :weapon_sticker_4, :weapon_keychain, :team)", $bindings);
 			}
 
-			saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, $paint, $wear, $seed, $stattrak, $stattrakCount, $nameTag);
+			saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, $paint, $wear, $seed, $stattrak, $appliedStatTrakCount, $nameTag);
 		}
 
 		go("{$fallbackUrl}&imported=1");
@@ -2121,7 +2147,12 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					$wear = $submittedWear ?? ($existing[0]['weapon_wear'] ?? 0.0);
 					$seed = $submittedSeed ?? ($existing[0]['weapon_seed'] ?? 0);
 					$stattrak = $submittedStatTrak;
-					$stattrakCount = $stattrak ? $submittedStatTrakCount : 0;
+					// When the counter is locked, whatever the form sent is ignored
+					// and the stored value stands: it belongs to the game, not to
+					// the player filling in a field.
+					$stattrakCount = $stattrak
+						? (stattrakCountEditable() ? $submittedStatTrakCount : (int)($existing[0]['weapon_stattrak_count'] ?? 0))
+						: 0;
 					$nameTag = array_key_exists('nametag_present', $_POST) ? $submittedNameTag : ($existing[0]['weapon_nametag'] ?? null);
 					$stickerValues = $submittedStickerValues ?? ($existing ? stickerValuesFromRow($existing[0]) : defaultStickerValues());
 					$keychainValue = $submittedKeychainValue ?? ($existing[0]['weapon_keychain'] ?? defaultKeychainValue());
@@ -2130,7 +2161,13 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					$wear = $cached ? (float)$cached['weapon_wear'] : 0.0;
 					$seed = $cached ? (int)$cached['weapon_seed'] : 0;
 					$stattrak = $cached ? (int)$cached['weapon_stattrak'] : 0;
-					$stattrakCount = $stattrak && $cached ? (int)($cached['weapon_stattrak_count'] ?? 0) : 0;
+					// The cache is fed by the form, so it can carry a count a player
+					// typed. Locked, the stored row is the only source we trust.
+					$stattrakCount = $stattrak
+						? (stattrakCountEditable()
+							? ($cached ? (int)($cached['weapon_stattrak_count'] ?? 0) : 0)
+							: (int)($existing[0]['weapon_stattrak_count'] ?? 0))
+						: 0;
 					$nameTag = $cached ? $cached['weapon_nametag'] : null;
 					$stickerValues = $existing ? stickerValuesFromRow($existing[0]) : defaultStickerValues();
 					$keychainValue = $existing[0]['weapon_keychain'] ?? defaultKeychainValue();
@@ -2501,7 +2538,6 @@ $returnTo = safeReturnUrl($returnTo);
 					<p><?= h(presetLabel($currentPreset)) ?> · <?= h($teams[$team]) ?></p>
 				</div>
 				<nav class="team-tabs">
-					<a class="<?= $team === 1 ? 'active' : '' ?>" href="index.php?action=edit&id=<?= h($currentPreset['steamid']) ?>&team=1"><?= h($teams[1]) ?></a>
 					<a class="<?= $team === 2 ? 'active' : '' ?>" href="index.php?action=edit&id=<?= h($currentPreset['steamid']) ?>&team=2"><?= h($teams[2]) ?></a>
 					<a class="<?= $team === 3 ? 'active' : '' ?>" href="index.php?action=edit&id=<?= h($currentPreset['steamid']) ?>&team=3"><?= h($teams[3]) ?></a>
 				</nav>
@@ -2804,7 +2840,7 @@ $returnTo = safeReturnUrl($returnTo);
 		<input type="checkbox" name="stattrak" value="1" data-stattrak-toggle <?= $currentKnifeStatTrak ? 'checked' : '' ?>>
 		<span class="stattrak-label">StatTrak™</span>
 	</label>
-	<input type="number" name="weapon_stattrak_count" value="<?= h($currentKnifeStatTrakCount) ?>" min="0" max="999999" step="1" class="form-control stattrak-input<?= $currentKnifeStatTrak ? '' : ' is-inactive' ?>" data-stattrak-input <?= $currentKnifeStatTrak ? '' : 'disabled' ?>>
+	<input type="number" name="weapon_stattrak_count" value="<?= h($currentKnifeStatTrakCount) ?>" min="0" max="999999" step="1" class="form-control stattrak-input<?= $currentKnifeStatTrak ? '' : ' is-inactive' ?>" data-stattrak-input <?= $currentKnifeStatTrak ? '' : 'disabled' ?> <?= stattrakCountEditable() ? '' : 'readonly' ?> title="<?= h(stattrakCountEditable() ? '' : t('stattrak_count_locked')) ?>">
 												</div>
 </div>
 											</div>
@@ -3080,7 +3116,6 @@ $returnTo = safeReturnUrl($returnTo);
 				<?php endif; ?>
 
 
-				<?php if ($team === 1) : ?>
 				<?php
 				$currentMusicId = $selectedMusic !== null && array_key_exists((int)$selectedMusic, $music) ? (int)$selectedMusic : 0;
 				$currentMusic = $music[$currentMusicId] ?? ($music[0] ?? ['id' => 0, 'name' => t('default_music'), 'image' => '']);
@@ -3138,7 +3173,6 @@ $returnTo = safeReturnUrl($returnTo);
 					</form>
 				</div>
 
-				<?php endif; ?>
 				<?php
 				$currentPinId = $selectedPin !== null && array_key_exists((int)$selectedPin, $pins) ? (int)$selectedPin : 0;
 				$currentPin = $pins[$currentPinId] ?? ($pins[0] ?? ['id' => 0, 'name' => t('default_pin'), 'image' => '']);
@@ -3398,7 +3432,7 @@ $returnTo = safeReturnUrl($returnTo);
 		<input type="checkbox" name="stattrak" value="1" data-stattrak-toggle <?= $initialStatTrakValue ? 'checked' : '' ?>>
 		<span class="stattrak-label">StatTrak™</span>
 	</label>
-	<input type="number" name="weapon_stattrak_count" value="<?= h($initialStatTrakCountValue) ?>" min="0" max="999999" step="1" class="form-control stattrak-input<?= $initialStatTrakValue ? '' : ' is-inactive' ?>" data-stattrak-input <?= $initialStatTrakValue ? '' : 'disabled' ?>>
+	<input type="number" name="weapon_stattrak_count" value="<?= h($initialStatTrakCountValue) ?>" min="0" max="999999" step="1" class="form-control stattrak-input<?= $initialStatTrakValue ? '' : ' is-inactive' ?>" data-stattrak-input <?= $initialStatTrakValue ? '' : 'disabled' ?> <?= stattrakCountEditable() ? '' : 'readonly' ?> title="<?= h(stattrakCountEditable() ? '' : t('stattrak_count_locked')) ?>">
 												</div>
 </div>
 												<div class="col-12 cosmetic-editor">
