@@ -2590,8 +2590,15 @@ $returnTo = safeReturnUrl($returnTo);
 							$currentKnifeWear = $cachedKnifeSetting['weapon_wear'];
 							$currentKnifeSeed = $cachedKnifeSetting['weapon_seed'];
 							$currentKnifeStatTrak = (int)$cachedKnifeSetting['weapon_stattrak'];
-							$currentKnifeStatTrakCount = $currentKnifeStatTrak ? (int)($cachedKnifeSetting['weapon_stattrak_count'] ?? 0) : 0;
-							$currentKnifeNameTag = $cachedKnifeSetting['weapon_nametag'];
+							// Same reasoning as the weapon cards: the kill counter is
+							// live game state and the cache may only replace a name tag,
+							// never erase one.
+							if (!$currentKnifeStatTrak) {
+								$currentKnifeStatTrakCount = 0;
+							}
+							if (($cachedKnifeSetting['weapon_nametag'] ?? '') !== '') {
+								$currentKnifeNameTag = $cachedKnifeSetting['weapon_nametag'];
+							}
 						}
 					}
 					$currentKnifeNameTagEnabled = $currentKnifeNameTag !== null && $currentKnifeNameTag !== '';
@@ -3223,7 +3230,13 @@ $returnTo = safeReturnUrl($returnTo);
 							if (!$initialStatTrakValue) {
 								$initialStatTrakCountValue = 0;
 							}
-							$initialNameTagValue = $cachedSkinSetting['weapon_nametag'];
+							// The cache may only replace a name tag, never erase one. A
+							// row written outside the settings dialog, by an inspect
+							// link import, carries a name the cache has never seen, and
+							// blanking it here would let the next save drop it.
+							if (($cachedSkinSetting['weapon_nametag'] ?? '') !== '') {
+								$initialNameTagValue = $cachedSkinSetting['weapon_nametag'];
+							}
 						}
 					}
 					$initialNameTagEnabled = $initialNameTagValue !== null && $initialNameTagValue !== '';
