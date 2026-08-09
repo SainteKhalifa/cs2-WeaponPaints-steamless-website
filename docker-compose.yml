@@ -26,7 +26,7 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       WEB_STYLE_DARK: ${WEB_STYLE_DARK:-true}
       ENABLE_SKIN_FUSION: ${ENABLE_SKIN_FUSION:-true}
-      ALLOW_STATTRAK_COUNT: ${ALLOW_STATTRAK_COUNT:-false}
+      LOCK_STATTRAK_COUNT: ${LOCK_STATTRAK_COUNT:-false}
 
     networks:
       - cs2

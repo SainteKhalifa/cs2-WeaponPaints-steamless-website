@@ -591,12 +591,12 @@ function authRateLimit($scope, $subject = '', $operation = 'check')
 /**
  * Whether players may set the StatTrak kill count themselves.
  *
- * The counter is game state the plugin maintains, so it stays read-only unless
- * a server owner opens it up on purpose.
+ * Open by default. The counter is game state the plugin maintains, so a server
+ * owner who does not trust everyone with access can lock it from the config.
  */
 function stattrakCountEditable()
 {
-	return defined('ALLOW_STATTRAK_COUNT') && ALLOW_STATTRAK_COUNT === true;
+	return !(defined('LOCK_STATTRAK_COUNT') && LOCK_STATTRAK_COUNT === true);
 }
 
 /**

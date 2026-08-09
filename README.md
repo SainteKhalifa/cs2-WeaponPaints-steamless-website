@@ -111,16 +111,16 @@ ALTER TABLE `wp_player_skins` ADD COLUMN `weapon_keychain` VARCHAR(64) NOT NULL 
 Charm offsets are stored in world units, where a genuine inspect link routinely
 carries values around 10, so they are not restricted to a unit range.
 
-### Read-only StatTrak counter
+### Optional StatTrak counter lock
 
-The kill count is game state the plugin maintains. An editable field is an easy
-way for a player to award themselves a record they never earned, so the counter
-is **read-only by default**.
+Players set their own StatTrak kill count by default. The counter is game state
+the plugin maintains, so an editable field lets anyone claim a record they never
+earned; on a public site you will probably want it locked.
 
-Set `ALLOW_STATTRAK_COUNT=true` to open it up. The check is enforced server side,
-in the settings dialog and in the inspect link import alike: a forged request or
-a link carrying its own count is discarded and the stored value is kept. The
-StatTrak toggle itself stays editable either way.
+Set `LOCK_STATTRAK_COUNT=true` to make it read-only. The check is enforced server
+side, in the settings dialog and in the inspect link import alike: a forged
+request or a link carrying its own count is discarded and the stored value is
+kept. The StatTrak toggle itself stays editable either way.
 
 ### Sides only, no global tab
 
@@ -355,17 +355,18 @@ Les décalages de charm sont exprimés en unités de monde, où un lien d'inspec
 réel porte couramment des valeurs de l'ordre de 10 : ils ne sont donc pas
 restreints à un intervalle unitaire.
 
-### Compteur StatTrak en lecture seule
+### Verrou optionnel du compteur StatTrak
 
-Le nombre de frags est un état de jeu que le plugin entretient. Un champ
-modifiable est un moyen commode de s'attribuer un palmarès qu'on n'a jamais fait,
-le compteur est donc **en lecture seule par défaut**.
+Par défaut, chaque joueur règle lui-même son nombre de frags StatTrak. Ce
+compteur est un état de jeu que le plugin entretient : un champ modifiable permet
+donc de s'attribuer un palmarès qu'on n'a jamais fait, et sur un site public tu
+voudras probablement le verrouiller.
 
-Passe `ALLOW_STATTRAK_COUNT=true` pour l'ouvrir. Le contrôle est appliqué côté
-serveur, dans la fenêtre de réglages comme à l'import d'un lien d'inspection :
-une requête forgée ou un lien portant son propre compteur est écarté et la valeur
-enregistrée est conservée. L'interrupteur StatTrak lui-même reste modifiable dans
-les deux cas.
+Passe `LOCK_STATTRAK_COUNT=true` pour le mettre en lecture seule. Le contrôle est
+appliqué côté serveur, dans la fenêtre de réglages comme à l'import d'un lien
+d'inspection : une requête forgée ou un lien portant son propre compteur est
+écarté et la valeur enregistrée est conservée. L'interrupteur StatTrak lui-même
+reste modifiable dans les deux cas.
 
 ### Uniquement T et CT, plus d'onglet global
 
