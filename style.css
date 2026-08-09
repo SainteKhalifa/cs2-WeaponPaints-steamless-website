@@ -457,7 +457,9 @@ body::after {
 .preset-card,
 .skin-card {
 	background: var(--panel);
-	border: 1px solid var(--line);
+	/* Every card carries the side accent, so switching between T and CT
+	   repaints the whole grid rather than a handful of highlighted cards. */
+	border: 1px solid rgba(var(--primary-rgb), .65);
 	border-radius: 8px;
 }
 
@@ -807,9 +809,6 @@ label {
 	min-height: 0;
 }
 
-.skin-card.featured {
-	border-color: rgba(var(--primary-rgb), .65);
-}
 
 .skin-card > form {
 	display: contents;
