@@ -169,6 +169,8 @@ $uiText = [
 		'inspect_step_paste' => '回到本页，把链接粘贴到下方并导入。',
 		'inspect_import_placeholder' => '粘贴检视链接或十六进制代码',
 		'inspect_paste' => '从剪贴板粘贴',
+		'stattrak_reset' => '归零',
+		'stattrak_reset_title' => '将击杀数归零',
 		'stattrak_count_locked' => '击杀数由服务器插件维护，无法在此修改。',
 		'inspect_keep_placement' => '保留精细的贴纸位置',
 		'inspect_keep_placement_hint' => '游戏插件目前无法还原精细位置：勾选后贴纸会挤在武器中央。取消勾选则使用默认位置，五张贴纸会正常分布。',
@@ -318,6 +320,8 @@ $uiText = [
 		'inspect_step_paste' => 'Come back here, paste the link below and import it.',
 		'inspect_import_placeholder' => 'Paste an inspect link or hex payload',
 		'inspect_paste' => 'Paste from clipboard',
+		'stattrak_reset' => 'Reset',
+		'stattrak_reset_title' => 'Set the kill count back to zero',
 		'stattrak_count_locked' => 'The kill count is maintained by the server plugin and cannot be changed here.',
 		'inspect_keep_placement' => 'Keep the fine sticker placement',
 		'inspect_keep_placement_hint' => 'The game plugin cannot reproduce fine placement yet: with this ticked, stickers end up piled in the middle of the weapon. Leave it off to use the default positions, where all five spread out properly.',
@@ -597,6 +601,29 @@ function authRateLimit($scope, $subject = '', $operation = 'check')
 function stattrakCountEditable()
 {
 	return !(defined('LOCK_STATTRAK_COUNT') && LOCK_STATTRAK_COUNT === true);
+}
+
+/**
+ * Settles the StatTrak kill count to store for a weapon.
+ *
+ * The count is a record earned in game, so nothing here may wipe it by accident:
+ * picking another skin, or switching StatTrak off and back on, leaves it alone.
+ * It moves only when the plugin increments it, when a player edits it where that
+ * is allowed, or when the reset button is used.
+ *
+ * @param array|null $existingRow Current wp_player_skins row, if any.
+ * @param int|null   $submitted   Count sent by the form, null when absent.
+ */
+function resolveStatTrakCount($existingRow, $submitted = null)
+{
+	if (array_key_exists('stattrak_reset', $_POST)) {
+		return 0;
+	}
+	if ($submitted !== null && stattrakCountEditable()) {
+		return max(0, min(999999, (int)$submitted));
+	}
+
+	return max(0, (int)($existingRow['weapon_stattrak_count'] ?? 0));
 }
 
 /**
@@ -1808,7 +1835,6 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$wear = round((float)$item['paintwear'], 8);
 		$seed = (int)$item['paintseed'];
 		$stattrak = $item['stattrak'] ? 1 : 0;
-		$stattrakCount = $stattrak ? (int)$item['stattrak_count'] : 0;
 		$nameTag = $item['customname'] !== '' ? $item['customname'] : null;
 
 		$isKnifeSkin = in_array($defindex, knifeDefindexes($knifes), true);
@@ -1846,7 +1872,7 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 				"weapon_wear" => $wear,
 				"weapon_seed" => $seed,
 				"weapon_stattrak" => $stattrak,
-				"weapon_stattrak_count" => $stattrakCount,
+				"weapon_stattrak_count" => 0,
 				"weapon_nametag" => $nameTag,
 				"weapon_sticker_0" => $stickerValues[0],
 				"weapon_sticker_1" => $stickerValues[1],
@@ -1864,14 +1890,11 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 				"team" => $targetTeam,
 			]);
 
-			// An inspect link carries a kill count of its own. Locked, it is
-			// discarded like any other player-supplied value and the stored
-			// counter is carried over untouched.
-			$appliedStatTrakCount = $stattrakCount;
-			if (!stattrakCountEditable()) {
-				$appliedStatTrakCount = $stattrak ? (int)($existing[0]['weapon_stattrak_count'] ?? 0) : 0;
-				$bindings['weapon_stattrak_count'] = $appliedStatTrakCount;
-			}
+			// An inspect link carries a kill count of its own. It is treated like
+			// any other player-supplied value: taken when editing is allowed,
+			// otherwise the stored counter is carried over untouched.
+			$appliedStatTrakCount = resolveStatTrakCount($existing[0] ?? null, (int)$item['stattrak_count']);
+			$bindings['weapon_stattrak_count'] = $appliedStatTrakCount;
 
 			if ($existing) {
 				$db->query("UPDATE `wp_player_skins`
@@ -2135,11 +2158,18 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					saveSkinSettingCache($db, $skinSettingsTable, $steamid, $targetTeam, $defindex, (int)$current['weapon_paint_id'], (float)$current['weapon_wear'], (int)$current['weapon_seed'], (int)$current['weapon_stattrak'], (int)($current['weapon_stattrak_count'] ?? 0), $current['weapon_nametag']);
 				}
 
+				// The kill count survives every branch below: it is never reset by
+				// changing skin, by reverting to the inventory one, or by turning
+				// StatTrak off.
+				$stattrakCount = resolveStatTrakCount(
+					$existing[0] ?? null,
+					$hasExplicitSettings && array_key_exists('stattrak', $_POST) ? $submittedStatTrakCount : null
+				);
+
 				if ($isInventorySkin) {
 					$wear = 0.0;
 					$seed = 0;
 					$stattrak = 0;
-					$stattrakCount = 0;
 					$nameTag = null;
 					$stickerValues = defaultStickerValues();
 					$keychainValue = defaultKeychainValue();
@@ -2147,12 +2177,6 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					$wear = $submittedWear ?? ($existing[0]['weapon_wear'] ?? 0.0);
 					$seed = $submittedSeed ?? ($existing[0]['weapon_seed'] ?? 0);
 					$stattrak = $submittedStatTrak;
-					// When the counter is locked, whatever the form sent is ignored
-					// and the stored value stands: it belongs to the game, not to
-					// the player filling in a field.
-					$stattrakCount = $stattrak
-						? (stattrakCountEditable() ? $submittedStatTrakCount : (int)($existing[0]['weapon_stattrak_count'] ?? 0))
-						: 0;
 					$nameTag = array_key_exists('nametag_present', $_POST) ? $submittedNameTag : ($existing[0]['weapon_nametag'] ?? null);
 					$stickerValues = $submittedStickerValues ?? ($existing ? stickerValuesFromRow($existing[0]) : defaultStickerValues());
 					$keychainValue = $submittedKeychainValue ?? ($existing[0]['weapon_keychain'] ?? defaultKeychainValue());
@@ -2161,13 +2185,6 @@ if ($accessGranted && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					$wear = $cached ? (float)$cached['weapon_wear'] : 0.0;
 					$seed = $cached ? (int)$cached['weapon_seed'] : 0;
 					$stattrak = $cached ? (int)$cached['weapon_stattrak'] : 0;
-					// The cache is fed by the form, so it can carry a count a player
-					// typed. Locked, the stored row is the only source we trust.
-					$stattrakCount = $stattrak
-						? (stattrakCountEditable()
-							? ($cached ? (int)($cached['weapon_stattrak_count'] ?? 0) : 0)
-							: (int)($existing[0]['weapon_stattrak_count'] ?? 0))
-						: 0;
 					$nameTag = $cached ? $cached['weapon_nametag'] : null;
 					$stickerValues = $existing ? stickerValuesFromRow($existing[0]) : defaultStickerValues();
 					$keychainValue = $existing[0]['weapon_keychain'] ?? defaultKeychainValue();
@@ -2326,6 +2343,38 @@ $music = [];
 $selectedMusic = null;
 $pins = [];
 $selectedPin = null;
+
+// Read-only endpoint the edit page polls: the plugin keeps incrementing the
+// StatTrak counters in game, and nothing else would ever refresh them short of
+// reloading a two-megabyte page.
+if ($accessGranted && $action === 'stattrak_counts') {
+	header('Content-Type: application/json; charset=utf-8');
+	header('Cache-Control: no-store');
+
+	$countsPreset = findPreset($db, $presetTable, cleanSteamId($_GET['id'] ?? ''));
+	if (!$countsPreset || !canEditPreset($countsPreset)) {
+		echo json_encode(['ok' => false, 'counts' => []]);
+		exit;
+	}
+
+	$countRows = $db->select("SELECT `weapon_defindex`, `weapon_stattrak`, `weapon_stattrak_count`
+		FROM `wp_player_skins`
+		WHERE `steamid` = :steamid AND `weapon_team` = :team", [
+		"steamid" => $countsPreset['steamid'],
+		"team" => readTeam(selectedTeam()),
+	]);
+
+	$counts = [];
+	foreach ($countRows as $countRow) {
+		if ((int)($countRow['weapon_stattrak'] ?? 0) !== 1) {
+			continue;
+		}
+		$counts[(string)(int)$countRow['weapon_defindex']] = (int)($countRow['weapon_stattrak_count'] ?? 0);
+	}
+
+	echo json_encode(['ok' => true, 'counts' => $counts]);
+	exit;
+}
 
 if ($action === 'edit') {
 	$id = cleanSteamId($_GET['id'] ?? '');
@@ -2650,7 +2699,7 @@ $themeTeam = $action === 'edit' && isset($team) ? (int)$team : 0;
 							<?php if ($currentKnifeIsFusion) : ?><span class="fusion-badge"><?= h(t('skin_fusion')) ?></span><?php endif; ?>
 							<?= paintKitFinishBadgeHtml($currentKnifePaintId) ?>
 							<?php if ($currentKnifeNameTagEnabled) : ?><span class="nametag-badge"><?= h(t('name_tag')) ?></span><?php endif; ?>
-							<?php if ($currentKnifeStatTrak) : ?><span class="stattrak-badge">StatTrak™</span><?php endif; ?>
+							<?php if ($currentKnifeStatTrak) : ?><span class="stattrak-badge" data-stattrak-badge="<?= (int)$actualKnifeKey ?>">StatTrak™ <span data-stattrak-badge-count><?= h($currentKnifeStatTrakCount) ?></span></span><?php endif; ?>
 						</div>
 					<?php endif; ?>
 					<div class="card-title-wrap">
@@ -2846,6 +2895,7 @@ $themeTeam = $action === 'edit' && isset($team) ? (int)$team : 0;
 		<span class="stattrak-label">StatTrak™</span>
 	</label>
 	<input type="number" name="weapon_stattrak_count" value="<?= h($currentKnifeStatTrakCount) ?>" min="0" max="999999" step="1" class="form-control stattrak-input<?= $currentKnifeStatTrak ? '' : ' is-inactive' ?>" data-stattrak-input <?= $currentKnifeStatTrak ? '' : 'disabled' ?> <?= stattrakCountEditable() ? '' : 'readonly' ?> title="<?= h(stattrakCountEditable() ? '' : t('stattrak_count_locked')) ?>">
+	<button type="submit" name="stattrak_reset" value="1" class="btn btn-sm btn-outline-light stattrak-reset" title="<?= h(t('stattrak_reset_title')) ?>"><?= h(t('stattrak_reset')) ?></button>
 												</div>
 </div>
 											</div>
@@ -3292,7 +3342,7 @@ $themeTeam = $action === 'edit' && isset($team) ? (int)$team : 0;
 								<?php if ($currentIsFusion) : ?><span class="fusion-badge"><?= h(t('skin_fusion')) ?></span><?php endif; ?>
 								<?= paintKitFinishBadgeHtml($currentPaintId) ?>
 								<?php if ($initialNameTagEnabled) : ?><span class="nametag-badge"><?= h(t('name_tag')) ?></span><?php endif; ?>
-								<?php if ($initialStatTrakValue) : ?><span class="stattrak-badge">StatTrak™</span><?php endif; ?>
+								<?php if ($initialStatTrakValue) : ?><span class="stattrak-badge" data-stattrak-badge="<?= (int)$defindex ?>">StatTrak™ <span data-stattrak-badge-count><?= h($initialStatTrakCountValue) ?></span></span><?php endif; ?>
 							</div>
 						<?php endif; ?>
 						<div class="card-title-wrap">
@@ -3438,6 +3488,7 @@ $themeTeam = $action === 'edit' && isset($team) ? (int)$team : 0;
 		<span class="stattrak-label">StatTrak™</span>
 	</label>
 	<input type="number" name="weapon_stattrak_count" value="<?= h($initialStatTrakCountValue) ?>" min="0" max="999999" step="1" class="form-control stattrak-input<?= $initialStatTrakValue ? '' : ' is-inactive' ?>" data-stattrak-input <?= $initialStatTrakValue ? '' : 'disabled' ?> <?= stattrakCountEditable() ? '' : 'readonly' ?> title="<?= h(stattrakCountEditable() ? '' : t('stattrak_count_locked')) ?>">
+	<button type="submit" name="stattrak_reset" value="1" class="btn btn-sm btn-outline-light stattrak-reset" title="<?= h(t('stattrak_reset_title')) ?>"><?= h(t('stattrak_reset')) ?></button>
 												</div>
 </div>
 												<div class="col-12 cosmetic-editor">
@@ -5317,6 +5368,46 @@ $themeTeam = $action === 'edit' && isset($team) ? (int)$team : 0;
 				toggle.addEventListener('change', sync);
 				sync();
 			});
+
+			var stattrakBadges = document.querySelectorAll('[data-stattrak-badge]');
+			if (stattrakBadges.length) {
+				var countsUrl = <?= json_encode('index.php?action=stattrak_counts&id=' . rawurlencode((string)($currentPreset['steamid'] ?? '')) . '&team=' . (int)($team ?? 2), JSON_UNESCAPED_SLASHES) ?>;
+
+				var refreshStatTrakCounts = function () {
+					// A hidden tab would keep polling for nothing.
+					if (document.hidden) return;
+
+					fetch(countsUrl, { headers: { 'X-Requested-With': 'fetch' } })
+						.then(function (response) { return response.ok ? response.json() : null; })
+						.then(function (payload) {
+							if (!payload || !payload.ok || !payload.counts) return;
+
+							stattrakBadges.forEach(function (badge) {
+								var value = payload.counts[badge.getAttribute('data-stattrak-badge')];
+								if (value === undefined) return;
+
+								var slot = badge.querySelector('[data-stattrak-badge-count]');
+								if (slot && slot.textContent !== String(value)) {
+									slot.textContent = value;
+								}
+
+								// Keep the dialog in step, unless the player is
+								// editing that very field right now.
+								var card = badge.closest('.skin-card');
+								var input = card ? card.querySelector('[data-stattrak-input]') : null;
+								if (input && input !== document.activeElement) {
+									input.value = value;
+								}
+							});
+						})
+						.catch(function () { /* a lost poll is picked up by the next one */ });
+				};
+
+				setInterval(refreshStatTrakCounts, 30000);
+				document.addEventListener('visibilitychange', function () {
+					if (!document.hidden) refreshStatTrakCounts();
+				});
+			}
 
 			var inspectEl = document.getElementById('inspectModal');
 			if (inspectEl && window.bootstrap) {

@@ -2295,3 +2295,8 @@ html[data-team="3"] {
 	--primary: #4f8cff;
 	--primary-rgb: 79, 140, 255;
 }
+
+.stattrak-reset {
+	flex: 0 0 auto;
+	white-space: nowrap;
+}
