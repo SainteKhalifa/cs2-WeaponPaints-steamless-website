@@ -24,13 +24,28 @@ class UtilsClass
 
     public static function dataFromJson(string $language, string $fallbackLanguage): array
     {
-        $path = __DIR__ . "/../data/{$language}.json";
-        if (!is_file($path)) {
-            $path = __DIR__ . "/../data/{$fallbackLanguage}.json";
-        }
+        $files = array_values(array_unique([$language, $fallbackLanguage]));
+        foreach ($files as $file) {
+            $path = __DIR__ . "/../data/{$file}.json";
+            if (!is_file($path)) {
+                error_log("CS2 data file not found: {$path}");
+                continue;
+            }
 
-        $json = json_decode(file_get_contents($path), true);
-        return is_array($json) ? $json : [];
+			$raw = file_get_contents($path);
+			if ($raw === false) {
+				error_log("Unable to read CS2 data file: {$path}");
+				continue;
+			}
+			$json = json_decode($raw, true);
+			if (!is_array($json)) {
+				error_log("Invalid CS2 data JSON in {$path}: " . json_last_error_msg());
+				continue;
+			}
+			return $json;
+		}
+
+		return [];
     }
 
 
@@ -66,7 +81,8 @@ class UtilsClass
     public static function skinsFromJson(): array
     {
         $skins = [];
-        $json = self::dataFromJson(self::languageFile('skins', defined('SKIN_LANGUAGE') ? SKIN_LANGUAGE : 'skins_en'), 'skins_en');
+		$language = self::languageFile('skins', defined('SKIN_LANGUAGE') ? SKIN_LANGUAGE : 'skins_en');
+		$json = self::dataFromJson($language, $language === 'skins_en' ? 'skins_zh-CN' : 'skins_en');
 
         foreach ($json as $skin) {
             $skins[(int) $skin['weapon_defindex']][(int) $skin['paint']] = [
@@ -81,37 +97,44 @@ class UtilsClass
 
     public static function paintKitsFromJson(): array
     {
-        return self::dataFromJson(self::languageFile('paint_kits', 'paint_kits_en'), 'paint_kits_en');
+		$language = self::languageFile('paint_kits', 'paint_kits_en');
+		return self::dataFromJson($language, $language === 'paint_kits_en' ? 'paint_kits_zh-CN' : 'paint_kits_en');
     }
 
     public static function agentsFromJson(): array
     {
-        return self::dataFromJson(self::languageFile('agents', defined('AGENT_LANGUAGE') ? AGENT_LANGUAGE : 'agents_en'), 'agents_en');
+		$language = self::languageFile('agents', defined('AGENT_LANGUAGE') ? AGENT_LANGUAGE : 'agents_en');
+		return self::dataFromJson($language, $language === 'agents_en' ? 'agents_zh-CN' : 'agents_en');
     }
 
     public static function glovesFromJson(): array
     {
-        return self::dataFromJson(self::languageFile('gloves', defined('GLOVE_LANGUAGE') ? GLOVE_LANGUAGE : 'gloves_en'), 'gloves_en');
+		$language = self::languageFile('gloves', defined('GLOVE_LANGUAGE') ? GLOVE_LANGUAGE : 'gloves_en');
+		return self::dataFromJson($language, $language === 'gloves_en' ? 'gloves_zh-CN' : 'gloves_en');
     }
 
     public static function keychainsFromJson(): array
     {
-        return self::dataFromJson(self::languageFile('keychains', defined('KEYCHAIN_LANGUAGE') ? KEYCHAIN_LANGUAGE : 'keychains_en'), 'keychains_en');
+		$language = self::languageFile('keychains', defined('KEYCHAIN_LANGUAGE') ? KEYCHAIN_LANGUAGE : 'keychains_en');
+		return self::dataFromJson($language, $language === 'keychains_en' ? 'keychains_zh-CN' : 'keychains_en');
     }
 
     public static function pinsFromJson(): array
     {
-        return self::dataFromJson(self::languageFile('collectibles', defined('PIN_LANGUAGE') ? PIN_LANGUAGE : 'collectibles_en'), 'collectibles_en');
+		$language = self::languageFile('collectibles', defined('PIN_LANGUAGE') ? PIN_LANGUAGE : 'collectibles_en');
+		return self::dataFromJson($language, $language === 'collectibles_en' ? 'collectibles_zh-CN' : 'collectibles_en');
     }
 
     public static function musicFromJson(): array
     {
-        return self::dataFromJson(self::languageFile('music', defined('MUSIC_LANGUAGE') ? MUSIC_LANGUAGE : 'music_en'), 'music_en');
+		$language = self::languageFile('music', defined('MUSIC_LANGUAGE') ? MUSIC_LANGUAGE : 'music_en');
+		return self::dataFromJson($language, $language === 'music_en' ? 'music_zh-CN' : 'music_en');
     }
 
     public static function stickersFromJson(): array
     {
-        return self::dataFromJson(self::languageFile('stickers', defined('STICKER_LANGUAGE') ? STICKER_LANGUAGE : 'stickers_en'), 'stickers_en');
+		$language = self::languageFile('stickers', defined('STICKER_LANGUAGE') ? STICKER_LANGUAGE : 'stickers_en');
+		return self::dataFromJson($language, $language === 'stickers_en' ? 'stickers_zh-CN' : 'stickers_en');
     }
 
     public static function getWeaponsFromArray()
@@ -123,10 +146,19 @@ class UtilsClass
             if (key_exists($key, $weapons))
                 continue;
 
+            $defaultSkin = $value[0] ?? reset($value);
+            if (!is_array($defaultSkin)) {
+                error_log("Skipping weapon defindex {$key}: no usable skin data.");
+                continue;
+            }
+            if (!isset($value[0])) {
+                error_log("Weapon defindex {$key} is missing paint 0; using the first available row as a display fallback.");
+            }
+
             $weapons[$key] = [
-                'weapon_name' => $value[0]['weapon_name'],
-                'paint_name' => $value[0]['paint_name'],
-                'image_url' => $value[0]['image_url'],
+                'weapon_name' => (string)($defaultSkin['weapon_name'] ?? "weapon_{$key}"),
+                'paint_name' => (string)($defaultSkin['paint_name'] ?? ''),
+                'image_url' => (string)($defaultSkin['image_url'] ?? ''),
             ];
         }
 
@@ -191,6 +223,7 @@ class UtilsClass
                 'weapon_seed' => $weapon['weapon_seed'],
                 'weapon_wear' => $weapon['weapon_wear'],
                 'weapon_stattrak' => $weapon['weapon_stattrak'] ?? 0,
+                'weapon_stattrak_count' => $weapon['weapon_stattrak_count'] ?? 0,
                 'weapon_nametag' => $weapon['weapon_nametag'] ?? null,
                 'weapon_sticker_0' => $weapon['weapon_sticker_0'] ?? '0;0;0;0;0;0;0',
                 'weapon_sticker_1' => $weapon['weapon_sticker_1'] ?? '0;0;0;0;0;0;0',

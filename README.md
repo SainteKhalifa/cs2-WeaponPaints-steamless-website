@@ -41,7 +41,7 @@ This project is intended for private servers and trusted player groups. It is no
 * Optional website password and per-loadout PIN protection
 * Administrator mode for unrestricted loadout management and deletion
 * English and Simplified Chinese UI
-* Responsive dark interface with local fallback images
+* Browser-switchable light and dark themes with local preference persistence and fallback images
 
 ## Requirements
 
@@ -55,22 +55,28 @@ Enabling PHP cURL and mbstring is recommended. The database account should have 
 
 1. Copy the project into the document root or a website directory configured by your web server.
 
-2. Edit `class/config.php`:
+2. Edit `config.php`:
 
    ```php
    <?php
-   define('DEFAULT_LANGUAGE', 'en'); // en or zh-CN
-   define('SITE_NAME_EN', 'CS2 WeaponPaints Loadout Manager');
-   define('SITE_NAME_ZH_CN', 'CS2 WeaponPaints 配置管理器');
-   define('SITE_ACCESS_PASSWORD', ''); // Optional website password
-   define('ADMIN_PASSWORD', ''); // Optional administrator password
-   define('ENABLE_SKIN_FUSION', true); // Experimental cross-weapon paint combinations
+   define('DEFAULT_LANGUAGE', 'en'); // Available values: en, zh-CN
+   define('SITE_NAME_EN', 'CS2 Loadout Manager'); // English name and fallback
+   define('SITE_NAME_ZH_CN', 'CS2 饰品管理器'); // Simplified Chinese name
+   define('AUTH_RATE_LIMIT_ATTEMPTS', 5); // Failed attempts allowed within the time window
+   define('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800); // Failure tracking window in seconds
+   define('AUTH_RATE_LIMIT_LOCK_SECONDS', 60); // Lock duration in seconds
+   define('ENABLE_SKIN_FUSION', true); // Allow cross-weapon paint combinations
+
+   define('SITE_ACCESS_PASSWORD', ''); // Set a password to enable access protection
+   define('ADMIN_PASSWORD', ''); // Leave empty to disable administrator mode
 
    define('DB_HOST', '127.0.0.1');
    define('DB_PORT', '3306');
    define('DB_NAME', 'your_db_name');
    define('DB_USER', 'your_db_user');
    define('DB_PASS', 'your_db_password');
+
+   define('DEFAULT_WEB_THEME', 'dark'); // Available values: dark, light; visitors can switch it in the browser
    ```
 
 3. Open the website:
@@ -105,7 +111,7 @@ Set `ENABLE_SKIN_FUSION` to `true`, open a weapon's **Skin** picker, then choose
 
 ### Administrator Mode
 
-Set `ADMIN_PASSWORD` in `class/config.php` to enable the administrator button. An administrator can bypass loadout PINs, edit any loadout, change or clear its PIN, and delete loadouts.
+Set `ADMIN_PASSWORD` in `config.php` to enable the administrator button. An administrator can bypass loadout PINs, edit any loadout, change or clear its PIN, and delete loadouts.
 
 **Loadouts can only be deleted in administrator mode.**
 
@@ -129,6 +135,12 @@ Run the full update:
 php tools/update_cs2_data.php
 ```
 
+By default, the updater clears the relevant source caches and downloads a complete fresh data set. If an update is interrupted, resume it and reuse successfully downloaded cache files with:
+
+```bash
+php tools/update_cs2_data.php --resume
+```
+
 Preview without writing output files:
 
 ```bash
@@ -141,9 +153,9 @@ Update only skins, gloves, and the fusion paint-kit catalog:
 php tools/update_cs2_data.php --only=skins
 ```
 
-Downloaded source files are cached in `data/.source_cache/`. A valid cache is reused without requesting GitHub again. Delete the relevant cache file when you want to fetch fresh upstream data. Existing output files are backed up in `data/backups/` before replacement.
+Downloaded source files are cached in `data/.source_cache/`. A normal run clears the relevant caches before downloading; `--resume` reuses valid caches and downloads only missing or invalid sources. Existing output files are backed up in `data/backups/` before replacement.
 
-If GitHub returns HTTP 429, wait before retrying. Failed downloads do not overwrite valid cached or generated data.
+If GitHub returns HTTP 429, wait before retrying, then use `--resume` to continue without downloading completed sources again. Failed downloads do not overwrite generated data files.
 
 ## Database
 
@@ -159,11 +171,11 @@ The website uses the existing WeaponPaints tables, including:
 It also creates:
 
 * `wp_presets` for the loadout list, nicknames, and hashed loadout PINs
-* `wp_skin_settings_cache` for remembering per-skin website settings
+* `wp_skin_settings_cache` for remembering each skin's wear, pattern, StatTrak™, name tag, stickers, and keychain settings
 
 ## Security
 
-Use HTTPS when enabling passwords or PINs. Website-password, administrator-password, and loadout-PIN failures are rate limited by client IP. By default, five failures within 30 minutes cause a one-minute lock; these values can be changed with the `AUTH_RATE_LIMIT_*` settings in `class/config.php`.
+Use HTTPS when enabling passwords or PINs. Website-password, administrator-password, and loadout-PIN failures are rate limited by client IP. By default, five failures within 30 minutes cause a one-minute lock; these values can be changed with the `AUTH_RATE_LIMIT_*` settings in `config.php`.
 
 State-changing requests are protected by CSRF token validation.
 

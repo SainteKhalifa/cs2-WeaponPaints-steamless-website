@@ -4,12 +4,16 @@
  *
  * Run from CLI:
  *   php tools/update_cs2_data.php
+ * This clears the relevant source caches and downloads fresh data.
  *
  * Preview without writing files:
  *   php tools/update_cs2_data.php --dry-run
  *
  * Update only skins/gloves:
  *   php tools/update_cs2_data.php --only=skins
+ *
+ * Resume an interrupted update with valid cached sources:
+ *   php tools/update_cs2_data.php --resume
  *
  * This script backs up existing files, then rewrites:
  *   data/skins_zh-CN.json / data/skins_en.json
@@ -89,7 +93,7 @@ class GithubRawRateLimitException extends RuntimeException
 
 function githubRawRateLimitMessage(string $url): string
 {
-    return "GitHub raw requests are too frequent (HTTP 429). Please retry later. URL: {$url}";
+    return "GitHub raw requests are too frequent (HTTP 429). Please retry later with --resume. URL: {$url}";
 }
 
 function decodeJsonString(string $raw, string $source): array
@@ -123,8 +127,37 @@ function writeJsonCache(string $cachePath, string $raw): void
         throw new RuntimeException("Failed to create source cache directory: {$dir}");
     }
 
-    if (file_put_contents($cachePath, $raw) === false) {
-        throw new RuntimeException("Failed to write source cache: {$cachePath}");
+    $tempPath = tempnam($dir, '.source-cache-');
+    if ($tempPath === false) {
+        throw new RuntimeException("Failed to create temporary source cache: {$cachePath}");
+    }
+
+    try {
+        if (file_put_contents($tempPath, $raw, LOCK_EX) === false) {
+            throw new RuntimeException("Failed to write temporary source cache: {$cachePath}");
+        }
+        decodeJsonString((string)file_get_contents($tempPath), $tempPath);
+        $rollbackPath = '';
+        if (is_file($cachePath)) {
+            $rollbackPath = $cachePath . '.rollback-' . bin2hex(random_bytes(6));
+            if (!rename($cachePath, $rollbackPath)) {
+                throw new RuntimeException("Failed to prepare source cache for replacement: {$cachePath}");
+            }
+        }
+        if (!rename($tempPath, $cachePath)) {
+            if ($rollbackPath !== '' && is_file($rollbackPath)) {
+                @rename($rollbackPath, $cachePath);
+            }
+            throw new RuntimeException("Failed to install source cache: {$cachePath}");
+        }
+        if ($rollbackPath !== '') {
+            @unlink($rollbackPath);
+        }
+    } catch (Throwable $exception) {
+        if (is_file($tempPath)) {
+            @unlink($tempPath);
+        }
+        throw $exception;
     }
 }
 
@@ -133,6 +166,25 @@ function sourceCachePath(string $cacheDir, string $language, string $kind): stri
     $safeLanguage = preg_replace('/[^A-Za-z0-9_-]/', '_', $language);
     $safeKind = preg_replace('/[^A-Za-z0-9_-]/', '_', $kind);
     return $cacheDir . DIRECTORY_SEPARATOR . "{$safeLanguage}_{$safeKind}.json";
+}
+
+function clearSourceCaches(array $sources, string $cacheDir, ?string $only): int
+{
+    $cleared = 0;
+    foreach ($sources as $language => $urls) {
+        $kinds = $only === 'skins' ? ['skins'] : array_keys($urls);
+        foreach ($kinds as $kind) {
+            $cachePath = sourceCachePath($cacheDir, (string)$language, (string)$kind);
+            if (!is_file($cachePath)) {
+                continue;
+            }
+            if (!unlink($cachePath)) {
+                throw new RuntimeException("Failed to clear source cache: {$cachePath}");
+            }
+            $cleared++;
+        }
+    }
+    return $cleared;
 }
 
 function throttleGithubRawRequest(string $url): void
@@ -246,9 +298,9 @@ function runPowerShellDownload(string $url): array
     return [$body, $status, $fullOutput];
 }
 
-function fetchJson(string $url, ?string $cachePath = null, bool $writeCache = true): array
+function fetchJson(string $url, ?string $cachePath = null, bool $writeCache = true, bool $useCache = true): array
 {
-    if ($cachePath !== null) {
+    if ($useCache && $cachePath !== null) {
         $cached = readJsonCache($cachePath);
         if ($cached !== null) {
             echo "Using cached source: {$cachePath}\n";
@@ -301,7 +353,14 @@ function fetchJson(string $url, ?string $cachePath = null, bool $writeCache = tr
         $previousError = error_get_last();
         $streamRaw = @file_get_contents($url, false, $context);
         $currentError = error_get_last();
-        $headers = function_exists('http_get_last_response_headers') ? (http_get_last_response_headers() ?: []) : [];
+        if (function_exists('http_get_last_response_headers')) {
+            $headers = http_get_last_response_headers() ?: [];
+        } else {
+            $localVariables = get_defined_vars();
+            $headers = isset($localVariables['http_response_header']) && is_array($localVariables['http_response_header'])
+                ? $localVariables['http_response_header']
+                : [];
+        }
         $status = parseHttpStatusFromHeaders($headers);
         if ($status === 429) {
             throw new GithubRawRateLimitException(githubRawRateLimitMessage($url));
@@ -369,15 +428,90 @@ function readJsonFile(string $path): array
     return is_array($json) ? $json : [];
 }
 
-function writeJsonFile(string $path, array $data): void
+function prepareJsonFile(string $path, array $data): array
 {
     $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     if ($json === false) {
         throw new RuntimeException("Failed to encode JSON for: {$path}");
     }
 
-    if (file_put_contents($path, $json . PHP_EOL) === false) {
-        throw new RuntimeException("Failed to write: {$path}");
+    $directory = dirname($path);
+    if (!is_dir($directory)) {
+        throw new RuntimeException("Target directory does not exist: {$directory}");
+    }
+    $tempPath = tempnam($directory, '.cs2-data-');
+    if ($tempPath === false) {
+        throw new RuntimeException("Failed to create a temporary file for: {$path}");
+    }
+
+    try {
+        if (file_put_contents($tempPath, $json . PHP_EOL, LOCK_EX) === false) {
+            throw new RuntimeException("Failed to write temporary JSON for: {$path}");
+        }
+        $verified = json_decode((string)file_get_contents($tempPath), true);
+        if (!is_array($verified) || json_last_error() !== JSON_ERROR_NONE) {
+            throw new RuntimeException("Temporary JSON validation failed for {$path}: " . json_last_error_msg());
+        }
+    } catch (Throwable $exception) {
+        @unlink($tempPath);
+        throw $exception;
+    }
+
+    return ['target' => $path, 'temp' => $tempPath];
+}
+
+function cleanupPreparedJsonFiles(array $preparedFiles): void
+{
+    foreach ($preparedFiles as $prepared) {
+        $tempPath = (string)($prepared['temp'] ?? '');
+        if ($tempPath !== '' && is_file($tempPath)) {
+            @unlink($tempPath);
+        }
+    }
+}
+
+function commitPreparedJsonFiles(array $preparedFiles, string $backupDir, string $timestamp): void
+{
+    $rollbackFiles = [];
+    $installedTargets = [];
+    try {
+        foreach ($preparedFiles as $prepared) {
+            backupFile($prepared['target'], $backupDir, $timestamp);
+        }
+
+        foreach ($preparedFiles as $prepared) {
+            $target = $prepared['target'];
+            if (!is_file($target)) {
+                continue;
+            }
+            $rollbackPath = $target . '.rollback-' . bin2hex(random_bytes(6));
+            if (!rename($target, $rollbackPath)) {
+                throw new RuntimeException("Failed to prepare existing file for replacement: {$target}");
+            }
+            $rollbackFiles[$target] = $rollbackPath;
+        }
+
+        foreach ($preparedFiles as $prepared) {
+            if (!rename($prepared['temp'], $prepared['target'])) {
+                throw new RuntimeException("Failed to install validated JSON: {$prepared['target']}");
+            }
+            $installedTargets[] = $prepared['target'];
+        }
+
+        foreach ($rollbackFiles as $rollbackPath) {
+            @unlink($rollbackPath);
+        }
+    } catch (Throwable $exception) {
+        foreach ($installedTargets as $target) {
+            @unlink($target);
+        }
+        foreach ($rollbackFiles as $target => $rollbackPath) {
+            if (is_file($rollbackPath)) {
+                @rename($rollbackPath, $target);
+            }
+        }
+        cleanupPreparedJsonFiles($preparedFiles);
+        throw $exception;
     }
 }
 
@@ -962,6 +1096,7 @@ function buildMusicRows(array $items): array
 }
 
 $dryRun = in_array('--dry-run', $argv ?? [], true);
+$resume = in_array('--resume', $argv ?? [], true);
 $only = null;
 foreach ($argv ?? [] as $arg) {
     if (str_starts_with($arg, '--only=')) {
@@ -973,13 +1108,23 @@ if ($only !== null && !in_array($only, ['skins'], true)) {
 }
 $timestamp = date('Ymd-His');
 $summary = [];
+$preparedUpdateFiles = [];
 
 try {
+    if ($resume) {
+        echo "Resume mode: valid source caches will be reused.\n";
+    } elseif ($dryRun) {
+        echo "Fresh download mode: source caches will not be changed during dry run.\n";
+    } else {
+        $clearedCaches = clearSourceCaches($sources, $sourceCacheDir, $only);
+        echo "Fresh download mode: cleared {$clearedCaches} source cache file(s).\n";
+    }
+
     foreach ($sources as $language => $urls) {
         $target = $targets[$language];
 
         echo "Downloading {$language} skins/gloves data...\n";
-        $skinItems = fetchJson($urls['skins'], sourceCachePath($sourceCacheDir, $language, 'skins'), !$dryRun);
+        $skinItems = fetchJson($urls['skins'], sourceCachePath($sourceCacheDir, $language, 'skins'), !$dryRun, $resume);
         [$skins, $gloves, $skinSkipped, $skinWarnings] = buildSkinAndGloveRows(
             $skinItems,
             existingDefaultSkinRows($target['skins'], $target['inventory_prefix']),
@@ -1000,7 +1145,7 @@ try {
 
         if ($only !== 'skins') {
             echo "Downloading {$language} agents data...\n";
-            $agentItems = fetchJson($urls['agents'], sourceCachePath($sourceCacheDir, $language, 'agents'), !$dryRun);
+            $agentItems = fetchJson($urls['agents'], sourceCachePath($sourceCacheDir, $language, 'agents'), !$dryRun, $resume);
             [$agents, $agentSkipped] = buildAgentRows(
                 $agentItems,
                 defaultAgentRows($target['agents'], $target['default_agent_name'])
@@ -1009,46 +1154,49 @@ try {
             unset($agentItems);
 
             echo "Downloading {$language} music data...\n";
-            $musicItems = fetchJson($urls['music'], sourceCachePath($sourceCacheDir, $language, 'music'), !$dryRun);
+            $musicItems = fetchJson($urls['music'], sourceCachePath($sourceCacheDir, $language, 'music'), !$dryRun, $resume);
             [$music, $musicSkipped] = buildMusicRows($musicItems);
             $musicSourceCount = count($musicItems);
             unset($musicItems);
 
             echo "Downloading {$language} stickers data...\n";
-            $stickerItems = fetchJson($urls['stickers'], sourceCachePath($sourceCacheDir, $language, 'stickers'), !$dryRun);
+            $stickerItems = fetchJson($urls['stickers'], sourceCachePath($sourceCacheDir, $language, 'stickers'), !$dryRun, $resume);
             [$stickers, $stickerSkipped] = buildSimpleIdRows($stickerItems, 'name');
             $stickerSourceCount = count($stickerItems);
             unset($stickerItems);
 
             echo "Downloading {$language} keychains data...\n";
-            $keychainItems = fetchJson($urls['keychains'], sourceCachePath($sourceCacheDir, $language, 'keychains'), !$dryRun);
+            $keychainItems = fetchJson($urls['keychains'], sourceCachePath($sourceCacheDir, $language, 'keychains'), !$dryRun, $resume);
             [$keychains, $keychainSkipped] = buildSimpleIdRows($keychainItems, 'name');
             $keychainSourceCount = count($keychainItems);
             unset($keychainItems);
 
             echo "Downloading {$language} collectibles data...\n";
-            $collectibleItems = fetchJson($urls['collectibles'], sourceCachePath($sourceCacheDir, $language, 'collectibles'), !$dryRun);
+            $collectibleItems = fetchJson($urls['collectibles'], sourceCachePath($sourceCacheDir, $language, 'collectibles'), !$dryRun, $resume);
             [$collectibles, $collectibleSkipped, $collectiblesFiltered] = buildCollectibleRows($collectibleItems);
             $collectiblesSourceCount = count($collectibleItems);
             unset($collectibleItems);
         }
 
         if (!$dryRun) {
-            $kinds = $only === 'skins' ? ['skins', 'paint_kits', 'gloves'] : ['skins', 'paint_kits', 'gloves', 'agents', 'music', 'stickers', 'keychains', 'collectibles'];
-            foreach ($kinds as $kind) {
-                backupFile($target[$kind], $backupDir, $timestamp);
-            }
+			$outputData = [
+				'skins' => $skins,
+				'paint_kits' => $paintKits,
+				'gloves' => $gloves,
+			];
+			if ($only !== 'skins') {
+				$outputData += [
+					'agents' => $agents,
+					'music' => $music,
+					'stickers' => $stickers,
+					'keychains' => $keychains,
+					'collectibles' => $collectibles,
+				];
+			}
 
-            writeJsonFile($target['skins'], $skins);
-            writeJsonFile($target['paint_kits'], $paintKits);
-            writeJsonFile($target['gloves'], $gloves);
-            if ($only !== 'skins') {
-                writeJsonFile($target['agents'], $agents);
-                writeJsonFile($target['music'], $music);
-                writeJsonFile($target['stickers'], $stickers);
-                writeJsonFile($target['keychains'], $keychains);
-                writeJsonFile($target['collectibles'], $collectibles);
-            }
+			foreach ($outputData as $kind => $data) {
+				$preparedUpdateFiles[] = prepareJsonFile($target[$kind], $data);
+			}
         }
 
         $summary[] = [
@@ -1074,6 +1222,11 @@ try {
         unset($skins, $paintKits, $gloves, $agents, $music, $stickers, $keychains, $collectibles, $skinSkipped, $paintKitSkipped, $agentSkipped, $musicSkipped, $stickerSkipped, $keychainSkipped, $collectibleSkipped, $collectiblesFiltered);
     }
 
+	if (!$dryRun) {
+		commitPreparedJsonFiles($preparedUpdateFiles, $backupDir, $timestamp);
+		$preparedUpdateFiles = [];
+	}
+
     echo $dryRun ? "\nDry run complete. No files were changed.\n" : "\nUpdate complete.\n";
     foreach ($summary as $row) {
         echo "{$row['language']}: skinsSource={$row['skins_source']}, agentsSource={$row['agents_source']}, musicSource={$row['music_source']}, stickersSource={$row['stickers_source']}, keychainsSource={$row['keychains_source']}, collectiblesSource={$row['collectibles_source']}, skins={$row['skins_written']}, paintKits={$row['paint_kits_written']}, gloves={$row['gloves_written']}, agents={$row['agents_written']}, music={$row['music_written']}, stickers={$row['stickers_written']}, keychains={$row['keychains_written']}, collectibles={$row['collectibles_written']}, collectiblesFiltered={$row['collectibles_filtered']}, skipped={$row['skipped']}\n";
@@ -1082,6 +1235,7 @@ try {
         echo "Backups: {$backupDir}\n";
     }
 } catch (Throwable $e) {
+	cleanupPreparedJsonFiles($preparedUpdateFiles);
     fwrite(STDERR, "Update failed: " . $e->getMessage() . "\n");
     exit(1);
 }
