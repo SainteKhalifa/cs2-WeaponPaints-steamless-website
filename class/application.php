@@ -43,6 +43,6 @@ $siteName = $siteNames[$currentLanguage] !== ''
 	? $siteNames[$currentLanguage]
 	: ($siteNames['en'] !== '' ? $siteNames['en'] : $siteNameFallback);
 $teams = $currentLanguage === 'en'
-	? [1 => 'Global', 2 => 'T', 3 => 'CT']
-	: [1 => '全局', 2 => 'T 阵营', 3 => 'CT 阵营'];
+	? [2 => 'T', 3 => 'CT']
+	: [2 => 'T 阵营', 3 => 'CT 阵营'];
 

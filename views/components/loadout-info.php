@@ -5,7 +5,6 @@
 					<p><?= h(presetLabel($currentPreset)) ?> · <?= h($teams[$team]) ?></p>
 				</div>
 				<nav class="team-tabs">
-					<a class="<?= $team === 1 ? 'active' : '' ?>" href="index.php?action=edit&id=<?= h($currentPreset['steamid']) ?>&team=1"><?= h($teams[1]) ?></a>
 					<a class="<?= $team === 2 ? 'active' : '' ?>" href="index.php?action=edit&id=<?= h($currentPreset['steamid']) ?>&team=2"><?= h($teams[2]) ?></a>
 					<a class="<?= $team === 3 ? 'active' : '' ?>" href="index.php?action=edit&id=<?= h($currentPreset['steamid']) ?>&team=3"><?= h($teams[3]) ?></a>
 				</nav>

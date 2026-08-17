@@ -1,4 +1,3 @@
-				<?php if ($team === 1) : ?>
 				<?php
 					$currentMusicId = $selectedMusic !== null ? (int)$selectedMusic : 0;
 					$currentMusic = $music[$currentMusicId] ?? unknownItemData($currentMusicId);
@@ -56,7 +55,6 @@
 					</form>
 				</div>
 
-				<?php endif; ?>
 				<?php
 				$currentPinId = $selectedPin !== null ? (int)$selectedPin : 0;
 				$currentPin = $pins[$currentPinId] ?? unknownItemData($currentPinId);

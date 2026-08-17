@@ -1,19 +1,23 @@
 <?php
 
+/**
+ * Loadouts are edited per side. Team 1 used to mean "both sides at once" and no
+ * longer exists, so an old link carrying it lands on the T side.
+ */
 function selectedTeam()
 {
-	$team = (int)($_GET['team'] ?? $_POST['team'] ?? 1);
-	return in_array($team, [1, 2, 3], true) ? $team : 1;
+	$team = (int)($_GET['team'] ?? $_POST['team'] ?? 2);
+	return in_array($team, [2, 3], true) ? $team : 2;
 }
 
 function readTeam($team)
 {
-	return $team === 1 ? 2 : $team;
+	return (int)$team;
 }
 
 function writeTeams($team)
 {
-	return $team === 1 ? [2, 3] : [$team];
+	return [(int)$team];
 }
 
 function knifeDefindexes($knifes)
