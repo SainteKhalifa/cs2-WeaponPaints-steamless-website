@@ -1,5 +1,7 @@
 data/backups/
 data/.source_cache/
+data/.cs2-data-*
+data/*.rollback-*
 
 # Deployment settings: domain, certificate resolver, database credentials.
 .env

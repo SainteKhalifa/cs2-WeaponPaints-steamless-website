@@ -41,7 +41,7 @@
 * 支持网站访问密码、单配置 PIN 和管理员模式
 * 管理员可以管理和删除所有配置
 * 支持英语和简体中文
-* 深色响应式界面，并提供本地图片兜底
+* 支持在网页中切换浅色与深色主题、记住浏览器偏好，并提供本地图片兜底
 
 ## 运行要求
 
@@ -55,22 +55,28 @@
 
 1. 将项目复制到网页服务器的网站根目录，或者服务器已配置的网站目录中。
 
-2. 编辑 `class/config.php`：
+2. 编辑 `config.php`：
 
    ```php
    <?php
-   define('DEFAULT_LANGUAGE', 'zh-CN'); // en 或 zh-CN
-   define('SITE_NAME_EN', 'CS2 WeaponPaints Loadout Manager');
-   define('SITE_NAME_ZH_CN', 'CS2 WeaponPaints 配置管理器');
-   define('SITE_ACCESS_PASSWORD', ''); // 可选的网站访问密码
-   define('ADMIN_PASSWORD', ''); // 可选的管理员密码
-   define('ENABLE_SKIN_FUSION', true); // 实验性的跨武器涂装组合
+   define('DEFAULT_LANGUAGE', 'en'); // 可用值：en、zh-CN
+   define('SITE_NAME_EN', 'CS2 Loadout Manager'); // 英文名称，同时作为回退名称
+   define('SITE_NAME_ZH_CN', 'CS2 饰品管理器'); // 简体中文名称
+   define('AUTH_RATE_LIMIT_ATTEMPTS', 5); // 时间窗口内允许的失败次数
+   define('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800); // 失败次数统计窗口，单位为秒
+   define('AUTH_RATE_LIMIT_LOCK_SECONDS', 60); // 触发限制后的锁定时间，单位为秒
+   define('ENABLE_SKIN_FUSION', true); // 允许跨武器组合涂装
+
+   define('SITE_ACCESS_PASSWORD', ''); // 设置密码以启用网站访问保护
+   define('ADMIN_PASSWORD', ''); // 留空表示禁用管理员模式
 
    define('DB_HOST', '127.0.0.1');
    define('DB_PORT', '3306');
    define('DB_NAME', 'your_db_name');
    define('DB_USER', 'your_db_user');
    define('DB_PASS', 'your_db_password');
+
+   define('DEFAULT_WEB_THEME', 'dark'); // 可填写 dark 或 light；访客可在网页中切换
    ```
 
 3. 访问网站：
@@ -105,7 +111,7 @@
 
 ### 管理员模式
 
-在 `class/config.php` 中填写 `ADMIN_PASSWORD` 后，网页右上角会启用管理员按钮。管理员可以跳过配置 PIN、进入任意配置、修改或清除配置 PIN，并删除配置。
+在 `config.php` 中填写 `ADMIN_PASSWORD` 后，网页右上角会启用管理员按钮。管理员可以跳过配置 PIN、进入任意配置、修改或清除配置 PIN，并删除配置。
 
 **所有配置都只能在管理员模式下删除。**
 
@@ -129,6 +135,12 @@ cd "项目文件夹地址"
 php tools/update_cs2_data.php
 ```
 
+默认情况下，更新工具会清除对应的源缓存并完整获取全新数据。如果更新中途被打断，可以使用以下命令复用已经成功下载的缓存并继续：
+
+```bash
+php tools/update_cs2_data.php --resume
+```
+
 仅预览结果，不写入文件：
 
 ```bash
@@ -141,9 +153,9 @@ php tools/update_cs2_data.php --dry-run
 php tools/update_cs2_data.php --only=skins
 ```
 
-下载的源文件会保存在 `data/.source_cache/`。存在有效缓存时，工具不会再次请求 GitHub；如需获取上游最新数据，请删除对应缓存文件。替换数据前，旧文件会备份到 `data/backups/`。
+下载的源文件会保存在 `data/.source_cache/`。普通运行会在下载前清除对应缓存；使用 `--resume` 时会复用有效缓存，只下载缺失或无效的数据。替换数据前，旧文件会备份到 `data/backups/`。
 
-如果 GitHub 返回 HTTP 429，请等待一段时间后重试。下载失败不会覆盖已有的有效缓存或数据文件。
+如果 GitHub 返回 HTTP 429，请等待一段时间后使用 `--resume` 继续，避免再次下载已经完成的源文件。下载失败不会覆盖已经生成的数据文件。
 
 ## 数据库
 
@@ -159,11 +171,11 @@ php tools/update_cs2_data.php --only=skins
 网站还会自动创建：
 
 * `wp_presets`：保存配置列表、备注用户名和配置 PIN 哈希
-* `wp_skin_settings_cache`：记住不同皮肤在网页侧的独立设置
+* `wp_skin_settings_cache`：分别记住每款皮肤的磨损、模板、StatTrak™、名称标签、贴纸和挂件设置
 
 ## 安全说明
 
-启用密码或 PIN 时请使用 HTTPS。网站访问密码、管理员密码和配置 PIN 的失败验证会按照客户端 IP 进行限流。默认规则是在 30 分钟内失败 5 次后锁定 1 分钟，可通过 `class/config.php` 中的 `AUTH_RATE_LIMIT_*` 设置调整。
+启用密码或 PIN 时请使用 HTTPS。网站访问密码、管理员密码和配置 PIN 的失败验证会按照客户端 IP 进行限流。默认规则是在 30 分钟内失败 5 次后锁定 1 分钟，可通过 `config.php` 中的 `AUTH_RATE_LIMIT_*` 设置调整。
 
 所有会修改数据的请求均通过 CSRF 令牌校验进行保护。
 

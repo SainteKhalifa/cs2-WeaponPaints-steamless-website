@@ -43,15 +43,12 @@ function config_flag(string $name, bool $fallback): bool
 }
 
 define('DEFAULT_LANGUAGE', config_value('DEFAULT_LANGUAGE', 'en')); // Available values: en, zh-CN
-define('SITE_NAME_EN', config_value('SITE_NAME_EN', 'CS2 WeaponPaints Loadout Manager')); // English name and fallback
-define('SITE_NAME_ZH_CN', config_value('SITE_NAME_ZH_CN', 'CS2 WeaponPaints 配置管理器')); // Simplified Chinese name
-define('SITE_ACCESS_PASSWORD', config_value('SITE_ACCESS_PASSWORD', '')); // Set a password to enable access protection
-define('ADMIN_PASSWORD', config_value('ADMIN_PASSWORD', '')); // Leave empty to disable administrator mode
-
+define('DEFAULT_WEB_THEME', config_value('DEFAULT_WEB_THEME', 'dark')); // Available values: dark, light; visitors can override it in the browser
+define('SITE_NAME_EN', config_value('SITE_NAME_EN', 'CS2 Loadout Manager')); // English name and fallback
+define('SITE_NAME_ZH_CN', config_value('SITE_NAME_ZH_CN', 'CS2 饰品管理器')); // Simplified Chinese name
 define('AUTH_RATE_LIMIT_ATTEMPTS', config_int('AUTH_RATE_LIMIT_ATTEMPTS', 5)); // Failed attempts allowed within the time window
-define('AUTH_RATE_LIMIT_WINDOW_SECONDS', config_int('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800)); // Failure tracking window: 30 minutes
-define('AUTH_RATE_LIMIT_LOCK_SECONDS', config_int('AUTH_RATE_LIMIT_LOCK_SECONDS', 60)); // Lock duration: 1 minute
-
+define('AUTH_RATE_LIMIT_WINDOW_SECONDS', config_int('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800)); // Failure tracking window in seconds
+define('AUTH_RATE_LIMIT_LOCK_SECONDS', config_int('AUTH_RATE_LIMIT_LOCK_SECONDS', 60)); // Lock duration in seconds
 define('ENABLE_SKIN_FUSION', config_flag('ENABLE_SKIN_FUSION', true)); // Allow cross-weapon paint combinations
 
 // Players may set their own StatTrak kill count. The counter is game state the
@@ -59,10 +56,11 @@ define('ENABLE_SKIN_FUSION', config_flag('ENABLE_SKIN_FUSION', true)); // Allow 
 // they never earned: turn this on to make it read-only.
 define('LOCK_STATTRAK_COUNT', config_flag('LOCK_STATTRAK_COUNT', false));
 
+define('SITE_ACCESS_PASSWORD', config_value('SITE_ACCESS_PASSWORD', '')); // Set a password to enable access protection
+define('ADMIN_PASSWORD', config_value('ADMIN_PASSWORD', '')); // Set a password to enable administrator mode
+
 define('DB_HOST', config_value('DB_HOST', '127.0.0.1'));
 define('DB_PORT', config_value('DB_PORT', '3306'));
 define('DB_NAME', config_value('DB_NAME', 'your_db_name'));
 define('DB_USER', config_value('DB_USER', 'your_db_user'));
 define('DB_PASS', config_value('DB_PASS', 'your_db_password'));
-
-define('WEB_STYLE_DARK', config_flag('WEB_STYLE_DARK', true));
