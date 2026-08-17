@@ -415,15 +415,24 @@ function readStickerAdvancedParamsFromPost()
 	];
 }
 
+/**
+ * Range allowed for keychain offsets.
+ *
+ * Stickers sit in a unit square, but a charm is positioned in world units: a
+ * genuine inspect link routinely carries values around 10. Clamping those to 1
+ * would drag the charm back to the same wrong spot on every save.
+ */
+const KEYCHAIN_OFFSET_LIMIT = 100;
+
 function keychainValueParts($value)
 {
 	$parts = array_pad(explode(';', (string)$value), 5, '');
 	$id = max(0, (int)($parts[0] ?? 0));
 	return [
 		'id' => $id,
-		'x' => stickerNumber($parts[1] ?? null, -1, 1, 0),
-		'y' => stickerNumber($parts[2] ?? null, -1, 1, 0),
-		'z' => stickerNumber($parts[3] ?? null, -1, 1, 0),
+		'x' => stickerNumber($parts[1] ?? null, -KEYCHAIN_OFFSET_LIMIT, KEYCHAIN_OFFSET_LIMIT, 0),
+		'y' => stickerNumber($parts[2] ?? null, -KEYCHAIN_OFFSET_LIMIT, KEYCHAIN_OFFSET_LIMIT, 0),
+		'z' => stickerNumber($parts[3] ?? null, -KEYCHAIN_OFFSET_LIMIT, KEYCHAIN_OFFSET_LIMIT, 0),
 		'template' => $id > 0 ? max(1, min(99999, (int)($parts[4] ?? 1))) : 0,
 	];
 }
@@ -439,9 +448,9 @@ function buildKeychainValueFromParts($id, $params)
 	if ($id === 0) {
 		return defaultKeychainValue();
 	}
-	$x = stickerFloatValue(stickerNumber($params['x'] ?? 0, -1, 1, 0));
-	$y = stickerFloatValue(stickerNumber($params['y'] ?? 0, -1, 1, 0));
-	$z = stickerFloatValue(stickerNumber($params['z'] ?? 0, -1, 1, 0));
+	$x = stickerFloatValue(stickerNumber($params['x'] ?? 0, -KEYCHAIN_OFFSET_LIMIT, KEYCHAIN_OFFSET_LIMIT, 0));
+	$y = stickerFloatValue(stickerNumber($params['y'] ?? 0, -KEYCHAIN_OFFSET_LIMIT, KEYCHAIN_OFFSET_LIMIT, 0));
+	$z = stickerFloatValue(stickerNumber($params['z'] ?? 0, -KEYCHAIN_OFFSET_LIMIT, KEYCHAIN_OFFSET_LIMIT, 0));
 	$template = (string)max(1, min(99999, (int)($params['template'] ?? 1)));
 	return "{$id};{$x};{$y};{$z};{$template}";
 }

@@ -36,7 +36,7 @@
 							<?php if ($currentKnifeIsFusion) : ?><span class="fusion-badge"><?= h(t('skin_fusion')) ?></span><?php endif; ?>
 							<?= paintKitFinishBadgeHtml($currentKnifePaintId) ?>
 							<?php if ($currentKnifeNameTagEnabled) : ?><span class="nametag-badge"><?= h(t('name_tag')) ?></span><?php endif; ?>
-							<?php if ($currentKnifeStatTrak) : ?><span class="stattrak-badge">StatTrak™</span><?php endif; ?>
+							<?php if ($currentKnifeStatTrak) : ?><span class="stattrak-badge" data-stattrak-badge="<?= (int)$actualKnifeKey ?>">StatTrak™ <span data-stattrak-badge-count><?= h($currentKnifeStatTrakCount) ?></span></span><?php endif; ?>
 						</div>
 					<?php endif; ?>
 					<div class="card-title-wrap">
@@ -74,6 +74,11 @@
 						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#knifeModal" <?= $currentKnifeCanEdit ? '' : 'disabled' ?>>
 							<?= h(t('edit')) ?>
 						</button>
+						<?= inspectButton(
+							$actualKnifeKey,
+							inspectHexFromValues($actualKnifeKey, $currentKnifePaintId, $currentKnifeWear, $currentKnifeSeed, $currentKnifeStatTrak, $currentKnifeStatTrakCount, $currentKnifeNameTag, null, $selectedKnifeSkin['weapon_keychain'] ?? null),
+							($actualKnife['weapon_name'] ?? '') . ' — ' . ($currentKnifeSkin['paint_name'] ?? '')
+						) ?>
 					</div>
 
 					<form method="post" class="modal-form">
@@ -216,7 +221,8 @@
 		<input type="checkbox" name="stattrak" value="1" data-stattrak-toggle <?= $currentKnifeStatTrak ? 'checked' : '' ?>>
 		<span class="stattrak-label">StatTrak™</span>
 	</label>
-	<input type="number" name="weapon_stattrak_count" value="<?= h($currentKnifeStatTrakCount) ?>" min="0" max="999999" step="1" class="form-control stattrak-input<?= $currentKnifeStatTrak ? '' : ' is-inactive' ?>" data-stattrak-input <?= $currentKnifeStatTrak ? '' : 'disabled' ?>>
+	<input type="number" name="weapon_stattrak_count" value="<?= h($currentKnifeStatTrakCount) ?>" min="0" max="999999" step="1" class="form-control stattrak-input<?= $currentKnifeStatTrak ? '' : ' is-inactive' ?>" data-stattrak-input <?= $currentKnifeStatTrak ? '' : 'disabled' ?> <?= stattrakCountEditable() ? "" : "readonly" ?> title="<?= h(stattrakCountEditable() ? "" : t("stattrak_count_locked")) ?>">
+	<button type="submit" name="stattrak_reset" value="1" class="btn btn-sm btn-outline-light stattrak-reset" title="<?= h(t("stattrak_reset_title")) ?>"><?= h(t("stattrak_reset")) ?></button>
 												</div>
 </div>
 											</div>

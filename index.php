@@ -13,6 +13,9 @@ $clientConfig = [
 	'paintKitDataUrl' => dataFileUrl(paintKitDataFile()),
 	'paintKitAliasDataUrl' => paintKitAliasDataFile() !== '' ? dataFileUrl(paintKitAliasDataFile()) : '',
 	'paintKitFinishBadges' => paintKitFinishBadges(),
+	'stattrakCountsUrl' => $action === 'edit' && isset($currentPreset['steamid'])
+		? 'index.php?action=stattrak_counts&id=' . rawurlencode((string)$currentPreset['steamid']) . '&team=' . (int)($team ?? 2)
+		: '',
 	'requestedLoadoutPasswordId' => (string)($_GET['loadout_password_error'] ?? $_GET['loadout_password_required'] ?? ''),
 	'requestedLoadoutPasswordTeam' => (string)($_GET['loadout_password_team'] ?? '1'),
 	'hasLoadoutPasswordError' => isset($_GET['loadout_password_error']),

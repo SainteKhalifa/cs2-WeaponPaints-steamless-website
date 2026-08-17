@@ -12,5 +12,6 @@
 	<script src="assets/js/keychains.js?v=<?= filemtime(__DIR__ . '/../../assets/js/keychains.js') ?>"></script>
 	<script src="assets/js/modal-escape.js?v=<?= filemtime(__DIR__ . '/../../assets/js/modal-escape.js') ?>"></script>
 	<script src="assets/js/forms.js?v=<?= filemtime(__DIR__ . '/../../assets/js/forms.js') ?>"></script>
+	<script src="assets/js/inspect.js?v=<?= filemtime(__DIR__ . '/../../assets/js/inspect.js') ?>"></script>
 </body>
 </html>

@@ -57,6 +57,15 @@
 						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#gloveModal" <?= $currentGloveCanEdit ? '' : 'disabled' ?>>
 							<?= h(t('edit')) ?>
 						</button>
+						<?php
+						// Gloves carry no sticker, charm, StatTrak or custom name: only the
+						// paint, the wear and the pattern matter.
+						?>
+						<?= inspectButton(
+							$actualGloveDefindex,
+							inspectHexFromValues($actualGloveDefindex, $currentGlovePaintId, $currentGloveWear, $currentGloveSeed, 0, 0, null, null, null),
+							($actualGlove['weapon_name'] ?? '') . ' — ' . ($currentGloveSkin['paint_name'] ?? '')
+						) ?>
 					</div>
 
 					<form method="post" class="modal-form">

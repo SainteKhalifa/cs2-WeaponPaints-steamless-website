@@ -193,3 +193,45 @@
 			</div>
 		</div>
 	<?php endif; ?>
+
+	<div class="modal fade inspect-modal" id="inspectModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered">
+			<form method="post" class="modal-content">
+				<?= csrfInput() ?>
+				<input type="hidden" name="action" value="import_inspect_link">
+				<input type="hidden" name="id" value="<?= h($currentPreset['steamid'] ?? '') ?>">
+				<input type="hidden" name="team" value="<?= h((string)($team ?? 2)) ?>">
+				<input type="hidden" name="weapon_defindex" value="" data-inspect-defindex-field>
+				<div class="modal-header">
+					<div>
+						<h5 class="modal-title"><?= h(t('inspect_title')) ?></h5>
+						<div class="inspect-subtitle" data-inspect-label></div>
+					</div>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h(t('close')) ?>"></button>
+				</div>
+				<div class="modal-body">
+					<ol class="inspect-steps">
+						<li><?= h(t('inspect_step_open')) ?></li>
+						<li><?= h(t('inspect_step_place')) ?></li>
+						<li><?= h(t('inspect_step_paste')) ?></li>
+					</ol>
+					<div class="inspect-actions">
+						<a class="btn btn-primary" href="#" target="_blank" rel="noopener noreferrer" data-inspect-open-link><?= h(t('inspect_open')) ?></a>
+						<button type="button" class="btn btn-outline-light" data-inspect-paste hidden><?= h(t('inspect_paste')) ?></button>
+					</div>
+					<input type="text" name="inspect_link" class="form-control inspect-input" placeholder="<?= h(t('inspect_import_placeholder')) ?>" autocomplete="off" spellcheck="false" required data-inspect-input>
+					<label class="inspect-placement">
+						<input type="checkbox" name="inspect_keep_placement" value="1">
+						<span>
+							<strong><?= h(t('inspect_keep_placement')) ?></strong>
+							<small><?= h(t('inspect_keep_placement_hint')) ?></small>
+						</span>
+					</label>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('cancel')) ?></button>
+					<button type="submit" class="btn btn-primary"><?= h(t('inspect_import_apply')) ?></button>
+				</div>
+			</form>
+		</div>
+	</div>

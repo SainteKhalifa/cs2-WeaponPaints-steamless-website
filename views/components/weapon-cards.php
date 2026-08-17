@@ -39,7 +39,7 @@
 								<?php if ($currentIsFusion) : ?><span class="fusion-badge"><?= h(t('skin_fusion')) ?></span><?php endif; ?>
 								<?= paintKitFinishBadgeHtml($currentPaintId) ?>
 								<?php if ($initialNameTagEnabled) : ?><span class="nametag-badge"><?= h(t('name_tag')) ?></span><?php endif; ?>
-								<?php if ($initialStatTrakValue) : ?><span class="stattrak-badge">StatTrak™</span><?php endif; ?>
+								<?php if ($initialStatTrakValue) : ?><span class="stattrak-badge" data-stattrak-badge="<?= (int)$defindex ?>">StatTrak™ <span data-stattrak-badge-count><?= h($initialStatTrakCountValue) ?></span></span><?php endif; ?>
 							</div>
 						<?php endif; ?>
 						<div class="card-title-wrap">
@@ -95,6 +95,11 @@
 								<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#<?= h($modalId) ?>" <?= $currentSkinCanEdit ? '' : 'disabled' ?>>
 									<?= h(t('edit')) ?>
 								</button>
+								<?= inspectButton(
+									$defindex,
+									inspectHexFromValues($defindex, $currentPaintId, $initialWearValue, $initialSeedValue, $initialStatTrakValue, $initialStatTrakCountValue, $initialNameTagValue, $initialStickerValues, $initialKeychainValue),
+									($default['weapon_name'] ?? '') . ' — ' . ($currentSkin['paint_name'] ?? '')
+								) ?>
 							</div>
 
 							<div class="modal fade skin-picker-modal" id="<?= h($skinPickerId) ?>" tabindex="-1" aria-hidden="true">
@@ -181,7 +186,8 @@
 		<input type="checkbox" name="stattrak" value="1" data-stattrak-toggle <?= $initialStatTrakValue ? 'checked' : '' ?>>
 		<span class="stattrak-label">StatTrak™</span>
 	</label>
-	<input type="number" name="weapon_stattrak_count" value="<?= h($initialStatTrakCountValue) ?>" min="0" max="999999" step="1" class="form-control stattrak-input<?= $initialStatTrakValue ? '' : ' is-inactive' ?>" data-stattrak-input <?= $initialStatTrakValue ? '' : 'disabled' ?>>
+	<input type="number" name="weapon_stattrak_count" value="<?= h($initialStatTrakCountValue) ?>" min="0" max="999999" step="1" class="form-control stattrak-input<?= $initialStatTrakValue ? '' : ' is-inactive' ?>" data-stattrak-input <?= $initialStatTrakValue ? '' : 'disabled' ?> <?= stattrakCountEditable() ? "" : "readonly" ?> title="<?= h(stattrakCountEditable() ? "" : t("stattrak_count_locked")) ?>">
+	<button type="submit" name="stattrak_reset" value="1" class="btn btn-sm btn-outline-light stattrak-reset" title="<?= h(t("stattrak_reset_title")) ?>"><?= h(t("stattrak_reset")) ?></button>
 												</div>
 </div>
 								<?php if ($allowsCustomization) : ?>
@@ -256,15 +262,15 @@
 												<div class="keychain-param-row" data-keychain-param-row="x">
 													<label for="keychainX<?= (int)$defindex ?>"><?= h(t('keychain_x')) ?></label>
 													<div class="keychain-param-control">
-														<input type="range" min="-1" max="1" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['x'])) ?>" data-keychain-inline-range="x" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
-														<input id="keychainX<?= (int)$defindex ?>" type="number" name="keychain_x" min="-1" max="1" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['x'])) ?>" class="form-control" data-keychain-inline-param="x" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+														<input type="range" min="-<?= KEYCHAIN_OFFSET_LIMIT ?>" max="<?= KEYCHAIN_OFFSET_LIMIT ?>" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['x'])) ?>" data-keychain-inline-range="x" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+														<input id="keychainX<?= (int)$defindex ?>" type="number" name="keychain_x" min="-<?= KEYCHAIN_OFFSET_LIMIT ?>" max="<?= KEYCHAIN_OFFSET_LIMIT ?>" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['x'])) ?>" class="form-control" data-keychain-inline-param="x" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
 													</div>
 												</div>
 												<div class="keychain-param-row" data-keychain-param-row="y">
 													<label for="keychainY<?= (int)$defindex ?>"><?= h(t('keychain_y')) ?></label>
 													<div class="keychain-param-control">
-														<input type="range" min="-1" max="1" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['y'])) ?>" data-keychain-inline-range="y" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
-														<input id="keychainY<?= (int)$defindex ?>" type="number" name="keychain_y" min="-1" max="1" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['y'])) ?>" class="form-control" data-keychain-inline-param="y" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+														<input type="range" min="-<?= KEYCHAIN_OFFSET_LIMIT ?>" max="<?= KEYCHAIN_OFFSET_LIMIT ?>" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['y'])) ?>" data-keychain-inline-range="y" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
+														<input id="keychainY<?= (int)$defindex ?>" type="number" name="keychain_y" min="-<?= KEYCHAIN_OFFSET_LIMIT ?>" max="<?= KEYCHAIN_OFFSET_LIMIT ?>" step="0.01" value="<?= h(stickerFloatValue($initialKeychainParts['y'])) ?>" class="form-control" data-keychain-inline-param="y" <?= $initialKeychainId > 0 ? '' : 'disabled' ?>>
 													</div>
 												</div>
 											</div>

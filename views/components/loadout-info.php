@@ -11,7 +11,11 @@
 			</header>
 
 			<?php if (isset($_GET['saved'])) : ?><div class="alert alert-success"><?= h(t('saved_notice')) ?></div><?php endif; ?>
-			<?php if (($_GET['error'] ?? '') === 'loadout_password') : ?>
+			<?php if (isset($_GET['imported'])) : ?><div class="alert alert-success"><?= h(t('inspect_imported')) ?></div><?php endif; ?>
+			<?php if (strpos((string)($_GET['error'] ?? ''), 'inspect_') === 0) : ?>
+				<?php $inspectErrorKey = 'inspect_error_' . substr((string)$_GET['error'], strlen('inspect_')); ?>
+				<div class="alert alert-danger"><?= h(t($inspectErrorKey) !== $inspectErrorKey ? t($inspectErrorKey) : t('inspect_error_failed')) ?></div>
+			<?php elseif (($_GET['error'] ?? '') === 'loadout_password') : ?>
 				<div class="alert alert-danger"><?= h(t('loadout_password_required')) ?></div>
 			<?php elseif (($_GET['error'] ?? '') === 'nickname') : ?>
 				<div class="alert alert-danger"><?= h(t('nickname_too_long')) ?></div>

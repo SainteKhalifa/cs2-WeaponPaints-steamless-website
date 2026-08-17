@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="<?= h($currentLanguage) ?>" data-bs-theme="<?= h($defaultWebTheme) ?>">
+<?php
+// The accent colour follows the side being edited. Anywhere else, including the
+// loadout list, there is no side to reflect and the default accent stands.
+$themeTeam = $action === 'edit' && isset($team) ? (int)$team : 0;
+?>
+<html lang="<?= h($currentLanguage) ?>" data-bs-theme="<?= h($defaultWebTheme) ?>"<?= $themeTeam ? ' data-team="' . $themeTeam . '"' : '' ?>>
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
