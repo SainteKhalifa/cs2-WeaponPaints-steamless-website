@@ -2414,7 +2414,9 @@ html[data-bs-theme="light"] .preset-card {
 }
 
 html[data-bs-theme="light"] .skin-card {
-	border-color: #b8c5d3;
+	/* The light palette darkens the accent rather than dropping it, so the
+	   side stays readable on the cards under either theme. */
+	border-color: rgba(var(--primary-rgb), .55);
 	background:
 		radial-gradient(circle at 50% 42%, rgba(255, 255, 255, .5), transparent 46%),
 		linear-gradient(180deg, #e9eef4 0%, #dce4ec 100%);
@@ -2551,6 +2553,8 @@ html[data-bs-theme="light"] .btn-outline-light {
 	--bs-btn-active-border-color: #43546b;
 	--bs-btn-disabled-color: #8c98a8;
 	--bs-btn-disabled-border-color: #cbd4df;
+}
+
 .inspect-button {
 	white-space: nowrap;
 }
@@ -2626,6 +2630,7 @@ html[data-team="3"] {
 .stattrak-reset {
 	flex: 0 0 auto;
 	white-space: nowrap;
+}
 
 /* The side accent has to work in both themes. These two-attribute selectors
    outrank the single-attribute ones above, so the light palette gets its own
@@ -2638,5 +2643,4 @@ html[data-bs-theme="light"][data-team="2"] {
 html[data-bs-theme="light"][data-team="3"] {
 	--primary: #3978d6;
 	--primary-rgb: 57, 120, 214;
-}
 }
