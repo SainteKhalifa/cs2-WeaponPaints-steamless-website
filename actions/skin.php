@@ -289,11 +289,19 @@
 					? readKeychainValueFromPost($keychains, $existing[0]['weapon_keychain'] ?? null)
 					: null;
 
+				// The kill count survives every branch below: it is never reset by
+				// changing skin, by reverting to the inventory one, or by turning
+				// StatTrak off. Only the game, an allowed edit or the reset button
+				// move it.
+				$stattrakCount = resolveStatTrakCount(
+					$existing[0] ?? null,
+					$hasExplicitSettings && array_key_exists('stattrak', $_POST) ? $submittedStatTrakCount : null
+				);
+
 				if ($isInventorySkin) {
 					$wear = 0.0;
 					$seed = 0;
 					$stattrak = 0;
-					$stattrakCount = 0;
 					$nameTag = null;
 					$stickerValues = defaultStickerValues();
 					$keychainValue = defaultKeychainValue();
@@ -301,7 +309,6 @@
 					$wear = $submittedWear ?? ($existing[0]['weapon_wear'] ?? 0.0);
 					$seed = $submittedSeed ?? ($existing[0]['weapon_seed'] ?? 0);
 					$stattrak = $submittedStatTrak;
-					$stattrakCount = $stattrak ? $submittedStatTrakCount : 0;
 					$nameTag = array_key_exists('nametag_present', $_POST) ? $submittedNameTag : ($existing[0]['weapon_nametag'] ?? null);
 					$stickerValues = $submittedStickerValuesForTeam ?? ($existing ? stickerValuesFromRow($existing[0]) : defaultStickerValues());
 					$keychainValue = $submittedKeychainValueForTeam ?? ($existing[0]['weapon_keychain'] ?? defaultKeychainValue());
@@ -310,7 +317,6 @@
 					$wear = $cached ? (float)$cached['weapon_wear'] : 0.0;
 					$seed = $cached ? (int)$cached['weapon_seed'] : 0;
 					$stattrak = $cached ? (int)$cached['weapon_stattrak'] : 0;
-					$stattrakCount = $stattrak && $cached ? (int)($cached['weapon_stattrak_count'] ?? 0) : 0;
 					$nameTag = $cached ? $cached['weapon_nametag'] : null;
 					$stickerValues = $cached ? stickerValuesFromRow($cached) : defaultStickerValues();
 					$keychainValue = $cached['weapon_keychain'] ?? defaultKeychainValue();

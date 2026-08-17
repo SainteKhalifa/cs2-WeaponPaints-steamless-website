@@ -10,6 +10,7 @@ if ($accessGranted) {
 	require __DIR__ . '/sticker.php';
 	require __DIR__ . '/keychain.php';
 	require __DIR__ . '/skin.php';
+	require __DIR__ . '/inspect.php';
 	require __DIR__ . '/music.php';
 	require __DIR__ . '/pin.php';
 	require __DIR__ . '/agent.php';
