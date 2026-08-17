@@ -8,7 +8,8 @@
 > A bilingual, Steamless loadout manager for private CS2 community servers.
 
 > **This is a fork** of [wtf729/cs2-WeaponPaints-steamless-website](https://github.com/wtf729/cs2-WeaponPaints-steamless-website).
-> It tracks upstream and adds a 3D placement bridge, a container deployment and
+> It tracks upstream — currently rebased on v1.3.0 and its `actions/`, `class/`
+> and `views/` split — and adds a 3D placement bridge, a container deployment and
 > environment-driven configuration. See [Fork additions](#fork-additions), or
 > [Ajouts de ce fork](#ajouts-de-ce-fork) for the French version.
 
@@ -36,7 +37,7 @@ This project is intended for private servers and trusted player groups. It is no
 ## Features
 
 * Steam64 ID-based loadouts without Steam login
-* Global, T-side, and CT-side editing modes
+* T-side and CT-side editing modes
 * Weapons, knives, gloves, agents, music kits, CS2 collectible pins, and weapon keychains
 * Wear, pattern template, name tag, StatTrak™ status, and StatTrak™ kill count
 * Five sticker slots per weapon, with fill-all, clear-all, and per-slot wear/position/scale/rotation settings
@@ -122,6 +123,16 @@ side, in the settings dialog and in the inspect link import alike: a forged
 request or a link carrying its own count is discarded and the stored value is
 kept. The StatTrak toggle itself stays editable either way.
 
+The count survives everything else you change. Picking another skin, editing the
+wear or importing a link no longer resets it, which is what used to happen; a
+**Reset** button next to the field zeroes it deliberately, and stays available
+even when the field is locked.
+
+Since the plugin keeps incrementing the counter in game, the page refreshes it
+every 30 seconds from `index.php?action=stattrak_counts`, a read-only endpoint.
+Frags scored while the tab is open show up without a reload. Hidden tabs stop
+polling, and a field being typed into is left alone.
+
 ### The accent follows the side
 
 Editing the T side turns the interface orange, the CT side blue. Pages without a
@@ -160,7 +171,7 @@ without touching the database.
 
 ### Environment-driven configuration
 
-`class/config.php` reads every setting from the environment first and keeps its
+`config.php` reads every setting from the environment first and keeps its
 former values as fallbacks, so a plain PHP hosting install still works by editing
 that file while a container deployment needs no tracked secret at all.
 
@@ -218,11 +229,11 @@ The website automatically creates its helper tables and adds missing helper colu
 
 1. Create a loadout with a Steam64 ID and an optional nickname.
 2. Optionally enable a loadout PIN during creation.
-3. Open the loadout and choose Global, T, or CT editing.
+3. Open the loadout and choose T or CT editing.
 4. Select the desired items and use **Edit** for wear, pattern, StatTrak™, name tag, stickers, and keychain settings.
 5. Use **Save** in an edit dialog to apply its settings. Sticker selection and sticker advanced settings use their own save flow.
 
-Global mode writes supported team-based settings to both T and CT. Music kits are managed globally, while agents are selected separately for T and CT.
+Settings are written for the side being edited. Music kits and CS2 collectible pins are stored per side and appear on both, while agents are selected separately for T and CT.
 
 ### Skin Fusion (Experimental)
 
@@ -390,6 +401,17 @@ d'inspection : une requête forgée ou un lien portant son propre compteur est
 écarté et la valeur enregistrée est conservée. L'interrupteur StatTrak lui-même
 reste modifiable dans les deux cas.
 
+Le compteur survit à tout le reste. Changer de skin, modifier l'usure ou importer
+un lien ne le remet plus à zéro, ce qui était le cas auparavant ; un bouton
+**Remettre à zéro** à côté du champ s'en charge volontairement, et reste
+disponible même quand le champ est verrouillé.
+
+Comme le plugin continue d'incrémenter le compteur en jeu, la page le rafraîchit
+toutes les 30 secondes depuis `index.php?action=stattrak_counts`, un point
+d'entrée en lecture seule. Les frags faits pendant que l'onglet est ouvert
+apparaissent sans recharger. Un onglet masqué cesse d'interroger le serveur, et
+un champ en cours de saisie n'est pas touché.
+
 ### La couleur suit le camp
 
 Éditer le camp T passe l'interface en orange, le camp CT en bleu. Les pages sans
@@ -430,7 +452,7 @@ sans toucher à la base.
 
 ### Configuration par l'environnement
 
-`class/config.php` lit chaque réglage depuis l'environnement en priorité et
+`config.php` lit chaque réglage depuis l'environnement en priorité et
 conserve ses anciennes valeurs en repli : une installation classique sur
 hébergement PHP fonctionne toujours en éditant ce fichier, tandis qu'un
 déploiement en conteneur n'a besoin d'aucun secret dans un fichier suivi.
