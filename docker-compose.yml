@@ -2,9 +2,11 @@
 # Start from .env.example to create it.
 
 services:
+  # The service key is internal to compose; CONTAINER_NAME renames both the
+  # image and the container, so a deployment never has to edit this file.
   cs2-loadout-web:
     build: .
-    image: cs2-loadout-web
+    image: ${CONTAINER_NAME:-cs2-loadout-web}
     container_name: ${CONTAINER_NAME:-cs2-loadout-web}
     restart: unless-stopped
 
