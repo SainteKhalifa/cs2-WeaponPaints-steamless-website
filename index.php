@@ -13,6 +13,7 @@ $clientConfig = [
 	'paintKitDataUrl' => dataFileUrl(paintKitDataFile()),
 	'paintKitAliasDataUrl' => paintKitAliasDataFile() !== '' ? dataFileUrl(paintKitAliasDataFile()) : '',
 	'paintKitFinishBadges' => paintKitFinishBadges(),
+	'inspectViewerUrl' => InspectLink::VIEWER_URL,
 	'stattrakCountsUrl' => $action === 'edit' && isset($currentPreset['steamid'])
 		? 'index.php?action=stattrak_counts&id=' . rawurlencode((string)$currentPreset['steamid']) . '&team=' . (int)($team ?? 2)
 		: '',

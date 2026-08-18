@@ -1,7 +1,8 @@
 (function () {
 	'use strict';
 
-	var VIEWER_URL = 'https://skincraft.gg/i/';
+	// Served by PHP so the address lives in one place: class/inspect.php.
+	var VIEWER_URL = (window.cs2AppConfig || {}).inspectViewerUrl || '';
 
 	document.addEventListener('DOMContentLoaded', function () {
 		var modalEl = document.getElementById('inspectModal');
@@ -21,7 +22,12 @@
 					if (defindexField) defindexField.value = button.getAttribute('data-inspect-defindex') || '';
 					if (label) label.textContent = button.getAttribute('data-inspect-label') || '';
 					if (input) input.value = '';
-					if (openLink) openLink.href = VIEWER_URL + hex;
+					if (openLink) {
+						// No viewer address means the config never reached the page;
+						// a bare hex href would just reload the site.
+						openLink.href = VIEWER_URL ? VIEWER_URL + hex : '#';
+						openLink.classList.toggle('disabled', !VIEWER_URL);
+					}
 					modal.show();
 				});
 			});
