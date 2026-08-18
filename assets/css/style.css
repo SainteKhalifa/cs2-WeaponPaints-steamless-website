@@ -1009,12 +1009,22 @@ label {
 	grid-row: 5;
 	display: flex;
 	justify-content: flex-end;
-	flex-wrap: nowrap;
+	/* Clipping used to hide a whole button instead of moving it: knives and
+	   gloves carry a fourth one, and "Category" alone is a third of the row. */
+	flex-wrap: wrap;
 	gap: 6px;
 	margin: 0;
 	align-self: end;
 	min-width: 0;
-	overflow: hidden;
+}
+
+/* Four buttons run past a narrow card. Tightening them keeps the row on one
+   line at every width the grid produces but the very narrowest, where the
+   wrap above takes over. The card keeps its height either way. */
+.settings-row:has(.btn:nth-child(4)) .btn {
+	font-size: .78rem;
+	padding-left: .35rem;
+	padding-right: .35rem;
 }
 
 .settings-row .btn {
@@ -2636,4 +2646,87 @@ html[data-bs-theme="light"][data-team="2"] {
 html[data-bs-theme="light"][data-team="3"] {
 	--primary: #3978d6;
 	--primary-rgb: 57, 120, 214;
+}
+
+/* Confirmation bubble, shown before an action that cannot be undone.
+
+   The trigger sits inside a modal whose ancestors all clip their overflow, so
+   the bubble is fixed on the body and placed from the trigger's own rectangle
+   rather than nested next to it. */
+.confirm-bubble {
+	position: fixed;
+	z-index: 1080;
+	width: max-content;
+	max-width: min(280px, calc(100vw - 24px));
+	padding: 12px 14px;
+	border-radius: 10px;
+	background: var(--panel-2);
+	border: 1px solid rgba(var(--primary-rgb), .55);
+	box-shadow: 0 18px 40px rgba(0, 0, 0, .45);
+	color: var(--text);
+	font-size: .86rem;
+	line-height: 1.4;
+	opacity: 0;
+	transform: translateY(6px) scale(.96);
+	transition: opacity .16s ease, transform .16s cubic-bezier(.2, .9, .3, 1.2);
+	pointer-events: none;
+}
+
+.confirm-bubble.is-open {
+	opacity: 1;
+	transform: translateY(0) scale(1);
+	pointer-events: auto;
+}
+
+/* A rotated square tucked under the edge facing the trigger. */
+.confirm-bubble::after {
+	content: '';
+	position: absolute;
+	left: var(--arrow-x, 50%);
+	width: 10px;
+	height: 10px;
+	margin-left: -5px;
+	background: var(--panel-2);
+	border-left: 1px solid rgba(var(--primary-rgb), .55);
+	border-top: 1px solid rgba(var(--primary-rgb), .55);
+}
+
+.confirm-bubble[data-placement="bottom"]::after {
+	top: -6px;
+	transform: rotate(45deg);
+}
+
+.confirm-bubble[data-placement="top"]::after {
+	bottom: -6px;
+	transform: rotate(225deg);
+}
+
+.confirm-bubble-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.confirm-bubble-actions .btn {
+	padding: .2rem .6rem;
+	font-size: .8rem;
+}
+
+/* The trigger stays visibly the thing being asked about while the bubble is up. */
+[data-confirm][aria-expanded="true"] {
+	border-color: rgba(var(--primary-rgb), .85);
+	box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.confirm-bubble {
+		transition: none;
+		transform: none;
+	}
+
+	.confirm-bubble.is-open {
+		transform: none;
+	}
 }

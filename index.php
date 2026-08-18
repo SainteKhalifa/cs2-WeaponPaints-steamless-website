@@ -37,6 +37,7 @@ $clientConfig = [
 		'validationNumberRange' => t('validation_number_range'),
 		'validationDecimalRange' => t('validation_decimal_range'),
 		'validationIntegerRange' => t('validation_integer_range'),
+		'cancel' => t('cancel'),
 	],
 ];
 

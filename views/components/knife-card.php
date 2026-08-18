@@ -222,7 +222,7 @@
 		<span class="stattrak-label">StatTrak™</span>
 	</label>
 	<input type="number" name="weapon_stattrak_count" value="<?= h($currentKnifeStatTrakCount) ?>" min="0" max="999999" step="1" class="form-control stattrak-input<?= $currentKnifeStatTrak ? '' : ' is-inactive' ?>" data-stattrak-input <?= $currentKnifeStatTrak ? '' : 'disabled' ?> <?= stattrakCountEditable() ? "" : "readonly" ?> title="<?= h(stattrakCountEditable() ? "" : t("stattrak_count_locked")) ?>">
-	<button type="submit" name="stattrak_reset" value="1" class="btn btn-sm btn-outline-light stattrak-reset" onclick="return confirm(<?= h(json_encode(t("stattrak_reset_confirm"), JSON_UNESCAPED_UNICODE)) ?>);" title="<?= h(t("stattrak_reset_title")) ?>"><?= h(t("stattrak_reset")) ?></button>
+	<button type="submit" name="stattrak_reset" value="1" class="btn btn-sm btn-outline-light stattrak-reset" data-confirm="<?= h(t("stattrak_reset_confirm")) ?>" data-confirm-ok="<?= h(t("stattrak_reset")) ?>" aria-expanded="false" title="<?= h(t("stattrak_reset_title")) ?>"><?= h(t("stattrak_reset")) ?></button>
 												</div>
 </div>
 											</div>
