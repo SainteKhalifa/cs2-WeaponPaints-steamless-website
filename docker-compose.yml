@@ -4,10 +4,10 @@
 services:
   # The service key is internal to compose; CONTAINER_NAME renames both the
   # image and the container, so a deployment never has to edit this file.
-  cs2-loadout-web:
+  cs2-skin-web:
     build: .
-    image: ${CONTAINER_NAME:-cs2-loadout-web}
-    container_name: ${CONTAINER_NAME:-cs2-loadout-web}
+    image: ${CONTAINER_NAME:-cs2-skin-web}
+    container_name: ${CONTAINER_NAME:-cs2-skin-web}
     restart: unless-stopped
 
     # Live editing of the code. Comment this out to serve only what was copied
