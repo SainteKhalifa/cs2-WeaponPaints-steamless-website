@@ -62,7 +62,7 @@ define('SITE_NAME_EN', config_text('SITE_NAME_EN', 'CS2 Loadout Manager')); // E
 define('SITE_NAME_ZH_CN', config_text('SITE_NAME_ZH_CN', 'CS2 饰品管理器')); // Simplified Chinese name
 define('AUTH_RATE_LIMIT_ATTEMPTS', config_int('AUTH_RATE_LIMIT_ATTEMPTS', 5)); // Failed attempts allowed within the time window
 define('AUTH_RATE_LIMIT_WINDOW_SECONDS', config_int('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800)); // Failure tracking window in seconds
-define('AUTH_RATE_LIMIT_LOCK_SECONDS', config_int('AUTH_RATE_LIMIT_LOCK_SECONDS', 60)); // Lock duration in seconds
+define('AUTH_RATE_LIMIT_LOCK_SECONDS', config_int('AUTH_RATE_LIMIT_LOCK_SECONDS', 300)); // Lock duration in seconds
 define('ENABLE_SKIN_FUSION', config_flag('ENABLE_SKIN_FUSION', true)); // Allow cross-weapon paint combinations
 
 // Players may set their own StatTrak kill count. The counter is game state the

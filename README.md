@@ -160,13 +160,13 @@ private ranges alone and rebuilds the client address from it. Without that,
 every visitor arrives as the proxy and five wrong tries by one player lock the
 login for all of them.
 
-The defaults are five failures per 30 minutes, then a one-minute lock. The lock
-clears the failure count, so the sustained ceiling is roughly five attempts a
-minute. That is thin for a short numeric PIN; on a public site, prefer:
+Five failures per 30 minutes then lock that IP, for five minutes rather than
+upstream's one. Reaching the limit clears the failure count, so the lock is what
+really caps a brute force run: five tries every five minutes instead of five
+every minute. Loadout PINs have no minimum length, and one minute left a short
+numeric PIN within reach of a patient script.
 
-```
-AUTH_RATE_LIMIT_LOCK_SECONDS=300
-```
+All three values are set in `.env.example` and can be tuned per deployment.
 
 ### Container deployment
 
@@ -197,6 +197,14 @@ that file while a container deployment needs no tracked secret at all.
 * The StatTrak kill counter is read from `wp_player_skins` rather than the
   settings cache. It used to display as `0` for any counter the plugin had
   incremented in game, and saving wrote that zero straight back.
+* A name tag held by the row is no longer blanked by the settings cache, which
+  could only ever replace it.
+* Charm offsets are no longer clamped into a unit range, which used to drag
+  every imported charm onto the same wrong spot.
+* Two stickers announcing the same slot no longer overwrite each other: the
+  second moves to the first free slot, so five stickers stay five.
+* Login throttling keys on the real client address behind a reverse proxy, and
+  the lock lasts five minutes rather than one.
 
 ## Requirements
 
@@ -219,7 +227,7 @@ Enabling PHP cURL and mbstring is recommended. The database account should have 
    define('SITE_NAME_ZH_CN', 'CS2 饰品管理器'); // Simplified Chinese name
    define('AUTH_RATE_LIMIT_ATTEMPTS', 5); // Failed attempts allowed within the time window
    define('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800); // Failure tracking window in seconds
-   define('AUTH_RATE_LIMIT_LOCK_SECONDS', 60); // Lock duration in seconds
+   define('AUTH_RATE_LIMIT_LOCK_SECONDS', 300); // Lock duration in seconds
    define('ENABLE_SKIN_FUSION', true); // Allow cross-weapon paint combinations
 
    define('SITE_ACCESS_PASSWORD', ''); // Set a password to enable access protection
@@ -330,7 +338,7 @@ It also creates:
 
 ## Security
 
-Use HTTPS when enabling passwords or PINs. Website-password, administrator-password, and loadout-PIN failures are rate limited by client IP. By default, five failures within 30 minutes cause a one-minute lock; these values can be changed with the `AUTH_RATE_LIMIT_*` settings in `config.php`.
+Use HTTPS when enabling passwords or PINs. Website-password, administrator-password, and loadout-PIN failures are rate limited by client IP. By default, five failures within 30 minutes cause a five-minute lock; these values can be changed with the `AUTH_RATE_LIMIT_*` settings in `config.php`, or through the environment. Behind a reverse proxy the container must see the real client address for this to work per visitor — see [Login throttling behind the proxy](#login-throttling-behind-the-proxy).
 
 State-changing requests are protected by CSRF token validation.
 
@@ -458,14 +466,14 @@ privées, et reconstruit l'adresse du client à partir de là. Sans ça, chaque
 visiteur arrive sous l'identité du proxy et cinq erreurs d'un seul joueur
 bloquent la connexion pour tous.
 
-Par défaut : cinq échecs sur 30 minutes, puis une minute de blocage. Le blocage
-remet le compteur d'échecs à zéro, donc le plafond réel tourne autour de cinq
-tentatives par minute. C'est juste pour un PIN numérique court ; sur un site
-public, préférer :
+Cinq échecs sur 30 minutes puis blocage de l'IP, pendant cinq minutes et non
+une seule comme chez l'upstream. Atteindre la limite remet le compteur d'échecs
+à zéro : c'est donc la durée du blocage qui plafonne vraiment une attaque, cinq
+essais toutes les cinq minutes au lieu de cinq par minute. Les PIN de loadout
+n'ont aucune longueur minimale, et une minute laissait un PIN numérique court à
+portée d'un script patient.
 
-```
-AUTH_RATE_LIMIT_LOCK_SECONDS=300
-```
+Les trois valeurs sont posées dans `.env.example` et se règlent par déploiement.
 
 ### Déploiement en conteneur
 
@@ -497,6 +505,14 @@ déploiement en conteneur n'a besoin d'aucun secret dans un fichier suivi.
 * Le compteur de frags StatTrak est lu depuis `wp_player_skins` et non depuis le
   cache de réglages. Il s'affichait à `0` pour tout compteur incrémenté en jeu
   par le plugin, et l'enregistrement gravait ce zéro en base.
+* Un nametag porté par la ligne n'est plus effacé par le cache de réglages, qui
+  ne peut désormais que le remplacer.
+* Les offsets de pendentif ne sont plus ramenés dans un intervalle unitaire, ce
+  qui collait tous les charms importés au même mauvais endroit.
+* Deux stickers annonçant le même emplacement ne s'écrasent plus : le second
+  prend le premier emplacement libre, donc cinq stickers restent cinq.
+* La limitation des tentatives s'indexe sur la vraie adresse du client derrière
+  un reverse proxy, et le blocage dure cinq minutes au lieu d'une.
 
 ## Credits
 

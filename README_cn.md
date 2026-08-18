@@ -64,7 +64,7 @@
    define('SITE_NAME_ZH_CN', 'CS2 饰品管理器'); // 简体中文名称
    define('AUTH_RATE_LIMIT_ATTEMPTS', 5); // 时间窗口内允许的失败次数
    define('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800); // 失败次数统计窗口，单位为秒
-   define('AUTH_RATE_LIMIT_LOCK_SECONDS', 60); // 触发限制后的锁定时间，单位为秒
+   define('AUTH_RATE_LIMIT_LOCK_SECONDS', 300); // 触发限制后的锁定时间，单位为秒
    define('ENABLE_SKIN_FUSION', true); // 允许跨武器组合涂装
 
    define('SITE_ACCESS_PASSWORD', ''); // 设置密码以启用网站访问保护
@@ -175,7 +175,7 @@ php tools/update_cs2_data.php --only=skins
 
 ## 安全说明
 
-启用密码或 PIN 时请使用 HTTPS。网站访问密码、管理员密码和配置 PIN 的失败验证会按照客户端 IP 进行限流。默认规则是在 30 分钟内失败 5 次后锁定 1 分钟，可通过 `config.php` 中的 `AUTH_RATE_LIMIT_*` 设置调整。
+启用密码或 PIN 时请使用 HTTPS。网站访问密码、管理员密码和配置 PIN 的失败验证会按照客户端 IP 进行限流。默认规则是在 30 分钟内失败 5 次后锁定 5 分钟，可通过 `config.php` 中的 `AUTH_RATE_LIMIT_*` 设置调整。
 
 所有会修改数据的请求均通过 CSRF 令牌校验进行保护。
 
