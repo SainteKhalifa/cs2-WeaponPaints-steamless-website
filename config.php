@@ -21,6 +21,20 @@ function config_value(string $name, string $fallback): string
     return $value === false ? $fallback : $value;
 }
 
+/**
+ * Same as config_value(), for settings an empty string cannot describe.
+ *
+ * A blank site name is never a deliberate choice, unlike a blank password, and
+ * the compose file forwards these variables whether the deployment sets them
+ * or not.
+ */
+function config_text(string $name, string $fallback): string
+{
+    $value = getenv($name);
+
+    return $value === false || $value === '' ? $fallback : $value;
+}
+
 function config_int(string $name, int $fallback): int
 {
     $value = getenv($name);
@@ -44,8 +58,8 @@ function config_flag(string $name, bool $fallback): bool
 
 define('DEFAULT_LANGUAGE', config_value('DEFAULT_LANGUAGE', 'en')); // Available values: en, zh-CN
 define('DEFAULT_WEB_THEME', config_value('DEFAULT_WEB_THEME', 'dark')); // Available values: dark, light; visitors can override it in the browser
-define('SITE_NAME_EN', config_value('SITE_NAME_EN', 'CS2 Loadout Manager')); // English name and fallback
-define('SITE_NAME_ZH_CN', config_value('SITE_NAME_ZH_CN', 'CS2 饰品管理器')); // Simplified Chinese name
+define('SITE_NAME_EN', config_text('SITE_NAME_EN', 'CS2 Loadout Manager')); // English name and fallback
+define('SITE_NAME_ZH_CN', config_text('SITE_NAME_ZH_CN', 'CS2 饰品管理器')); // Simplified Chinese name
 define('AUTH_RATE_LIMIT_ATTEMPTS', config_int('AUTH_RATE_LIMIT_ATTEMPTS', 5)); // Failed attempts allowed within the time window
 define('AUTH_RATE_LIMIT_WINDOW_SECONDS', config_int('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800)); // Failure tracking window in seconds
 define('AUTH_RATE_LIMIT_LOCK_SECONDS', config_int('AUTH_RATE_LIMIT_LOCK_SECONDS', 60)); // Lock duration in seconds

@@ -151,6 +151,23 @@ both sides at once, is gone; an old link carrying `team=1` lands on the T side.
 Music kits and collectible pins used to appear on that tab alone. They are stored
 per side in the database, so they now show on both, like everything else.
 
+### Login throttling behind the proxy
+
+The throttling counts failures per client IP, which only works if the container
+sees the real one. Nothing is published to the host — the proxy is the only
+thing that can reach nginx — so `nginx.conf` trusts `X-Forwarded-For` from the
+private ranges alone and rebuilds the client address from it. Without that,
+every visitor arrives as the proxy and five wrong tries by one player lock the
+login for all of them.
+
+The defaults are five failures per 30 minutes, then a one-minute lock. The lock
+clears the failure count, so the sustained ceiling is roughly five attempts a
+minute. That is thin for a short numeric PIN; on a public site, prefer:
+
+```
+AUTH_RATE_LIMIT_LOCK_SECONDS=300
+```
+
 ### Container deployment
 
 The repository ships a complete stack for running behind an existing reverse
@@ -431,6 +448,24 @@ côté T.
 Les kits musicaux et les pin's n'apparaissaient que sur cet onglet. Ils sont
 stockés par camp en base, ils s'affichent donc désormais des deux côtés, comme le
 reste.
+
+### Limitation des tentatives derrière le proxy
+
+La limitation compte les échecs par IP cliente, ce qui suppose que le conteneur
+voie la vraie. Rien n'est publié vers l'hôte — seul le proxy peut joindre nginx
+— donc `nginx.conf` ne fait confiance à `X-Forwarded-For` que depuis les plages
+privées, et reconstruit l'adresse du client à partir de là. Sans ça, chaque
+visiteur arrive sous l'identité du proxy et cinq erreurs d'un seul joueur
+bloquent la connexion pour tous.
+
+Par défaut : cinq échecs sur 30 minutes, puis une minute de blocage. Le blocage
+remet le compteur d'échecs à zéro, donc le plafond réel tourne autour de cinq
+tentatives par minute. C'est juste pour un PIN numérique court ; sur un site
+public, préférer :
+
+```
+AUTH_RATE_LIMIT_LOCK_SECONDS=300
+```
 
 ### Déploiement en conteneur
 

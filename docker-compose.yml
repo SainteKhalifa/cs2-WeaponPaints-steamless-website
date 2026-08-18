@@ -13,7 +13,7 @@ services:
     volumes:
       - ./:/var/www/html
 
-    # class/config.php reads these, so no credential ends up in a tracked file.
+    # config.php reads these, so no credential ends up in a tracked file.
     environment:
       TZ: ${TZ:-Europe/Paris}
       DB_HOST: ${DB_HOST}
@@ -27,6 +27,13 @@ services:
       DEFAULT_WEB_THEME: ${DEFAULT_WEB_THEME:-dark}
       ENABLE_SKIN_FUSION: ${ENABLE_SKIN_FUSION:-true}
       LOCK_STATTRAK_COUNT: ${LOCK_STATTRAK_COUNT:-false}
+      # Optional, and only forwarded so that setting them in .env has an
+      # effect: an unset variable falls through to the default in config.php.
+      SITE_NAME_EN: ${SITE_NAME_EN:-}
+      SITE_NAME_ZH_CN: ${SITE_NAME_ZH_CN:-}
+      AUTH_RATE_LIMIT_ATTEMPTS: ${AUTH_RATE_LIMIT_ATTEMPTS:-}
+      AUTH_RATE_LIMIT_WINDOW_SECONDS: ${AUTH_RATE_LIMIT_WINDOW_SECONDS:-}
+      AUTH_RATE_LIMIT_LOCK_SECONDS: ${AUTH_RATE_LIMIT_LOCK_SECONDS:-}
 
     networks:
       - cs2
