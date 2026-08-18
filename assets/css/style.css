@@ -2335,7 +2335,7 @@ html[data-bs-theme="light"] {
 
 html[data-bs-theme="light"] body {
 	background:
-		radial-gradient(circle at 18% 14%, rgba(57, 120, 214, .13), transparent 28%),
+		radial-gradient(circle at 18% 14%, rgba(var(--primary-rgb), .13), transparent 28%),
 		radial-gradient(circle at 82% 8%, rgba(91, 124, 166, .1), transparent 24%),
 		linear-gradient(180deg, #f1f5f9 0%, var(--bg) 44%, #dbe3ec 100%);
 }
@@ -2347,7 +2347,7 @@ html[data-bs-theme="light"] body::before {
 }
 
 html[data-bs-theme="light"] body::after {
-	background: rgba(57, 120, 214, .1);
+	background: rgba(var(--primary-rgb), .1);
 }
 
 html[data-bs-theme="light"] .panel,
@@ -2360,7 +2360,7 @@ html[data-bs-theme="light"] .language-dropdown {
 
 html[data-bs-theme="light"] .access-panel {
 	background:
-		radial-gradient(circle at top right, rgba(57, 120, 214, .13), transparent 34%),
+		radial-gradient(circle at top right, rgba(var(--primary-rgb), .13), transparent 34%),
 		linear-gradient(180deg, rgba(255, 255, 255, .92), rgba(247, 250, 254, .96)),
 		var(--panel);
 	border-color: rgba(91, 112, 140, .2);
@@ -2369,7 +2369,7 @@ html[data-bs-theme="light"] .access-panel {
 
 html[data-bs-theme="light"] .access-panel::before {
 	background:
-		linear-gradient(135deg, rgba(57, 120, 214, .08), transparent 38%),
+		linear-gradient(135deg, rgba(var(--primary-rgb), .08), transparent 38%),
 		radial-gradient(circle at 15% 100%, rgba(91, 124, 166, .08), transparent 36%);
 }
 
@@ -2404,34 +2404,27 @@ html[data-bs-theme="light"] .sticker-slot-button:hover,
 html[data-bs-theme="light"] .sticker-result:hover,
 html[data-bs-theme="light"] .keychain-slot-button:hover,
 html[data-bs-theme="light"] .keychain-result:hover {
-	background: #edf4ff;
+	background: rgba(var(--primary-rgb), .1);
 }
 
 html[data-bs-theme="light"] .preset-card {
 	background:
-		linear-gradient(180deg, rgba(57, 120, 214, .025), transparent),
+		linear-gradient(180deg, rgba(var(--primary-rgb), .025), transparent),
 		var(--panel);
 }
 
 html[data-bs-theme="light"] .skin-card {
-	/* The light palette darkens the accent rather than dropping it, so the
-	   side stays readable on the cards under either theme. */
-	border-color: rgba(var(--primary-rgb), .55);
 	background:
 		radial-gradient(circle at 50% 42%, rgba(255, 255, 255, .5), transparent 46%),
 		linear-gradient(180deg, #e9eef4 0%, #dce4ec 100%);
 	box-shadow: 0 14px 32px rgba(58, 75, 98, .14), inset 0 1px 0 rgba(255, 255, 255, .72);
 }
 
-html[data-bs-theme="light"] .skin-card.featured {
-	border-color: rgba(57, 120, 214, .7);
-}
-
 html[data-bs-theme="light"] .loadout-password-label,
 html[data-bs-theme="light"] .identity-status.active {
-	color: #285fae;
-	background: #edf4ff;
-	border-color: #b9d0f2;
+	color: var(--primary);
+	background: rgba(var(--primary-rgb), .1);
+	border-color: rgba(var(--primary-rgb), .42);
 }
 
 html[data-bs-theme="light"] .identity-status,
@@ -2447,9 +2440,9 @@ html[data-bs-theme="light"] .skin-param-row {
 }
 
 html[data-bs-theme="light"] .nametag-row:has([data-nametag-toggle]:checked) {
-	background: #eef5ff;
-	border-color: #a9c6ef;
-	box-shadow: 0 0 0 1px rgba(57, 120, 214, .07);
+	background: rgba(var(--primary-rgb), .07);
+	border-color: rgba(var(--primary-rgb), .42);
+	box-shadow: 0 0 0 1px rgba(var(--primary-rgb), .07);
 }
 
 html[data-bs-theme="light"] .stattrak-row:has([data-stattrak-toggle]:checked) {
@@ -2504,7 +2497,7 @@ html[data-bs-theme="light"] .agent-result:hover,
 html[data-bs-theme="light"] .agent-result.active,
 html[data-bs-theme="light"] .skin-result:hover,
 html[data-bs-theme="light"] .skin-result.active {
-	background: #edf4ff;
+	background: rgba(var(--primary-rgb), .1);
 }
 
 html[data-bs-theme="light"] .skin-result.fusion-result {
