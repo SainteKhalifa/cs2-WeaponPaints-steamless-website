@@ -260,6 +260,15 @@
 											</span>
 										</label>
 									</div>
+									<div class="admin-settings-section admin-settings-section-wide">
+										<label class="admin-setting-toggle form-check form-switch" for="lockStatTrakCountSetting">
+											<input class="form-check-input" type="checkbox" role="switch" id="lockStatTrakCountSetting" name="lock_stattrak_count" value="1"<?= siteSettingEnabled('lock_stattrak_count') ? ' checked' : '' ?>>
+											<span>
+												<strong><?= h(t('lock_stattrak_count')) ?></strong>
+												<small><?= h(t('lock_stattrak_count_hint')) ?></small>
+											</span>
+										</label>
+									</div>
 								</div>
 							</form>
 						<?php else : ?>

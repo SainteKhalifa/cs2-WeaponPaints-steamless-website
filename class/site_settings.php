@@ -25,6 +25,7 @@ function siteSettingDefaults()
 		'default_language' => $defaultLanguage,
 		'default_web_theme' => $defaultTheme,
 		'enable_skin_fusion' => defined('ENABLE_SKIN_FUSION') && ENABLE_SKIN_FUSION === true ? '1' : '0',
+		'lock_stattrak_count' => defined('LOCK_STATTRAK_COUNT') && LOCK_STATTRAK_COUNT === true ? '1' : '0',
 		'server_address' => $serverAddress,
 		'server_password' => $serverPassword,
 	];
@@ -100,11 +101,9 @@ function normalizedSiteSettings(array $settings)
 	if (!in_array($normalized['default_web_theme'], ['dark', 'light'], true)) {
 		$normalized['default_web_theme'] = $defaults['default_web_theme'];
 	}
-	$normalized['enable_skin_fusion'] = in_array(
-		strtolower($normalized['enable_skin_fusion']),
-		['1', 'true', 'on', 'yes'],
-		true
-	) ? '1' : '0';
+	foreach (['enable_skin_fusion', 'lock_stattrak_count'] as $toggle) {
+		$normalized[$toggle] = in_array(strtolower($normalized[$toggle]), ['1', 'true', 'on', 'yes'], true) ? '1' : '0';
+	}
 	if (!isValidServerAddress($normalized['server_address'])) {
 		$normalized['server_address'] = $defaults['server_address'];
 	}
@@ -167,6 +166,7 @@ function editableSiteSettingConstants()
 		'default_language' => 'DEFAULT_LANGUAGE',
 		'default_web_theme' => 'DEFAULT_WEB_THEME',
 		'enable_skin_fusion' => 'ENABLE_SKIN_FUSION',
+		'lock_stattrak_count' => 'LOCK_STATTRAK_COUNT',
 		'server_address' => 'SERVER_ADDRESS',
 		'server_password' => 'SERVER_PASSWORD',
 	];
@@ -186,13 +186,16 @@ function isValidEditableSiteSettings(array $settings)
 		&& in_array($settings['default_language'], ['zh-CN', 'en'], true)
 		&& in_array($settings['default_web_theme'], ['dark', 'light'], true)
 		&& in_array($settings['enable_skin_fusion'], ['0', '1'], true)
+		&& in_array($settings['lock_stattrak_count'], ['0', '1'], true)
 		&& isValidServerAddress($settings['server_address'])
 		&& isValidServerPassword($settings['server_password']);
 }
 
 function replaceConfigConstant($config, $constant, $value)
 {
-	$exportedValue = $constant === 'ENABLE_SKIN_FUSION'
+	// Both toggles are declared as real booleans in config.php, so neither may
+	// come back as the strings '1' and '0'.
+	$exportedValue = in_array($constant, ['ENABLE_SKIN_FUSION', 'LOCK_STATTRAK_COUNT'], true)
 		? ($value === '1' ? 'true' : 'false')
 		: var_export($value, true);
 	$pattern = '/^([ \t]*)define\(\s*([\'\"])' . preg_quote($constant, '/') . '\2\s*,[^\r\n]*\);([ \t]*(?:\/\/[^\r\n]*)?)$/m';

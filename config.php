@@ -53,6 +53,7 @@ define('DEFAULT_WEB_THEME', 'dark'); // Available values: dark, light; visitors 
 define('SITE_NAME_EN', 'CS2 Loadout Manager'); // English name and fallback
 define('SITE_NAME_ZH_CN', 'CS2 饰品管理器'); // Simplified Chinese name
 define('ENABLE_SKIN_FUSION', true); // Allow cross-weapon paint combinations
+define('LOCK_STATTRAK_COUNT', false); // Make the StatTrak kill count read-only
 define('SERVER_ADDRESS', ''); // "hostname or IP:port"; empty hides the Connect to Server button
 define('SERVER_PASSWORD', ''); // Empty connects directly; a value copies the console command instead
 
@@ -62,11 +63,6 @@ define('SERVER_PASSWORD', ''); // Empty connects directly; a value copies the co
 define('AUTH_RATE_LIMIT_ATTEMPTS', config_int('AUTH_RATE_LIMIT_ATTEMPTS', 5)); // Failed attempts allowed within the time window
 define('AUTH_RATE_LIMIT_WINDOW_SECONDS', config_int('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800)); // Failure tracking window in seconds
 define('AUTH_RATE_LIMIT_LOCK_SECONDS', config_int('AUTH_RATE_LIMIT_LOCK_SECONDS', 300)); // Lock duration in seconds
-
-// Players may set their own StatTrak kill count. The counter is game state the
-// plugin increments on its own, so an editable field lets anyone claim a record
-// they never earned: turn this on to make it read-only.
-define('LOCK_STATTRAK_COUNT', config_flag('LOCK_STATTRAK_COUNT', false));
 
 define('SITE_ACCESS_PASSWORD', config_value('SITE_ACCESS_PASSWORD', '')); // Set a password to enable access protection
 define('ADMIN_PASSWORD', config_value('ADMIN_PASSWORD', '')); // Set a password to enable administrator mode

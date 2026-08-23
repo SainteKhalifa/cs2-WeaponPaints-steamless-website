@@ -17,7 +17,7 @@ require_once __DIR__ . '/inspect.php';
  */
 function stattrakCountEditable()
 {
-	return !(defined('LOCK_STATTRAK_COUNT') && LOCK_STATTRAK_COUNT === true);
+	return !siteSettingEnabled('lock_stattrak_count');
 }
 
 /**

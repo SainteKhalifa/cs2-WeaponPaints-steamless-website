@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
 	$defaultLanguage = $_POST['default_language'] ?? null;
 	$defaultWebTheme = $_POST['default_web_theme'] ?? null;
 	$fusionValue = $_POST['enable_skin_fusion'] ?? null;
+	$lockStatTrakValue = $_POST['lock_stattrak_count'] ?? null;
 	$serverAddress = $_POST['server_address'] ?? null;
 	$serverPassword = $_POST['server_password'] ?? null;
 	$hasValidTypes = is_string($siteNameEn)
@@ -29,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
 		'default_language' => $defaultLanguage,
 		'default_web_theme' => $defaultWebTheme,
 		'enable_skin_fusion' => $fusionValue === '1' ? '1' : '0',
+		'lock_stattrak_count' => $lockStatTrakValue === '1' ? '1' : '0',
 		'server_address' => trim($serverAddress),
 		'server_password' => trim($serverPassword),
 	] : [];

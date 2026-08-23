@@ -35,7 +35,7 @@ Nothing upstream ships. Removing them leaves the original site intact.
 | `class/translations.php` | 20 keys added, in both languages |
 | `class/bootstrap.php`, `actions/bootstrap.php` | Register the two new files |
 | `actions/skin.php` | Kill count settled once, before the branches, so no path can wipe it |
-| `config.php` | Split in two: the seven settings the admin dialog rewrites keep plain values, the rest reads the environment; `LOCK_STATTRAK_COUNT` added |
+| `config.php` | Split in two: the settings the admin dialog rewrites keep plain values, the rest reads the environment; `LOCK_STATTRAK_COUNT` added and wired into the dialog |
 | `index.php` | Two values handed to the page: viewer address, counter endpoint |
 | `views/layout/header.php` | `data-team` on `<html>`, driving the accent colour |
 | `views/layout/footer.php` | Loads the new script |
@@ -77,7 +77,7 @@ Charm offsets are world units — a genuine inspect link routinely carries value
 
 ### StatTrak counter
 
-Players set their own kill count by default. The counter is game state the plugin maintains, so an editable field lets anyone claim a record they never earned: set `LOCK_STATTRAK_COUNT=true` to make it read-only. The check is enforced server side, in the settings dialog and on import alike. The StatTrak toggle itself stays editable either way.
+Players set their own kill count by default. The counter is game state the plugin maintains, so an editable field lets anyone claim a record they never earned: turn **Lock the StatTrak™ Kill Count** on in the Site Settings dialog to make it read-only. The check is enforced server side, in the settings dialog and on import alike. The StatTrak toggle itself stays editable either way.
 
 The count survives everything else. Picking another skin, editing the wear or importing a link no longer resets it; a **Reset** button zeroes it deliberately, and stays available even when the field is locked.
 
@@ -121,6 +121,7 @@ two sets are kept apart.
 | `DEFAULT_LANGUAGE` | `en` | `en` or `zh-CN` |
 | `DEFAULT_WEB_THEME` | `dark` | `dark` or `light`; visitors can switch |
 | `ENABLE_SKIN_FUSION` | `true` | Cross-weapon paint combinations |
+| `LOCK_STATTRAK_COUNT` | `false` | Makes the kill count read-only |
 | `SERVER_ADDRESS` | *(empty)* | `hostname:port`; empty hides the Connect to Server button |
 | `SERVER_PASSWORD` | *(empty)* | Empty connects directly; a value copies the console command |
 
@@ -131,7 +132,6 @@ two sets are kept apart.
 | `DB_HOST` `DB_PORT` `DB_NAME` `DB_USER` `DB_PASS` | — | The database the plugin uses |
 | `SITE_ACCESS_PASSWORD` | *(empty)* | Password asked on entry; empty means an open site |
 | `ADMIN_PASSWORD` | *(empty)* | Administrator mode; empty disables it, and the dialog with it |
-| `LOCK_STATTRAK_COUNT` | `false` | Makes the kill count read-only |
 | `AUTH_RATE_LIMIT_ATTEMPTS` | `5` | Failures allowed in the window |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `1800` | Failure tracking window |
 | `AUTH_RATE_LIMIT_LOCK_SECONDS` | `300` | Lock duration |
@@ -185,7 +185,7 @@ Absents de l'upstream. Les retirer laisse le site d'origine intact.
 | `class/translations.php` | 20 clés ajoutées, dans les deux langues |
 | `class/bootstrap.php`, `actions/bootstrap.php` | Déclarent les deux nouveaux fichiers |
 | `actions/skin.php` | Compteur de frags résolu une seule fois, avant les branches, pour qu'aucun chemin ne l'efface |
-| `config.php` | Coupé en deux : les sept réglages que la fenêtre d'administration réécrit gardent des valeurs simples, le reste lit l'environnement ; `LOCK_STATTRAK_COUNT` ajouté |
+| `config.php` | Coupé en deux : les réglages que la fenêtre d'administration réécrit gardent des valeurs simples, le reste lit l'environnement ; `LOCK_STATTRAK_COUNT` ajouté et branché sur la fenêtre |
 | `index.php` | Deux valeurs transmises à la page : adresse du visionneur, point d'entrée du compteur |
 | `views/layout/header.php` | `data-team` sur `<html>`, qui pilote la couleur d'accent |
 | `views/layout/footer.php` | Charge le nouveau script |
@@ -227,7 +227,7 @@ Les offsets de pendentif sont des unités monde — un vrai lien d'inspection po
 
 ### Compteur StatTrak
 
-Par défaut, chaque joueur règle son propre nombre de frags. Ce compteur est un état de jeu que le plugin entretient : un champ modifiable permet donc de s'attribuer un palmarès qu'on n'a jamais fait. `LOCK_STATTRAK_COUNT=true` le passe en lecture seule. Le contrôle est appliqué côté serveur, dans la fenêtre de réglages comme à l'import. L'interrupteur StatTrak lui-même reste modifiable dans les deux cas.
+Par défaut, chaque joueur règle son propre nombre de frags. Ce compteur est un état de jeu que le plugin entretient : un champ modifiable permet donc de s'attribuer un palmarès qu'on n'a jamais fait. L'interrupteur **Lock the StatTrak™ Kill Count**, dans la fenêtre de réglages du site, le passe en lecture seule. Le contrôle est appliqué côté serveur, dans la fenêtre de réglages comme à l'import. L'interrupteur StatTrak lui-même reste modifiable dans les deux cas.
 
 Le compteur survit à tout le reste. Changer de skin, modifier l'usure ou importer un lien ne le remet plus à zéro ; un bouton **Remettre à zéro** s'en charge volontairement, et reste disponible même quand le champ est verrouillé.
 
@@ -271,6 +271,7 @@ annulerait silencieusement la sauvegarde : les deux ensembles sont donc séparé
 | `DEFAULT_LANGUAGE` | `en` | `en` ou `zh-CN` |
 | `DEFAULT_WEB_THEME` | `dark` | `dark` ou `light` ; le visiteur peut changer |
 | `ENABLE_SKIN_FUSION` | `true` | Combinaisons de peintures entre armes |
+| `LOCK_STATTRAK_COUNT` | `false` | Passe le compteur de frags en lecture seule |
 | `SERVER_ADDRESS` | *(vide)* | `hôte:port` ; vide masque le bouton de connexion au serveur |
 | `SERVER_PASSWORD` | *(vide)* | Vide connecte directement ; une valeur copie la commande console |
 
@@ -281,7 +282,6 @@ annulerait silencieusement la sauvegarde : les deux ensembles sont donc séparé
 | `DB_HOST` `DB_PORT` `DB_NAME` `DB_USER` `DB_PASS` | — | La base utilisée par le plugin |
 | `SITE_ACCESS_PASSWORD` | *(vide)* | Mot de passe demandé à l'entrée ; vide = site ouvert |
 | `ADMIN_PASSWORD` | *(vide)* | Mode administrateur ; vide le désactive, et la fenêtre avec |
-| `LOCK_STATTRAK_COUNT` | `false` | Passe le compteur de frags en lecture seule |
 | `AUTH_RATE_LIMIT_ATTEMPTS` | `5` | Échecs autorisés dans la fenêtre |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `1800` | Fenêtre de comptage des échecs |
 | `AUTH_RATE_LIMIT_LOCK_SECONDS` | `300` | Durée du blocage |
