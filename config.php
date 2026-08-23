@@ -1,15 +1,17 @@
 <?php
 
 /**
- * Site configuration.
+ * Site configuration, in two halves.
  *
- * Every setting can come from an environment variable, which makes it possible
- * to deploy through Docker and a .env file without writing a single secret into
- * a tracked file. The fallbacks below cover a plain PHP hosting install, where
- * this file is edited directly.
+ * The first block holds what the Site Settings dialog rewrites: those lines are
+ * edited in place by the administrator, so they carry plain values.
+ *
+ * The second reads the environment, which keeps credentials and deployment
+ * settings in .env rather than in this tracked file. The fallbacks cover a plain
+ * PHP hosting install, where this file is edited directly.
  *
  * php-fpm clears the environment by default, so the project image sets
- * `clear_env = no` for getenv() to see these variables inside a container.
+ * `clear_env = no` for getenv() to see those variables inside a container.
  */
 
 function config_value(string $name, string $fallback): string
@@ -19,20 +21,6 @@ function config_value(string $name, string $fallback): string
     // A variable that is defined but empty is a deliberate choice, such as a
     // disabled password, rather than an absent setting.
     return $value === false ? $fallback : $value;
-}
-
-/**
- * Same as config_value(), for settings an empty string cannot describe.
- *
- * A blank site name is never a deliberate choice, unlike a blank password, and
- * the compose file forwards these variables whether the deployment sets them
- * or not.
- */
-function config_text(string $name, string $fallback): string
-{
-    $value = getenv($name);
-
-    return $value === false || $value === '' ? $fallback : $value;
 }
 
 function config_int(string $name, int $fallback): int
@@ -56,14 +44,24 @@ function config_flag(string $name, bool $fallback): bool
     return $parsed === null ? $fallback : $parsed;
 }
 
-define('DEFAULT_LANGUAGE', config_value('DEFAULT_LANGUAGE', 'en')); // Available values: en, zh-CN
-define('DEFAULT_WEB_THEME', config_value('DEFAULT_WEB_THEME', 'dark')); // Available values: dark, light; visitors can override it in the browser
-define('SITE_NAME_EN', config_text('SITE_NAME_EN', 'CS2 Loadout Manager')); // English name and fallback
-define('SITE_NAME_ZH_CN', config_text('SITE_NAME_ZH_CN', 'CS2 饰品管理器')); // Simplified Chinese name
+// --- Settings the administrator edits from the site ---------------------------
+// The Site Settings dialog rewrites these lines in place, so they hold plain
+// values rather than reading the environment: a variable would be overwritten by
+// the first save and the deployment would look like it had stopped working.
+define('DEFAULT_LANGUAGE', 'en'); // Available values: en, zh-CN
+define('DEFAULT_WEB_THEME', 'dark'); // Available values: dark, light; visitors can override it in the browser
+define('SITE_NAME_EN', 'CS2 Loadout Manager'); // English name and fallback
+define('SITE_NAME_ZH_CN', 'CS2 饰品管理器'); // Simplified Chinese name
+define('ENABLE_SKIN_FUSION', true); // Allow cross-weapon paint combinations
+define('SERVER_ADDRESS', ''); // "hostname or IP:port"; empty hides the Connect to Server button
+define('SERVER_PASSWORD', ''); // Empty connects directly; a value copies the console command instead
+
+// --- Settings the deployment owns --------------------------------------------
+// Never touched by the dialog, so these keep reading the environment and stay in
+// .env, out of this tracked file.
 define('AUTH_RATE_LIMIT_ATTEMPTS', config_int('AUTH_RATE_LIMIT_ATTEMPTS', 5)); // Failed attempts allowed within the time window
 define('AUTH_RATE_LIMIT_WINDOW_SECONDS', config_int('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800)); // Failure tracking window in seconds
 define('AUTH_RATE_LIMIT_LOCK_SECONDS', config_int('AUTH_RATE_LIMIT_LOCK_SECONDS', 300)); // Lock duration in seconds
-define('ENABLE_SKIN_FUSION', config_flag('ENABLE_SKIN_FUSION', true)); // Allow cross-weapon paint combinations
 
 // Players may set their own StatTrak kill count. The counter is game state the
 // plugin increments on its own, so an editable field lets anyone claim a record

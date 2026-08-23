@@ -158,7 +158,7 @@ function keychainsFromJson()
 
 function skinFusionEnabled()
 {
-	return defined('ENABLE_SKIN_FUSION') && ENABLE_SKIN_FUSION === true;
+	return siteSettingEnabled('enable_skin_fusion');
 }
 
 function paintKitFinishBadges()

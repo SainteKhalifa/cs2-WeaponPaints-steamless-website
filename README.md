@@ -1,6 +1,6 @@
 # CS2 WeaponPaints Loadout Manager — fork
 
-Fork of [wtf729/cs2-WeaponPaints-steamless-website](https://github.com/wtf729/cs2-WeaponPaints-steamless-website), rebased on **v1.3.0**.
+Fork of [wtf729/cs2-WeaponPaints-steamless-website](https://github.com/wtf729/cs2-WeaponPaints-steamless-website), rebased on **v1.3.1**.
 
 **This file documents only what the fork changes.** Features, installation and day-to-day use are unchanged and are described in the [upstream README](https://github.com/wtf729/cs2-WeaponPaints-steamless-website#readme). `README_cn.md` is upstream's, in Simplified Chinese.
 
@@ -31,11 +31,11 @@ Nothing upstream ships. Removing them leaves the original site intact.
 | File | Change |
 |---|---|
 | `class/weapon_data.php` | Team 1 (*Global*) removed; charm offsets no longer clamped to ±1 |
-| `class/application.php` | *Global* dropped from the side list |
+| `class/application.php`, `class/site_settings.php` | *Global* dropped from both side lists |
 | `class/translations.php` | 20 keys added, in both languages |
 | `class/bootstrap.php`, `actions/bootstrap.php` | Register the two new files |
 | `actions/skin.php` | Kill count settled once, before the branches, so no path can wipe it |
-| `config.php` | Every setting reads the environment first; `LOCK_STATTRAK_COUNT` added |
+| `config.php` | Split in two: the seven settings the admin dialog rewrites keep plain values, the rest reads the environment; `LOCK_STATTRAK_COUNT` added |
 | `index.php` | Two values handed to the page: viewer address, counter endpoint |
 | `views/layout/header.php` | `data-team` on `<html>`, driving the accent colour |
 | `views/layout/footer.php` | Loads the new script |
@@ -108,17 +108,29 @@ Five failures per 30 minutes then lock that IP for five minutes, rather than ups
 
 ### Settings
 
-All optional except the database. Absent means the default applies.
+Since v1.3.1 the administrator edits part of the configuration from the site, and
+saving rewrites those lines in `config.php`. An environment variable pointing at
+the same setting would win on the next request and quietly undo the save, so the
+two sets are kept apart.
+
+**In `config.php`, through the Site Settings dialog:**
+
+| Setting | Default | Effect |
+|---|---|---|
+| `SITE_NAME_EN` `SITE_NAME_ZH_CN` | built-in | Site name per language |
+| `DEFAULT_LANGUAGE` | `en` | `en` or `zh-CN` |
+| `DEFAULT_WEB_THEME` | `dark` | `dark` or `light`; visitors can switch |
+| `ENABLE_SKIN_FUSION` | `true` | Cross-weapon paint combinations |
+| `SERVER_ADDRESS` | *(empty)* | `hostname:port`; empty hides the Connect to Server button |
+| `SERVER_PASSWORD` | *(empty)* | Empty connects directly; a value copies the console command |
+
+**In `.env`, which git ignores:**
 
 | Setting | Default | Effect |
 |---|---|---|
 | `DB_HOST` `DB_PORT` `DB_NAME` `DB_USER` `DB_PASS` | — | The database the plugin uses |
 | `SITE_ACCESS_PASSWORD` | *(empty)* | Password asked on entry; empty means an open site |
-| `ADMIN_PASSWORD` | *(empty)* | Administrator mode; empty disables it |
-| `DEFAULT_LANGUAGE` | `en` | `en` or `zh-CN` |
-| `DEFAULT_WEB_THEME` | `dark` | `dark` or `light`; visitors can switch |
-| `SITE_NAME_EN` `SITE_NAME_ZH_CN` | built-in | Site name per language |
-| `ENABLE_SKIN_FUSION` | `true` | Cross-weapon paint combinations |
+| `ADMIN_PASSWORD` | *(empty)* | Administrator mode; empty disables it, and the dialog with it |
 | `LOCK_STATTRAK_COUNT` | `false` | Makes the kill count read-only |
 | `AUTH_RATE_LIMIT_ATTEMPTS` | `5` | Failures allowed in the window |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `1800` | Failure tracking window |
@@ -126,7 +138,11 @@ All optional except the database. Absent means the default applies.
 | `CONTAINER_NAME` | `cs2-skin-web` | Names the image and the container |
 | `TZ` | `Europe/Paris` | Container timezone |
 
-A plain PHP install without Docker still works by editing `config.php` directly: the environment is only read first, the values in the file remain the fallback.
+`config.php` is tracked, so a saved setting shows as a local modification. Pull
+with `git stash`, `git pull`, `git stash pop` when a release touches that file,
+and never commit it from the server: `SERVER_PASSWORD` is stored in clear.
+
+A plain PHP install without Docker still works by editing `config.php` directly.
 
 ### Fixes carried on top of upstream
 
@@ -140,7 +156,7 @@ A plain PHP install without Docker still works by editing `config.php` directly:
 
 ## Ce que le fork change
 
-Fork de [wtf729/cs2-WeaponPaints-steamless-website](https://github.com/wtf729/cs2-WeaponPaints-steamless-website), rebasé sur la **v1.3.0**.
+Fork de [wtf729/cs2-WeaponPaints-steamless-website](https://github.com/wtf729/cs2-WeaponPaints-steamless-website), rebasé sur la **v1.3.1**.
 
 **Ce fichier ne documente que ce que le fork change.** Les fonctionnalités, l'installation et l'usage courant sont inchangés et décrits dans le [README de l'upstream](https://github.com/wtf729/cs2-WeaponPaints-steamless-website#readme).
 
@@ -165,11 +181,11 @@ Absents de l'upstream. Les retirer laisse le site d'origine intact.
 | Fichier | Modification |
 |---|---|
 | `class/weapon_data.php` | Camp 1 (*Global*) retiré ; offsets de pendentif plus bornés à ±1 |
-| `class/application.php` | *Global* retiré de la liste des camps |
+| `class/application.php`, `class/site_settings.php` | *Global* retiré des deux listes de camps |
 | `class/translations.php` | 20 clés ajoutées, dans les deux langues |
 | `class/bootstrap.php`, `actions/bootstrap.php` | Déclarent les deux nouveaux fichiers |
 | `actions/skin.php` | Compteur de frags résolu une seule fois, avant les branches, pour qu'aucun chemin ne l'efface |
-| `config.php` | Chaque réglage lit l'environnement en priorité ; `LOCK_STATTRAK_COUNT` ajouté |
+| `config.php` | Coupé en deux : les sept réglages que la fenêtre d'administration réécrit gardent des valeurs simples, le reste lit l'environnement ; `LOCK_STATTRAK_COUNT` ajouté |
 | `index.php` | Deux valeurs transmises à la page : adresse du visionneur, point d'entrée du compteur |
 | `views/layout/header.php` | `data-team` sur `<html>`, qui pilote la couleur d'accent |
 | `views/layout/footer.php` | Charge le nouveau script |
@@ -242,17 +258,29 @@ Cinq échecs sur 30 minutes puis blocage de l'IP pendant cinq minutes, et non un
 
 ### Réglages
 
-Tous optionnels sauf la base. Absent signifie que la valeur par défaut s'applique.
+Depuis la v1.3.1, l'administrateur édite une partie de la configuration depuis le
+site, et l'enregistrement réécrit ces lignes dans `config.php`. Une variable
+d'environnement portant le même réglage l'emporterait à la requête suivante et
+annulerait silencieusement la sauvegarde : les deux ensembles sont donc séparés.
+
+**Dans `config.php`, via la fenêtre de réglages du site :**
+
+| Réglage | Défaut | Effet |
+|---|---|---|
+| `SITE_NAME_EN` `SITE_NAME_ZH_CN` | intégré | Nom du site par langue |
+| `DEFAULT_LANGUAGE` | `en` | `en` ou `zh-CN` |
+| `DEFAULT_WEB_THEME` | `dark` | `dark` ou `light` ; le visiteur peut changer |
+| `ENABLE_SKIN_FUSION` | `true` | Combinaisons de peintures entre armes |
+| `SERVER_ADDRESS` | *(vide)* | `hôte:port` ; vide masque le bouton de connexion au serveur |
+| `SERVER_PASSWORD` | *(vide)* | Vide connecte directement ; une valeur copie la commande console |
+
+**Dans `.env`, que git ignore :**
 
 | Réglage | Défaut | Effet |
 |---|---|---|
 | `DB_HOST` `DB_PORT` `DB_NAME` `DB_USER` `DB_PASS` | — | La base utilisée par le plugin |
 | `SITE_ACCESS_PASSWORD` | *(vide)* | Mot de passe demandé à l'entrée ; vide = site ouvert |
-| `ADMIN_PASSWORD` | *(vide)* | Mode administrateur ; vide le désactive |
-| `DEFAULT_LANGUAGE` | `en` | `en` ou `zh-CN` |
-| `DEFAULT_WEB_THEME` | `dark` | `dark` ou `light` ; le visiteur peut changer |
-| `SITE_NAME_EN` `SITE_NAME_ZH_CN` | intégré | Nom du site par langue |
-| `ENABLE_SKIN_FUSION` | `true` | Combinaisons de peintures entre armes |
+| `ADMIN_PASSWORD` | *(vide)* | Mode administrateur ; vide le désactive, et la fenêtre avec |
 | `LOCK_STATTRAK_COUNT` | `false` | Passe le compteur de frags en lecture seule |
 | `AUTH_RATE_LIMIT_ATTEMPTS` | `5` | Échecs autorisés dans la fenêtre |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `1800` | Fenêtre de comptage des échecs |
@@ -260,7 +288,13 @@ Tous optionnels sauf la base. Absent signifie que la valeur par défaut s'appliq
 | `CONTAINER_NAME` | `cs2-skin-web` | Nomme l'image et le conteneur |
 | `TZ` | `Europe/Paris` | Fuseau horaire du conteneur |
 
-Une installation PHP classique sans Docker fonctionne toujours en éditant `config.php` : l'environnement n'est que lu en priorité, les valeurs du fichier restent le repli.
+`config.php` est suivi par git : un réglage enregistré apparaît donc comme une
+modification locale. Faire `git stash`, `git pull`, `git stash pop` quand une
+version touche ce fichier, et ne jamais le commiter depuis le serveur —
+`SERVER_PASSWORD` y est stocké en clair.
+
+Une installation PHP classique sans Docker fonctionne toujours en éditant
+`config.php` directement.
 
 ### Correctifs apportés par-dessus l'upstream
 
