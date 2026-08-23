@@ -6,7 +6,6 @@ require __DIR__ . '/access.php';
 
 if ($accessGranted) {
 	require __DIR__ . '/admin.php';
-	require __DIR__ . '/site_settings.php';
 	require __DIR__ . '/loadout.php';
 	require __DIR__ . '/sticker.php';
 	require __DIR__ . '/keychain.php';

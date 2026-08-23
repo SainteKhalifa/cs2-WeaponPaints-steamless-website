@@ -35,7 +35,7 @@ Nothing upstream ships. Removing them leaves the original site intact.
 | `class/translations.php` | 20 keys added, in both languages |
 | `class/bootstrap.php`, `actions/bootstrap.php` | Register the two new files |
 | `actions/skin.php` | Kill count settled once, before the branches, so no path can wipe it |
-| `config.php` | Split in two: the settings the admin dialog rewrites keep plain values, the rest reads the environment; `LOCK_STATTRAK_COUNT` added and wired into the dialog |
+| `config.php` | Every setting reads the environment first; `LOCK_STATTRAK_COUNT` and the two server ones added |
 | `index.php` | Two values handed to the page: viewer address, counter endpoint |
 | `views/layout/header.php` | `data-team` on `<html>`, driving the accent colour |
 | `views/layout/footer.php` | Loads the new script |
@@ -77,7 +77,7 @@ Charm offsets are world units — a genuine inspect link routinely carries value
 
 ### StatTrak counter
 
-Players set their own kill count by default. The counter is game state the plugin maintains, so an editable field lets anyone claim a record they never earned: turn **Lock the StatTrak™ Kill Count** on in the Site Settings dialog to make it read-only. The check is enforced server side, in the settings dialog and on import alike. The StatTrak toggle itself stays editable either way.
+Players set their own kill count by default. The counter is game state the plugin maintains, so an editable field lets anyone claim a record they never earned: set `LOCK_STATTRAK_COUNT=true` to make it read-only. The check is enforced server side, in the settings dialog and on import alike. The StatTrak toggle itself stays editable either way.
 
 The count survives everything else. Picking another skin, editing the wear or importing a link no longer resets it; a **Reset** button zeroes it deliberately, and stays available even when the field is locked.
 
@@ -108,15 +108,14 @@ Five failures per 30 minutes then lock that IP for five minutes, rather than ups
 
 ### Settings
 
-Since v1.3.1 the administrator edits part of the configuration from the site, and
-saving rewrites those lines in `config.php`. An environment variable pointing at
-the same setting would win on the next request and quietly undo the save, so the
-two sets are kept apart.
-
-**In `config.php`, through the Site Settings dialog:**
+Everything lives in `.env`, which git ignores. All optional except the database;
+absent means the default applies.
 
 | Setting | Default | Effect |
 |---|---|---|
+| `DB_HOST` `DB_PORT` `DB_NAME` `DB_USER` `DB_PASS` | — | The database the plugin uses |
+| `SITE_ACCESS_PASSWORD` | *(empty)* | Password asked on entry; empty means an open site |
+| `ADMIN_PASSWORD` | *(empty)* | Administrator mode; empty disables it |
 | `SITE_NAME_EN` `SITE_NAME_ZH_CN` | built-in | Site name per language |
 | `DEFAULT_LANGUAGE` | `en` | `en` or `zh-CN` |
 | `DEFAULT_WEB_THEME` | `dark` | `dark` or `light`; visitors can switch |
@@ -124,23 +123,25 @@ two sets are kept apart.
 | `LOCK_STATTRAK_COUNT` | `false` | Makes the kill count read-only |
 | `SERVER_ADDRESS` | *(empty)* | `hostname:port`; empty hides the Connect to Server button |
 | `SERVER_PASSWORD` | *(empty)* | Empty connects directly; a value copies the console command |
-
-**In `.env`, which git ignores:**
-
-| Setting | Default | Effect |
-|---|---|---|
-| `DB_HOST` `DB_PORT` `DB_NAME` `DB_USER` `DB_PASS` | — | The database the plugin uses |
-| `SITE_ACCESS_PASSWORD` | *(empty)* | Password asked on entry; empty means an open site |
-| `ADMIN_PASSWORD` | *(empty)* | Administrator mode; empty disables it, and the dialog with it |
 | `AUTH_RATE_LIMIT_ATTEMPTS` | `5` | Failures allowed in the window |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `1800` | Failure tracking window |
 | `AUTH_RATE_LIMIT_LOCK_SECONDS` | `300` | Lock duration |
 | `CONTAINER_NAME` | `cs2-skin-web` | Names the image and the container |
 | `TZ` | `Europe/Paris` | Container timezone |
 
-`config.php` is tracked, so a saved setting shows as a local modification. Pull
-with `git stash`, `git pull`, `git stash pop` when a release touches that file,
-and never commit it from the server: `SERVER_PASSWORD` is stored in clear.
+### No Site Settings dialog
+
+Upstream v1.3.1 lets an administrator edit part of the configuration from the
+site, and saving rewrites the matching `define()` lines in `config.php`. That
+cannot coexist with reading the same values from the environment: the variable
+wins on the next request, so the save looks lost. It also writes the server
+password in clear into a tracked file, and leaves `config.php` modified, which
+stops the next `git pull`.
+
+The form is therefore not rendered and its handler is not registered, so a forged
+request cannot reach the write either. Administrator mode itself is untouched:
+bypassing loadout PINs, editing and deleting loadouts all still work. Everything
+the dialog offered is set in `.env` and applied with one `docker compose up`.
 
 A plain PHP install without Docker still works by editing `config.php` directly.
 
@@ -185,7 +186,7 @@ Absents de l'upstream. Les retirer laisse le site d'origine intact.
 | `class/translations.php` | 20 clés ajoutées, dans les deux langues |
 | `class/bootstrap.php`, `actions/bootstrap.php` | Déclarent les deux nouveaux fichiers |
 | `actions/skin.php` | Compteur de frags résolu une seule fois, avant les branches, pour qu'aucun chemin ne l'efface |
-| `config.php` | Coupé en deux : les réglages que la fenêtre d'administration réécrit gardent des valeurs simples, le reste lit l'environnement ; `LOCK_STATTRAK_COUNT` ajouté et branché sur la fenêtre |
+| `config.php` | Chaque réglage lit l'environnement en priorité ; `LOCK_STATTRAK_COUNT` et les deux réglages serveur ajoutés |
 | `index.php` | Deux valeurs transmises à la page : adresse du visionneur, point d'entrée du compteur |
 | `views/layout/header.php` | `data-team` sur `<html>`, qui pilote la couleur d'accent |
 | `views/layout/footer.php` | Charge le nouveau script |
@@ -227,7 +228,7 @@ Les offsets de pendentif sont des unités monde — un vrai lien d'inspection po
 
 ### Compteur StatTrak
 
-Par défaut, chaque joueur règle son propre nombre de frags. Ce compteur est un état de jeu que le plugin entretient : un champ modifiable permet donc de s'attribuer un palmarès qu'on n'a jamais fait. L'interrupteur **Lock the StatTrak™ Kill Count**, dans la fenêtre de réglages du site, le passe en lecture seule. Le contrôle est appliqué côté serveur, dans la fenêtre de réglages comme à l'import. L'interrupteur StatTrak lui-même reste modifiable dans les deux cas.
+Par défaut, chaque joueur règle son propre nombre de frags. Ce compteur est un état de jeu que le plugin entretient : un champ modifiable permet donc de s'attribuer un palmarès qu'on n'a jamais fait. `LOCK_STATTRAK_COUNT=true` le passe en lecture seule. Le contrôle est appliqué côté serveur, dans la fenêtre de réglages comme à l'import. L'interrupteur StatTrak lui-même reste modifiable dans les deux cas.
 
 Le compteur survit à tout le reste. Changer de skin, modifier l'usure ou importer un lien ne le remet plus à zéro ; un bouton **Remettre à zéro** s'en charge volontairement, et reste disponible même quand le champ est verrouillé.
 
@@ -258,15 +259,14 @@ Cinq échecs sur 30 minutes puis blocage de l'IP pendant cinq minutes, et non un
 
 ### Réglages
 
-Depuis la v1.3.1, l'administrateur édite une partie de la configuration depuis le
-site, et l'enregistrement réécrit ces lignes dans `config.php`. Une variable
-d'environnement portant le même réglage l'emporterait à la requête suivante et
-annulerait silencieusement la sauvegarde : les deux ensembles sont donc séparés.
-
-**Dans `config.php`, via la fenêtre de réglages du site :**
+Tout vit dans `.env`, que git ignore. Tous optionnels sauf la base ; absent
+signifie que la valeur par défaut s'applique.
 
 | Réglage | Défaut | Effet |
 |---|---|---|
+| `DB_HOST` `DB_PORT` `DB_NAME` `DB_USER` `DB_PASS` | — | La base utilisée par le plugin |
+| `SITE_ACCESS_PASSWORD` | *(vide)* | Mot de passe demandé à l'entrée ; vide = site ouvert |
+| `ADMIN_PASSWORD` | *(vide)* | Mode administrateur ; vide le désactive |
 | `SITE_NAME_EN` `SITE_NAME_ZH_CN` | intégré | Nom du site par langue |
 | `DEFAULT_LANGUAGE` | `en` | `en` ou `zh-CN` |
 | `DEFAULT_WEB_THEME` | `dark` | `dark` ou `light` ; le visiteur peut changer |
@@ -274,24 +274,27 @@ annulerait silencieusement la sauvegarde : les deux ensembles sont donc séparé
 | `LOCK_STATTRAK_COUNT` | `false` | Passe le compteur de frags en lecture seule |
 | `SERVER_ADDRESS` | *(vide)* | `hôte:port` ; vide masque le bouton de connexion au serveur |
 | `SERVER_PASSWORD` | *(vide)* | Vide connecte directement ; une valeur copie la commande console |
-
-**Dans `.env`, que git ignore :**
-
-| Réglage | Défaut | Effet |
-|---|---|---|
-| `DB_HOST` `DB_PORT` `DB_NAME` `DB_USER` `DB_PASS` | — | La base utilisée par le plugin |
-| `SITE_ACCESS_PASSWORD` | *(vide)* | Mot de passe demandé à l'entrée ; vide = site ouvert |
-| `ADMIN_PASSWORD` | *(vide)* | Mode administrateur ; vide le désactive, et la fenêtre avec |
 | `AUTH_RATE_LIMIT_ATTEMPTS` | `5` | Échecs autorisés dans la fenêtre |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `1800` | Fenêtre de comptage des échecs |
 | `AUTH_RATE_LIMIT_LOCK_SECONDS` | `300` | Durée du blocage |
 | `CONTAINER_NAME` | `cs2-skin-web` | Nomme l'image et le conteneur |
 | `TZ` | `Europe/Paris` | Fuseau horaire du conteneur |
 
-`config.php` est suivi par git : un réglage enregistré apparaît donc comme une
-modification locale. Faire `git stash`, `git pull`, `git stash pop` quand une
-version touche ce fichier, et ne jamais le commiter depuis le serveur —
-`SERVER_PASSWORD` y est stocké en clair.
+### Pas de fenêtre de réglages du site
+
+La v1.3.1 d'upstream permet à un administrateur d'éditer une partie de la
+configuration depuis le site, et l'enregistrement réécrit les lignes `define()`
+correspondantes dans `config.php`. C'est incompatible avec des valeurs lues
+depuis l'environnement : la variable l'emporte à la requête suivante, et la
+sauvegarde paraît perdue. Cela écrit aussi le mot de passe du serveur en clair
+dans un fichier suivi, et laisse `config.php` modifié, ce qui bloque le `git pull`
+suivant.
+
+Le formulaire n'est donc pas affiché et son traitement n'est pas déclaré : une
+requête forgée n'atteint pas davantage l'écriture. Le mode administrateur lui-même
+est intact — contourner les PIN, éditer et supprimer des loadouts fonctionnent
+toujours. Tout ce que proposait la fenêtre se règle dans `.env` et s'applique avec
+un `docker compose up`.
 
 Une installation PHP classique sans Docker fonctionne toujours en éditant
 `config.php` directement.

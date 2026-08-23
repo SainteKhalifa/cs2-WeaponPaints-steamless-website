@@ -15,11 +15,7 @@ services:
     volumes:
       - ./:/var/www/html
 
-    # config.php reads these, so no credential ends up in a tracked file. Site
-    # name, language, theme, fusion, the StatTrak lock and the server address are
-    # absent on purpose: the Site Settings dialog writes those into config.php,
-    # and a variable here would silently win over whatever the administrator had
-    # just saved.
+    # config.php reads these, so no credential ends up in a tracked file.
     environment:
       TZ: ${TZ:-Europe/Paris}
       DB_HOST: ${DB_HOST}
@@ -27,8 +23,14 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
+      DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-en}
       SITE_ACCESS_PASSWORD: ${SITE_ACCESS_PASSWORD:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      DEFAULT_WEB_THEME: ${DEFAULT_WEB_THEME:-dark}
+      ENABLE_SKIN_FUSION: ${ENABLE_SKIN_FUSION:-true}
+      LOCK_STATTRAK_COUNT: ${LOCK_STATTRAK_COUNT:-false}
+      SERVER_ADDRESS: ${SERVER_ADDRESS:-}
+      SERVER_PASSWORD: ${SERVER_PASSWORD:-}
       # Optional, and only forwarded so that setting them in .env has an
       # effect: an unset variable falls through to the default in config.php.
       AUTH_RATE_LIMIT_ATTEMPTS: ${AUTH_RATE_LIMIT_ATTEMPTS:-}
