@@ -189,7 +189,7 @@
 						<?php if (isAdmin()) : ?>
 							<div class="admin-settings-heading">
 								<div class="admin-settings-heading-row">
-									<h5 class="modal-title"><?= h(t('admin')) ?></h5>
+									<h5 class="modal-title"><?= h(t('site_settings')) ?></h5>
 									<span class="admin-mode-badge"><span aria-hidden="true"></span><?= h(t('admin_mode_badge')) ?></span>
 								</div>
 							</div>
@@ -202,7 +202,75 @@
 						<?php if (adminPassword() === '') : ?>
 							<div class="alert alert-info mb-0"><?= h(t('admin_disabled')) ?></div>
 						<?php elseif (isAdmin()) : ?>
-							<div class="alert alert-info mb-0"><?= h(t('admin_settings_in_env')) ?></div>
+							<?php if (($siteSettingsStatus ?? '') !== '') : ?>
+								<div class="alert <?= $siteSettingsStatus === 'saved' ? 'alert-success admin-settings-status' : 'alert-danger' ?>" role="status"<?= $siteSettingsStatus === 'saved' ? ' data-site-settings-success' : '' ?>>
+									<?= h(t('site_settings_' . $siteSettingsStatus)) ?>
+								</div>
+							<?php endif; ?>
+							<form method="post" class="admin-settings-form" id="siteSettingsForm">
+								<?= csrfInput() ?>
+								<input type="hidden" name="action" value="save_site_settings">
+								<input type="hidden" name="return_to" value="<?= h($returnTo) ?>">
+								<div class="admin-settings-layout">
+									<div class="admin-settings-section">
+										<div class="admin-settings-fields">
+											<label><?= h(t('site_name_en')) ?>
+												<input class="form-control" type="text" name="site_name_en" value="<?= h(siteSetting('site_name_en')) ?>" maxlength="100" data-site-name-input>
+											</label>
+											<label><?= h(t('site_name_zh_cn')) ?>
+												<input class="form-control" type="text" name="site_name_zh_cn" value="<?= h(siteSetting('site_name_zh_cn')) ?>" maxlength="100" data-site-name-input>
+											</label>
+										</div>
+									</div>
+									<div class="admin-settings-section">
+										<div class="admin-settings-fields">
+											<label><?= h(t('default_language')) ?>
+												<select class="form-select" name="default_language">
+													<?php foreach ($availableLanguages as $languageCode => $languageName) : ?>
+														<option value="<?= h($languageCode) ?>"<?= siteSetting('default_language') === $languageCode ? ' selected' : '' ?>><?= h($languageName) ?></option>
+													<?php endforeach; ?>
+												</select>
+											</label>
+											<label><?= h(t('default_theme')) ?>
+												<select class="form-select" name="default_web_theme">
+													<option value="dark"<?= siteSetting('default_web_theme') === 'dark' ? ' selected' : '' ?>><?= h(t('theme_dark')) ?></option>
+													<option value="light"<?= siteSetting('default_web_theme') === 'light' ? ' selected' : '' ?>><?= h(t('theme_light')) ?></option>
+												</select>
+											</label>
+										</div>
+									</div>
+									<div class="admin-settings-section admin-settings-section-wide">
+										<div class="admin-settings-fields admin-settings-fields-split">
+											<label><?= h(t('server_address')) ?>
+												<input class="form-control" type="text" name="server_address" value="<?= h(serverAddress()) ?>" maxlength="261" autocomplete="off" spellcheck="false" data-server-address-input>
+												<small><?= h(t('server_address_hint')) ?></small>
+											</label>
+											<label><?= h(t('server_password')) ?>
+												<input class="form-control" type="text" name="server_password" value="<?= h(serverPassword()) ?>" maxlength="128" autocomplete="off" spellcheck="false" pattern="[^\s;&quot;;\\]+" data-server-password-input>
+												<small><?= h(t('server_password_hint')) ?></small>
+											</label>
+										</div>
+									</div>
+									<div class="admin-settings-section admin-settings-section-wide">
+										<label class="admin-setting-toggle form-check form-switch" for="enableSkinFusionSetting">
+											<input class="form-check-input" type="checkbox" role="switch" id="enableSkinFusionSetting" name="enable_skin_fusion" value="1"<?= siteSettingEnabled('enable_skin_fusion') ? ' checked' : '' ?>>
+											<span>
+												<strong><?= h(t('enable_skin_fusion')) ?></strong>
+												<small><?= h(t('enable_skin_fusion_hint')) ?></small>
+											</span>
+										</label>
+									</div>
+									<div class="admin-settings-section admin-settings-section-wide">
+										<label class="admin-setting-toggle form-check form-switch" for="lockStatTrakCountSetting">
+											<input class="form-check-input" type="checkbox" role="switch" id="lockStatTrakCountSetting" name="lock_stattrak_count" value="1"<?= siteSettingEnabled('lock_stattrak_count') ? ' checked' : '' ?>>
+											<span>
+												<strong><?= h(t('lock_stattrak_count')) ?></strong>
+												<small><?= h(t('lock_stattrak_count_hint')) ?></small>
+											</span>
+										</label>
+									</div>
+								</div>
+							</form>
 						<?php else : ?>
 							<?php if ($adminError) : ?>
 								<div class="alert alert-danger"><?= h($adminError === 'rate_limited' ? sprintf(t('auth_rate_limited'), max(1, $adminRetryAfter)) : t('admin_invalid')) ?></div>
@@ -228,6 +296,7 @@
 								</form>
 								<div class="admin-settings-footer-actions">
 									<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('back')) ?></button>
+									<button class="btn btn-primary" type="submit" form="siteSettingsForm"><?= h(t('save_settings')) ?></button>
 								</div>
 							<?php else : ?>
 								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= h(t('back')) ?></button>

@@ -8,14 +8,17 @@
  * a tracked file. The fallbacks below cover a plain PHP hosting install, where
  * this file is edited directly.
  *
- * Upstream's Site Settings dialog rewrites config.php in place, which cannot
- * work against values read from the environment: the variable wins on the next
- * request and the save looks lost. The form is therefore not rendered, and its
- * handler is not registered.
+ * Three layers, highest first: what the administrator saved from the Site
+ * Settings dialog, then the environment, then the values written below.
+ * Upstream saves the dialog into config.php itself, which would both fight the
+ * environment and leave this tracked file modified; class/site_settings_store.php
+ * keeps it outside the repository instead.
  *
  * php-fpm clears the environment by default, so the project image sets
  * `clear_env = no` for getenv() to see those variables inside a container.
  */
+
+require_once __DIR__ . '/class/site_settings_store.php';
 
 function config_value(string $name, string $fallback): string
 {
@@ -61,21 +64,21 @@ function config_flag(string $name, bool $fallback): bool
     return $parsed === null ? $fallback : $parsed;
 }
 
-define('DEFAULT_LANGUAGE', config_value('DEFAULT_LANGUAGE', 'en')); // Available values: en, zh-CN
-define('DEFAULT_WEB_THEME', config_value('DEFAULT_WEB_THEME', 'dark')); // Available values: dark, light; visitors can override it in the browser
-define('SITE_NAME_EN', config_text('SITE_NAME_EN', 'CS2 Loadout Manager')); // English name and fallback
-define('SITE_NAME_ZH_CN', config_text('SITE_NAME_ZH_CN', 'CS2 饰品管理器')); // Simplified Chinese name
-define('ENABLE_SKIN_FUSION', config_flag('ENABLE_SKIN_FUSION', true)); // Allow cross-weapon paint combinations
+define('DEFAULT_LANGUAGE', storedSiteSetting('default_language', config_value('DEFAULT_LANGUAGE', 'en'))); // Available values: en, zh-CN
+define('DEFAULT_WEB_THEME', storedSiteSetting('default_web_theme', config_value('DEFAULT_WEB_THEME', 'dark'))); // Available values: dark, light; visitors can override it in the browser
+define('SITE_NAME_EN', storedSiteSetting('site_name_en', config_text('SITE_NAME_EN', 'CS2 Loadout Manager'))); // English name and fallback
+define('SITE_NAME_ZH_CN', storedSiteSetting('site_name_zh_cn', config_text('SITE_NAME_ZH_CN', 'CS2 饰品管理器'))); // Simplified Chinese name
+define('ENABLE_SKIN_FUSION', storedSiteSetting('enable_skin_fusion', config_flag('ENABLE_SKIN_FUSION', true) ? '1' : '0') === '1'); // Allow cross-weapon paint combinations
 
 // The Connect to Server button in the header. Empty address hides it; with a
 // password the button copies the console command instead of launching the game.
-define('SERVER_ADDRESS', config_value('SERVER_ADDRESS', '')); // "hostname or IP:port"
-define('SERVER_PASSWORD', config_value('SERVER_PASSWORD', '')); // Leave empty to connect directly
+define('SERVER_ADDRESS', storedSiteSetting('server_address', config_value('SERVER_ADDRESS', ''))); // "hostname or IP:port"
+define('SERVER_PASSWORD', storedSiteSetting('server_password', config_value('SERVER_PASSWORD', ''))); // Leave empty to connect directly
 
 // Players may set their own StatTrak kill count. The counter is game state the
 // plugin increments on its own, so an editable field lets anyone claim a record
 // they never earned: turn this on to make it read-only.
-define('LOCK_STATTRAK_COUNT', config_flag('LOCK_STATTRAK_COUNT', false));
+define('LOCK_STATTRAK_COUNT', storedSiteSetting('lock_stattrak_count', config_flag('LOCK_STATTRAK_COUNT', false) ? '1' : '0') === '1');
 
 define('AUTH_RATE_LIMIT_ATTEMPTS', config_int('AUTH_RATE_LIMIT_ATTEMPTS', 5)); // Failed attempts allowed within the time window
 define('AUTH_RATE_LIMIT_WINDOW_SECONDS', config_int('AUTH_RATE_LIMIT_WINDOW_SECONDS', 1800)); // Failure tracking window in seconds

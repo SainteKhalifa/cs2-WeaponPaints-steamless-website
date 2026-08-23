@@ -41,7 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
 	}
 
 	try {
-		saveSiteSettingsToConfig($submittedSettings);
+		// Stored outside the repository rather than written into config.php.
+		storeSiteSettings($submittedSettings);
 		$_SESSION['cs2_site_settings_status'] = 'saved';
 	} catch (Throwable $exception) {
 		error_log('Unable to save site settings: ' . $exception->getMessage());

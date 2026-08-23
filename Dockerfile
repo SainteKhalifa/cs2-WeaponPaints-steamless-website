@@ -45,6 +45,12 @@ RUN printf '%s\n' \
 RUN printf '%s\n' '<?php header("Content-Type: text/plain"); echo "pong";' \
         > /var/www/health.php
 
+# What the administrator saves from the Site Settings dialog. Outside the web
+# root so nginx can never serve it, and outside the repository so a save is not
+# a local modification blocking the next `git pull`. Compose mounts a volume
+# here, otherwise the settings would go with the container.
+RUN install -d -o www-data -g www-data -m 0770 /var/www/settings
+
 # memory_limit: decoding data/stickers_*.json, close to 4 MB, goes past the
 # default 128 MB on some setups.
 # validate_timestamps stays on so that bind-mounting the repository picks up

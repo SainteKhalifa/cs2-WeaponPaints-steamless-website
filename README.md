@@ -18,6 +18,7 @@ Nothing upstream ships. Removing them leaves the original site intact.
 |---|---|
 | `class/inspect.php` | CS2 inspect link encoder and decoder (`CEconItemPreviewDataBlock`), written by hand, no dependency |
 | `class/inspect_bridge.php` | Glue between the loadout tables and the encoder, kept apart so upstream changes rarely collide |
+| `class/site_settings_store.php` | Keeps what the Site Settings dialog saves outside the repository, instead of rewriting `config.php` |
 | `actions/inspect.php` | Import handler, and the read-only endpoint the page polls for kill counts |
 | `assets/js/inspect.js` | The import window, the clipboard button and the counter refresh |
 | `Dockerfile` | PHP-FPM + nginx image, with the extensions the site actually uses |
@@ -108,40 +109,47 @@ Five failures per 30 minutes then lock that IP for five minutes, rather than ups
 
 ### Settings
 
-Everything lives in `.env`, which git ignores. All optional except the database;
-absent means the default applies.
+All optional except the database; absent means the default applies. The eight
+marked **†** are also editable from the site, and what is saved there wins.
 
 | Setting | Default | Effect |
 |---|---|---|
 | `DB_HOST` `DB_PORT` `DB_NAME` `DB_USER` `DB_PASS` | — | The database the plugin uses |
 | `SITE_ACCESS_PASSWORD` | *(empty)* | Password asked on entry; empty means an open site |
 | `ADMIN_PASSWORD` | *(empty)* | Administrator mode; empty disables it |
-| `SITE_NAME_EN` `SITE_NAME_ZH_CN` | built-in | Site name per language |
-| `DEFAULT_LANGUAGE` | `en` | `en` or `zh-CN` |
-| `DEFAULT_WEB_THEME` | `dark` | `dark` or `light`; visitors can switch |
-| `ENABLE_SKIN_FUSION` | `true` | Cross-weapon paint combinations |
-| `LOCK_STATTRAK_COUNT` | `false` | Makes the kill count read-only |
-| `SERVER_ADDRESS` | *(empty)* | `hostname:port`; empty hides the Connect to Server button |
-| `SERVER_PASSWORD` | *(empty)* | Empty connects directly; a value copies the console command |
+| `SITE_NAME_EN` `SITE_NAME_ZH_CN` **†** | built-in | Site name per language |
+| `DEFAULT_LANGUAGE` **†** | `en` | `en` or `zh-CN` |
+| `DEFAULT_WEB_THEME` **†** | `dark` | `dark` or `light`; visitors can switch |
+| `ENABLE_SKIN_FUSION` **†** | `true` | Cross-weapon paint combinations |
+| `LOCK_STATTRAK_COUNT` **†** | `false` | Makes the kill count read-only |
+| `SERVER_ADDRESS` **†** | *(empty)* | `hostname:port`; empty hides the Connect to Server button |
+| `SERVER_PASSWORD` **†** | *(empty)* | Empty connects directly; a value copies the console command |
 | `AUTH_RATE_LIMIT_ATTEMPTS` | `5` | Failures allowed in the window |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `1800` | Failure tracking window |
 | `AUTH_RATE_LIMIT_LOCK_SECONDS` | `300` | Lock duration |
 | `CONTAINER_NAME` | `cs2-skin-web` | Names the image and the container |
 | `TZ` | `Europe/Paris` | Container timezone |
 
-### No Site Settings dialog
+### Where the Site Settings dialog saves
 
 Upstream v1.3.1 lets an administrator edit part of the configuration from the
-site, and saving rewrites the matching `define()` lines in `config.php`. That
-cannot coexist with reading the same values from the environment: the variable
-wins on the next request, so the save looks lost. It also writes the server
-password in clear into a tracked file, and leaves `config.php` modified, which
-stops the next `git pull`.
+site. It saves by rewriting the matching `define()` lines inside `config.php`,
+which does not work here: that file is tracked, so every save became a local
+modification that stopped the next `git pull`, and the CS2 server password ended
+up in clear inside a tracked file.
 
-The form is therefore not rendered and its handler is not registered, so a forged
-request cannot reach the write either. Administrator mode itself is untouched:
-bypassing loadout PINs, editing and deleting loadouts all still work. Everything
-the dialog offered is set in `.env` and applied with one `docker compose up`.
+`class/site_settings_store.php` keeps them in a JSON file outside the repository
+instead — `/var/www/settings/site-settings.json` by default, on its own volume so
+a rebuild does not drop it. Point `SITE_SETTINGS_FILE` elsewhere if needed.
+`config.php` reads it before defining anything, so the order is: what the
+administrator saved, then the environment, then the values in the file.
+
+Nothing git tracks is ever written, and the dialog works as upstream intended.
+To go back to what `.env` says, delete the stored file:
+
+```bash
+docker compose exec cs2-skin-web rm /var/www/settings/site-settings.json
+```
 
 A plain PHP install without Docker still works by editing `config.php` directly.
 
@@ -169,6 +177,7 @@ Absents de l'upstream. Les retirer laisse le site d'origine intact.
 |---|---|
 | `class/inspect.php` | Encodeur et décodeur de liens d'inspection CS2 (`CEconItemPreviewDataBlock`), écrit à la main, sans dépendance |
 | `class/inspect_bridge.php` | Liaison entre les tables de loadout et l'encodeur, à part pour limiter les conflits avec l'upstream |
+| `class/site_settings_store.php` | Garde ce que la fenêtre de réglages enregistre hors du dépôt, au lieu de réécrire `config.php` |
 | `actions/inspect.php` | Traitement de l'import, et le point d'entrée en lecture seule que la page interroge |
 | `assets/js/inspect.js` | La fenêtre d'import, le bouton presse-papiers et le rafraîchissement du compteur |
 | `Dockerfile` | Image PHP-FPM + nginx, avec les seules extensions utilisées |
@@ -259,42 +268,49 @@ Cinq échecs sur 30 minutes puis blocage de l'IP pendant cinq minutes, et non un
 
 ### Réglages
 
-Tout vit dans `.env`, que git ignore. Tous optionnels sauf la base ; absent
-signifie que la valeur par défaut s'applique.
+Tous optionnels sauf la base ; absent signifie que la valeur par défaut
+s'applique. Les huit marqués **†** sont aussi éditables depuis le site, et ce qui
+y est enregistré l'emporte.
 
 | Réglage | Défaut | Effet |
 |---|---|---|
 | `DB_HOST` `DB_PORT` `DB_NAME` `DB_USER` `DB_PASS` | — | La base utilisée par le plugin |
 | `SITE_ACCESS_PASSWORD` | *(vide)* | Mot de passe demandé à l'entrée ; vide = site ouvert |
 | `ADMIN_PASSWORD` | *(vide)* | Mode administrateur ; vide le désactive |
-| `SITE_NAME_EN` `SITE_NAME_ZH_CN` | intégré | Nom du site par langue |
-| `DEFAULT_LANGUAGE` | `en` | `en` ou `zh-CN` |
-| `DEFAULT_WEB_THEME` | `dark` | `dark` ou `light` ; le visiteur peut changer |
-| `ENABLE_SKIN_FUSION` | `true` | Combinaisons de peintures entre armes |
-| `LOCK_STATTRAK_COUNT` | `false` | Passe le compteur de frags en lecture seule |
-| `SERVER_ADDRESS` | *(vide)* | `hôte:port` ; vide masque le bouton de connexion au serveur |
-| `SERVER_PASSWORD` | *(vide)* | Vide connecte directement ; une valeur copie la commande console |
+| `SITE_NAME_EN` `SITE_NAME_ZH_CN` **†** | intégré | Nom du site par langue |
+| `DEFAULT_LANGUAGE` **†** | `en` | `en` ou `zh-CN` |
+| `DEFAULT_WEB_THEME` **†** | `dark` | `dark` ou `light` ; le visiteur peut changer |
+| `ENABLE_SKIN_FUSION` **†** | `true` | Combinaisons de peintures entre armes |
+| `LOCK_STATTRAK_COUNT` **†** | `false` | Passe le compteur de frags en lecture seule |
+| `SERVER_ADDRESS` **†** | *(vide)* | `hôte:port` ; vide masque le bouton de connexion au serveur |
+| `SERVER_PASSWORD` **†** | *(vide)* | Vide connecte directement ; une valeur copie la commande console |
 | `AUTH_RATE_LIMIT_ATTEMPTS` | `5` | Échecs autorisés dans la fenêtre |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `1800` | Fenêtre de comptage des échecs |
 | `AUTH_RATE_LIMIT_LOCK_SECONDS` | `300` | Durée du blocage |
 | `CONTAINER_NAME` | `cs2-skin-web` | Nomme l'image et le conteneur |
 | `TZ` | `Europe/Paris` | Fuseau horaire du conteneur |
 
-### Pas de fenêtre de réglages du site
+### Où la fenêtre de réglages enregistre
 
 La v1.3.1 d'upstream permet à un administrateur d'éditer une partie de la
-configuration depuis le site, et l'enregistrement réécrit les lignes `define()`
-correspondantes dans `config.php`. C'est incompatible avec des valeurs lues
-depuis l'environnement : la variable l'emporte à la requête suivante, et la
-sauvegarde paraît perdue. Cela écrit aussi le mot de passe du serveur en clair
-dans un fichier suivi, et laisse `config.php` modifié, ce qui bloque le `git pull`
-suivant.
+configuration depuis le site. Elle enregistre en réécrivant les lignes `define()`
+correspondantes dans `config.php`, ce qui ne convient pas ici : ce fichier est
+suivi par git, donc chaque enregistrement devenait une modification locale qui
+bloquait le `git pull` suivant, et le mot de passe du serveur CS2 se retrouvait en
+clair dans un fichier suivi.
 
-Le formulaire n'est donc pas affiché et son traitement n'est pas déclaré : une
-requête forgée n'atteint pas davantage l'écriture. Le mode administrateur lui-même
-est intact — contourner les PIN, éditer et supprimer des loadouts fonctionnent
-toujours. Tout ce que proposait la fenêtre se règle dans `.env` et s'applique avec
-un `docker compose up`.
+`class/site_settings_store.php` les garde plutôt dans un fichier JSON hors du
+dépôt — `/var/www/settings/site-settings.json` par défaut, sur son propre volume
+pour qu'une reconstruction ne l'efface pas. `SITE_SETTINGS_FILE` permet de le
+déplacer. `config.php` le lit avant toute définition, d'où l'ordre : ce que
+l'administrateur a enregistré, puis l'environnement, puis les valeurs du fichier.
+
+Rien de suivi par git n'est jamais écrit, et la fenêtre fonctionne comme upstream
+l'a prévue. Pour revenir à ce que dit le `.env`, supprimer le fichier enregistré :
+
+```bash
+docker compose exec cs2-skin-web rm /var/www/settings/site-settings.json
+```
 
 Une installation PHP classique sans Docker fonctionne toujours en éditant
 `config.php` directement.
