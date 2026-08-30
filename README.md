@@ -1,6 +1,6 @@
 # CS2 WeaponPaints Loadout Manager — fork
 
-Fork of [wtf729/cs2-WeaponPaints-steamless-website](https://github.com/wtf729/cs2-WeaponPaints-steamless-website), rebased on **v1.3.1**.
+Fork of [wtf729/cs2-WeaponPaints-steamless-website](https://github.com/wtf729/cs2-WeaponPaints-steamless-website), rebased on **v1.3.2**.
 
 **This file documents only what the fork changes.** Features, installation and day-to-day use are unchanged and are described in the [upstream README](https://github.com/wtf729/cs2-WeaponPaints-steamless-website#readme). `README_cn.md` is upstream's, in Simplified Chinese.
 
@@ -165,7 +165,7 @@ A plain PHP install without Docker still works by editing `config.php` directly.
 
 ## Ce que le fork change
 
-Fork de [wtf729/cs2-WeaponPaints-steamless-website](https://github.com/wtf729/cs2-WeaponPaints-steamless-website), rebasé sur la **v1.3.1**.
+Fork de [wtf729/cs2-WeaponPaints-steamless-website](https://github.com/wtf729/cs2-WeaponPaints-steamless-website), rebasé sur la **v1.3.2**.
 
 **Ce fichier ne documente que ce que le fork change.** Les fonctionnalités, l'installation et l'usage courant sont inchangés et décrits dans le [README de l'upstream](https://github.com/wtf729/cs2-WeaponPaints-steamless-website#readme).
 
