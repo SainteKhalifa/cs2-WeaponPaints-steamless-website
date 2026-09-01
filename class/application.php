@@ -17,7 +17,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
 $presetTable = 'wp_presets';
 $skinSettingsTable = 'wp_skin_settings_cache';
-$availableLanguages = ['zh-CN' => '简体中文', 'en' => 'English'];
+$availableLanguages = ['zh-CN' => '简体中文', 'en' => 'English', 'fr' => 'Français'];
 $languageCookieName = 'cs2_wp_lang';
 $cookiePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
 $cookiePath = $cookiePath === '' ? '/' : $cookiePath . '/';
@@ -34,8 +34,8 @@ $siteNameFallback = 'CS2 Loadout Manager';
 $siteName = $siteNames[$currentLanguage] !== ''
 	? $siteNames[$currentLanguage]
 	: ($siteNames['en'] !== '' ? $siteNames['en'] : $siteNameFallback);
-$teams = $currentLanguage === 'en'
-	? [2 => 'T', 3 => 'CT']
-	: [2 => 'T 阵营', 3 => 'CT 阵营'];
+$teams = $currentLanguage === 'zh-CN'
+	? [2 => 'T 阵营', 3 => 'CT 阵营']
+	: [2 => 'T', 3 => 'CT'];
 $defaultWebTheme = siteSetting('default_web_theme', 'dark');
 

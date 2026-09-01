@@ -32,8 +32,8 @@ Nothing upstream ships. Removing them leaves the original site intact.
 | File | Change |
 |---|---|
 | `class/weapon_data.php` | Team 1 (*Global*) removed; charm offsets no longer clamped to ±1 |
-| `class/application.php`, `class/site_settings.php` | *Global* dropped from both side lists |
-| `class/translations.php` | 24 keys added, in both languages |
+| `class/application.php`, `class/site_settings.php` | *Global* dropped from both side lists; French registered, and the side labels no longer fall to Chinese |
+| `class/translations.php` | 24 keys added, and a full French block; a missing key falls back to English rather than Chinese |
 | `class/bootstrap.php`, `actions/bootstrap.php` | Register the two new files |
 | `actions/skin.php` | Kill count settled once, before the branches, so no path can wipe it |
 | `config.php` | Every setting reads the environment first; `LOCK_STATTRAK_COUNT` and the two server ones added |
@@ -84,6 +84,22 @@ The count survives everything else. Picking another skin, editing the wear or im
 
 Since the plugin keeps incrementing it in game, the page refreshes it every 30 seconds from `index.php?action=stattrak_counts`, a read-only endpoint. Hidden tabs stop polling, and a field being typed into is left alone.
 
+### French interface
+
+Upstream ships English and Simplified Chinese. The fork adds French: the same 213
+strings, picked from the language selector like the other two and remembered in a
+cookie.
+
+Item names — skins, stickers, agents, charms — stay in English. Those come from
+`data/*_en.json` and `data/*_zh-CN.json`, and there is no French set; anything
+that is not Chinese already falls back to the English files, so nothing breaks.
+Weapon finishes are rarely translated between players anyway.
+
+Two upstream habits had to go for this to work. A missing key fell back to
+Chinese, which helped nobody outside that locale, so it falls back to English
+now. And the side labels were chosen by testing for English, which would have
+shown *T 阵营* and *CT 阵营* to a French visitor; they test for Chinese instead.
+
 ### Sides only, no global tab
 
 Loadouts are edited per side, T or CT. The *Global* tab, which wrote to both at once, is gone; an old link carrying `team=1` lands on the T side. Music kits and collectible pins used to appear on that tab alone — they are stored per side, so they now show on both.
@@ -118,7 +134,7 @@ marked **†** are also editable from the site, and what is saved there wins.
 | `SITE_ACCESS_PASSWORD` | *(empty)* | Password asked on entry; empty means an open site |
 | `ADMIN_PASSWORD` | *(empty)* | Administrator mode; empty disables it |
 | `SITE_NAME_EN` `SITE_NAME_ZH_CN` **†** | built-in | Site name per language |
-| `DEFAULT_LANGUAGE` **†** | `en` | `en` or `zh-CN` |
+| `DEFAULT_LANGUAGE` **†** | `en` | `en`, `fr` or `zh-CN` |
 | `DEFAULT_WEB_THEME` **†** | `dark` | `dark` or `light`; visitors can switch |
 | `ENABLE_SKIN_FUSION` **†** | `true` | Cross-weapon paint combinations |
 | `LOCK_STATTRAK_COUNT` **†** | `false` | Makes the kill count read-only |
@@ -191,8 +207,8 @@ Absents de l'upstream. Les retirer laisse le site d'origine intact.
 | Fichier | Modification |
 |---|---|
 | `class/weapon_data.php` | Camp 1 (*Global*) retiré ; offsets de pendentif plus bornés à ±1 |
-| `class/application.php`, `class/site_settings.php` | *Global* retiré des deux listes de camps |
-| `class/translations.php` | 24 clés ajoutées, dans les deux langues |
+| `class/application.php`, `class/site_settings.php` | *Global* retiré des deux listes de camps ; français déclaré, et les libellés de camp ne retombent plus sur le chinois |
+| `class/translations.php` | 24 clés ajoutées, et un bloc français complet ; une clé manquante retombe sur l'anglais et non le chinois |
 | `class/bootstrap.php`, `actions/bootstrap.php` | Déclarent les deux nouveaux fichiers |
 | `actions/skin.php` | Compteur de frags résolu une seule fois, avant les branches, pour qu'aucun chemin ne l'efface |
 | `config.php` | Chaque réglage lit l'environnement en priorité ; `LOCK_STATTRAK_COUNT` et les deux réglages serveur ajoutés |
@@ -243,6 +259,24 @@ Le compteur survit à tout le reste. Changer de skin, modifier l'usure ou import
 
 Comme le plugin continue de l'incrémenter en jeu, la page le rafraîchit toutes les 30 secondes depuis `index.php?action=stattrak_counts`, un point d'entrée en lecture seule. Un onglet masqué cesse d'interroger le serveur, et un champ en cours de saisie n'est pas touché.
 
+### Interface en français
+
+L'upstream propose l'anglais et le chinois simplifié. Le fork ajoute le français :
+les mêmes 213 chaînes, choisies depuis le sélecteur de langue comme les deux
+autres et retenues dans un cookie.
+
+Les noms d'objets — skins, stickers, agents, breloques — restent en anglais. Ils
+viennent de `data/*_en.json` et `data/*_zh-CN.json`, et il n'existe pas de jeu
+français ; tout ce qui n'est pas du chinois retombe déjà sur les fichiers
+anglais, donc rien ne casse. De toute façon, les joueurs s'échangent rarement les
+noms de peintures traduits.
+
+Deux habitudes de l'upstream ont dû céder pour que ça tienne. Une clé manquante
+retombait sur le chinois, ce qui n'aide personne en dehors de cette locale : elle
+retombe désormais sur l'anglais. Et les libellés de camp étaient choisis en
+testant l'anglais, ce qui aurait affiché *T 阵营* et *CT 阵营* à un visiteur
+français ; ils testent le chinois à la place.
+
 ### Uniquement T et CT
 
 Les loadouts s'éditent par camp, T ou CT. L'onglet *Global*, qui écrivait aux deux à la fois, est retiré ; un ancien lien portant `team=1` arrive côté T. Les kits musicaux et les pin's n'apparaissaient que sur cet onglet — ils sont stockés par camp, ils s'affichent donc désormais des deux côtés.
@@ -278,7 +312,7 @@ y est enregistré l'emporte.
 | `SITE_ACCESS_PASSWORD` | *(vide)* | Mot de passe demandé à l'entrée ; vide = site ouvert |
 | `ADMIN_PASSWORD` | *(vide)* | Mode administrateur ; vide le désactive |
 | `SITE_NAME_EN` `SITE_NAME_ZH_CN` **†** | intégré | Nom du site par langue |
-| `DEFAULT_LANGUAGE` **†** | `en` | `en` ou `zh-CN` |
+| `DEFAULT_LANGUAGE` **†** | `en` | `en`, `fr` ou `zh-CN` |
 | `DEFAULT_WEB_THEME` **†** | `dark` | `dark` ou `light` ; le visiteur peut changer |
 | `ENABLE_SKIN_FUSION` **†** | `true` | Combinaisons de peintures entre armes |
 | `LOCK_STATTRAK_COUNT` **†** | `false` | Passe le compteur de frags en lecture seule |

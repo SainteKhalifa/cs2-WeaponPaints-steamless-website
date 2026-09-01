@@ -3,7 +3,7 @@
 function siteSettingDefaults()
 {
 	$defaultLanguage = defined('DEFAULT_LANGUAGE') ? (string)DEFAULT_LANGUAGE : 'zh-CN';
-	if (!in_array($defaultLanguage, ['zh-CN', 'en'], true)) {
+	if (!in_array($defaultLanguage, ['zh-CN', 'en', 'fr'], true)) {
 		$defaultLanguage = 'zh-CN';
 	}
 	$defaultTheme = defined('DEFAULT_WEB_THEME') ? strtolower(trim((string)DEFAULT_WEB_THEME)) : 'dark';
@@ -95,7 +95,7 @@ function normalizedSiteSettings(array $settings)
 			$normalized[$key] = trim((string)$settings[$key]);
 		}
 	}
-	if (!in_array($normalized['default_language'], ['zh-CN', 'en'], true)) {
+	if (!in_array($normalized['default_language'], ['zh-CN', 'en', 'fr'], true)) {
 		$normalized['default_language'] = $defaults['default_language'];
 	}
 	if (!in_array($normalized['default_web_theme'], ['dark', 'light'], true)) {
@@ -183,7 +183,7 @@ function isValidEditableSiteSettings(array $settings)
 	return isValidSiteName($settings['site_name_en'])
 		&& isValidSiteName($settings['site_name_zh_cn'])
 		&& (trim($settings['site_name_en']) !== '' || trim($settings['site_name_zh_cn']) !== '')
-		&& in_array($settings['default_language'], ['zh-CN', 'en'], true)
+		&& in_array($settings['default_language'], ['zh-CN', 'en', 'fr'], true)
 		&& in_array($settings['default_web_theme'], ['dark', 'light'], true)
 		&& in_array($settings['enable_skin_fusion'], ['0', '1'], true)
 		&& in_array($settings['lock_stattrak_count'], ['0', '1'], true)
@@ -316,11 +316,11 @@ function applySiteSettingsContext(array $settings)
 		'zh-CN' => siteSetting('site_name_zh_cn'),
 	];
 	$siteNameFallback = 'CS2 Loadout Manager';
-	$siteName = $siteNames[$currentLanguage] !== ''
+	$siteName = ($siteNames[$currentLanguage] ?? '') !== ''
 		? $siteNames[$currentLanguage]
 		: ($siteNames['en'] !== '' ? $siteNames['en'] : $siteNameFallback);
-	$teams = $currentLanguage === 'en'
-		? [2 => 'T', 3 => 'CT']
-		: [2 => 'T 阵营', 3 => 'CT 阵营'];
+	$teams = $currentLanguage === 'zh-CN'
+		? [2 => 'T 阵营', 3 => 'CT 阵营']
+		: [2 => 'T', 3 => 'CT'];
 	$defaultWebTheme = siteSetting('default_web_theme', 'dark');
 }
