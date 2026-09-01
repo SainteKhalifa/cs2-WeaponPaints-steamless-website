@@ -31,7 +31,7 @@ $siteNames = [
 	'zh-CN' => siteSetting('site_name_zh_cn'),
 ];
 $siteNameFallback = 'CS2 Loadout Manager';
-$siteName = $siteNames[$currentLanguage] !== ''
+$siteName = ($siteNames[$currentLanguage] ?? '') !== ''
 	? $siteNames[$currentLanguage]
 	: ($siteNames['en'] !== '' ? $siteNames['en'] : $siteNameFallback);
 $teams = $currentLanguage === 'zh-CN'

@@ -80,7 +80,9 @@ Charm offsets are world units — a genuine inspect link routinely carries value
 
 ### StatTrak counter
 
-Players set their own kill count by default. The counter is game state the plugin maintains, so an editable field lets anyone claim a record they never earned: set `LOCK_STATTRAK_COUNT=true` to make it read-only. The check is enforced server side, in the settings dialog and on import alike. The StatTrak toggle itself stays editable either way.
+Players set their own kill count by default. The counter is game state the plugin maintains, so an editable field lets anyone claim a record they never earned: set `LOCK_STATTRAK_COUNT=true` to make it read-only. The check is enforced server side, in the settings dialog and on import alike, and a forged request is refused rather than trusted. The StatTrak toggle itself stays editable either way.
+
+The lock does not apply in administrator mode: it exists to stop players inflating their own record, and it leaves the administrator a way to correct a counter by hand.
 
 The count survives everything else. Picking another skin, editing the wear or importing a link no longer resets it; a **Reset** button zeroes it deliberately, and stays available even when the field is locked.
 
@@ -293,7 +295,9 @@ Les offsets de pendentif sont des unités monde — un vrai lien d'inspection po
 
 ### Compteur StatTrak
 
-Par défaut, chaque joueur règle son propre nombre de frags. Ce compteur est un état de jeu que le plugin entretient : un champ modifiable permet donc de s'attribuer un palmarès qu'on n'a jamais fait. `LOCK_STATTRAK_COUNT=true` le passe en lecture seule. Le contrôle est appliqué côté serveur, dans la fenêtre de réglages comme à l'import. L'interrupteur StatTrak lui-même reste modifiable dans les deux cas.
+Par défaut, chaque joueur règle son propre nombre de frags. Ce compteur est un état de jeu que le plugin entretient : un champ modifiable permet donc de s'attribuer un palmarès qu'on n'a jamais fait. `LOCK_STATTRAK_COUNT=true` le passe en lecture seule. Le contrôle est appliqué côté serveur, dans la fenêtre de réglages comme à l'import, et une requête forgée est refusée plutôt que crue. L'interrupteur StatTrak lui-même reste modifiable dans les deux cas.
+
+Le verrou ne s'applique pas en mode administrateur : il sert à empêcher un joueur de gonfler son propre palmarès, et laisse à l'administrateur le moyen de corriger un compteur à la main.
 
 Le compteur survit à tout le reste. Changer de skin, modifier l'usure ou importer un lien ne le remet plus à zéro ; un bouton **Remettre à zéro** s'en charge volontairement, et reste disponible même quand le champ est verrouillé.
 

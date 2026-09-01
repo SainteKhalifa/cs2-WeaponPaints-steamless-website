@@ -10,14 +10,19 @@
 require_once __DIR__ . '/inspect.php';
 
 /**
- * Whether players may set the StatTrak kill count themselves.
+ * Whether the StatTrak kill count may be typed in.
  *
- * Open by default. The counter is game state the plugin maintains, so a server
- * owner who does not trust everyone with access can lock it from the config.
+ * Open by default. The counter is game state the plugin maintains, so an
+ * editable field lets a player claim a record they never earned, and a server
+ * owner can lock it from the Site Settings dialog.
+ *
+ * The lock never applies to an administrator: it exists to stop players
+ * inflating their own record, and the administrator is the person who turned it
+ * on. It also leaves them a way to correct a counter by hand.
  */
 function stattrakCountEditable()
 {
-	return !siteSettingEnabled('lock_stattrak_count');
+	return isAdmin() || !siteSettingEnabled('lock_stattrak_count');
 }
 
 /**
