@@ -107,28 +107,22 @@ shown *T 阵营* and *CT 阵营* to a French visitor; they test for Chinese inst
 The loadout list shows each player's Steam persona name after the id, and their
 avatar underneath. A row reads `76561199132070076 — StKhalifa`.
 
-**No API key is required.** Steam serves a small XML document per public profile,
-which is what the site reads by default.
-
 Fetching that naively — one request per card, on every page view — is how a
-server gets throttled or blocked. `class/steam_profiles.php` avoids it four ways:
-everything is cached in `wp_steam_profiles`, so a view where nothing has expired
-makes **no request at all**; the keyless endpoint answers about one player per
-request, so at most **three stale profiles are refreshed per page view** and the
-rest are picked up on later views rather than firing a burst; an empty result is
-cached too, which stops a private or deleted account from being retried on every
-view; and Steam gets five seconds before the page renders without it.
+server gets throttled or blocked. `class/steam_profiles.php` avoids it three
+ways: everything is cached in `wp_steam_profiles`, so a view where nothing has
+expired makes **no request at all**; `GetPlayerSummaries` takes up to 100 ids per
+call, so a whole page of stale players is refreshed in **one** request; and an
+empty result is cached too, which is what stops a private or deleted account from
+being retried on every view.
 
 A day is the default lifetime, and the floor is five minutes so a typo cannot
-turn every view into a call. A failed call leaves the cache alone, so the last
-known names stay on screen.
+turn every view into a call. Steam is given five seconds, after which the page
+renders without it; a failed call leaves the cache alone, so the last known names
+stay on screen.
 
-Setting `STEAM_API_KEY` is optional and only makes the first fill faster: the Web
-API takes a hundred ids per call, so a whole list is resolved in one request with
-no rationing. Get one from
-[steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey).
-`SHOW_STEAM_PROFILES=false` turns the whole thing off, and the site then never
-contacts Steam.
+Set `STEAM_API_KEY` to enable it — get one from
+[steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey). Without a
+key the site never contacts Steam and the list shows the id alone.
 
 ### One button fewer on the knife and glove cards
 
@@ -185,8 +179,7 @@ marked **†** are also editable from the site, and what is saved there wins.
 | `AUTH_RATE_LIMIT_ATTEMPTS` | `5` | Failures allowed in the window |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `1800` | Failure tracking window |
 | `AUTH_RATE_LIMIT_LOCK_SECONDS` | `300` | Lock duration |
-| `SHOW_STEAM_PROFILES` | `true` | Steam names and avatars on the list; `false` never contacts Steam |
-| `STEAM_API_KEY` | *(empty)* | Optional; batches the lookups instead of rationing them |
+| `STEAM_API_KEY` | *(empty)* | Steam names and avatars on the list; empty never contacts Steam |
 | `STEAM_PROFILE_TTL` | `86400` | Seconds a name and avatar are trusted |
 | `CONTAINER_NAME` | `cs2-skin-web` | Names the image and the container |
 | `TZ` | `Europe/Paris` | Container timezone |
@@ -329,30 +322,23 @@ français ; ils testent le chinois à la place.
 La liste des inventaires affiche le pseudo Steam après l'identifiant, et l'avatar
 en dessous. Une ligne se lit `76561199132070076 — StKhalifa`.
 
-**Aucune clé API n'est nécessaire.** Steam publie un petit document XML par profil
-public, et c'est ce que le site lit par défaut.
-
 Aller les chercher naïvement — une requête par carte, à chaque affichage — c'est
 la façon la plus sûre de se faire limiter ou bloquer par Steam.
-`class/steam_profiles.php` l'évite de quatre manières : tout est mis en cache dans
+`class/steam_profiles.php` l'évite de trois manières : tout est mis en cache dans
 `wp_steam_profiles`, donc un affichage où rien n'a expiré ne déclenche **aucune
-requête** ; le point d'entrée sans clé ne répond que sur un joueur à la fois, donc
-**trois profils périmés au maximum sont rafraîchis par affichage** et les autres
-suivent aux visites suivantes, au lieu d'une rafale ; un résultat vide est mis en
-cache aussi, ce qui empêche un compte privé ou supprimé d'être redemandé à chaque
-affichage ; et Steam dispose de cinq secondes avant que la page ne s'affiche sans
-lui.
+requête** ; `GetPlayerSummaries` accepte jusqu'à 100 identifiants par appel, donc
+une page entière de profils périmés se rafraîchit en **une seule** requête ; et un
+résultat vide est mis en cache aussi, ce qui empêche un compte privé ou supprimé
+d'être redemandé à chaque affichage.
 
 La durée de validité par défaut est d'un jour, avec un plancher de cinq minutes
-pour qu'une faute de frappe ne transforme pas chaque affichage en appel. Un appel
+pour qu'une faute de frappe ne transforme pas chaque affichage en appel. Steam
+dispose de cinq secondes, au-delà desquelles la page s'affiche sans lui ; un appel
 raté laisse le cache intact, donc les derniers noms connus restent affichés.
 
-Renseigner `STEAM_API_KEY` est facultatif et n'accélère que le premier
-remplissage : l'API Web accepte cent identifiants par appel, donc une liste
-entière se résout en une requête, sans rationnement. La clé se demande sur
-[steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey).
-`SHOW_STEAM_PROFILES=false` désactive tout, et le site ne contacte alors jamais
-Steam.
+Renseignez `STEAM_API_KEY` pour l'activer — la clé se demande sur
+[steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey). Sans clé,
+le site ne contacte jamais Steam et la liste n'affiche que l'identifiant.
 
 ### Un bouton de moins sur les cartes couteau et gants
 
@@ -410,8 +396,7 @@ y est enregistré l'emporte.
 | `AUTH_RATE_LIMIT_ATTEMPTS` | `5` | Échecs autorisés dans la fenêtre |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `1800` | Fenêtre de comptage des échecs |
 | `AUTH_RATE_LIMIT_LOCK_SECONDS` | `300` | Durée du blocage |
-| `SHOW_STEAM_PROFILES` | `true` | Pseudos et avatars Steam sur la liste ; `false` ne contacte jamais Steam |
-| `STEAM_API_KEY` | *(vide)* | Facultatif ; groupe les requêtes au lieu de les rationner |
+| `STEAM_API_KEY` | *(vide)* | Pseudos et avatars Steam sur la liste ; vide ne contacte jamais Steam |
 | `STEAM_PROFILE_TTL` | `86400` | Secondes de validité d'un pseudo et d'un avatar |
 | `CONTAINER_NAME` | `cs2-skin-web` | Nomme l'image et le conteneur |
 | `TZ` | `Europe/Paris` | Fuseau horaire du conteneur |
