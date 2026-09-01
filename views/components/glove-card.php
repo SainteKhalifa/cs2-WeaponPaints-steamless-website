@@ -49,9 +49,6 @@
 					</div>
 					<div class="settings-row">
 						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#gloveTypeModal">
-							<?= h(t('choose_type')) ?>
-						</button>
-						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#gloveSkinModal" <?= ($actualGloveDefindex === 0 || !$gloveTypeIsKnown) ? 'disabled' : '' ?>>
 							<?= h(t('choose_skin')) ?>
 						</button>
 						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#gloveModal" <?= $currentGloveCanEdit ? '' : 'disabled' ?>>
@@ -87,7 +84,7 @@
 												$gloveTypePlaceholder = glovePlaceholderImage((int)$gloveDefindex);
 												$gloveTypeImage = (string)($gloveType['image_url'] ?? '');
 												?>
-												<button type="submit" name="forma" value="glove-<?= (int)$gloveDefindex ?>" class="skin-result <?= $actualGloveDefindex === (int)$gloveDefindex ? 'active' : '' ?>">
+												<button type="submit" name="forma" value="glove-<?= (int)$gloveDefindex ?>" class="skin-result <?= $actualGloveDefindex === (int)$gloveDefindex ? 'active' : '' ?>"<?= (int)$gloveDefindex === 0 ? '' : ' data-chain-picker="gloveSkinModal"' ?>>
 													<?php if ($gloveTypePlaceholder !== '') : ?>
 														<img src="<?= h($gloveTypePlaceholder) ?>" alt="">
 													<?php elseif ($gloveTypeImage !== '') : ?>

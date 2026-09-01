@@ -16,4 +16,5 @@ require_once __DIR__ . '/site_settings.php';
 require_once __DIR__ . '/weapon_data.php';
 require_once __DIR__ . '/skin_settings.php';
 require_once __DIR__ . '/inspect_bridge.php';
+require_once __DIR__ . '/steam_profiles.php';
 require_once __DIR__ . '/application.php';

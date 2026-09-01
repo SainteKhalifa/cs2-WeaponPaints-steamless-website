@@ -85,5 +85,10 @@ if ($action === 'edit') {
 }
 
 $presets = $accessGranted ? $db->select("SELECT * FROM `{$presetTable}` ORDER BY `created_time` ASC, `id` ASC") : [];
+// Every player on the page is resolved in one batch, from cache when it is
+// warm. Only the list needs them, so nothing else pays for the lookup.
+$steamProfiles = $accessGranted && $action === 'list'
+	? steamProfiles($db, array_column($presets, 'steamid'))
+	: [];
 $returnTo = 'index.php' . (!empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '');
 $returnTo = safeReturnUrl($returnTo);

@@ -3286,3 +3286,18 @@ html[data-bs-theme="light"][data-team="3"] {
 		transform: none;
 	}
 }
+
+/* Steam avatar on a loadout card, under the id and persona name.
+
+   Sized in CSS as well as in the markup so the row does not jump while the
+   image is still loading. */
+.steam-avatar {
+	display: block;
+	width: 48px;
+	height: 48px;
+	margin-top: 8px;
+	border-radius: 6px;
+	border: 1px solid rgba(var(--primary-rgb), .45);
+	object-fit: cover;
+	background: var(--panel-2);
+}

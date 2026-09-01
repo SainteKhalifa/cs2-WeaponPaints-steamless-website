@@ -70,6 +70,14 @@ define('SITE_NAME_EN', storedSiteSetting('site_name_en', config_text('SITE_NAME_
 define('SITE_NAME_ZH_CN', storedSiteSetting('site_name_zh_cn', config_text('SITE_NAME_ZH_CN', 'CS2 饰品管理器'))); // Simplified Chinese name
 define('ENABLE_SKIN_FUSION', storedSiteSetting('enable_skin_fusion', config_flag('ENABLE_SKIN_FUSION', true) ? '1' : '0') === '1'); // Allow cross-weapon paint combinations
 
+// Steam persona names and avatars on the loadout list. Without a key the list
+// shows the Steam64 id alone and the site never contacts Steam. Get one at
+// https://steamcommunity.com/dev/apikey
+define('STEAM_API_KEY', config_value('STEAM_API_KEY', ''));
+// How long a name and avatar are trusted, in seconds. A day keeps the traffic
+// negligible; the floor is 300 so a typo cannot turn every view into a call.
+define('STEAM_PROFILE_TTL', config_int('STEAM_PROFILE_TTL', 86400));
+
 // The Connect to Server button in the header. Empty address hides it; with a
 // password the button copies the console command instead of launching the game.
 define('SERVER_ADDRESS', storedSiteSetting('server_address', config_value('SERVER_ADDRESS', ''))); // "hostname or IP:port"

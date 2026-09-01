@@ -13,5 +13,6 @@
 	<script src="assets/js/modal-escape.js?v=<?= filemtime(__DIR__ . '/../../assets/js/modal-escape.js') ?>"></script>
 	<script src="assets/js/forms.js?v=<?= filemtime(__DIR__ . '/../../assets/js/forms.js') ?>"></script>
 	<script src="assets/js/inspect.js?v=<?= filemtime(__DIR__ . '/../../assets/js/inspect.js') ?>"></script>
+	<script src="assets/js/card-flow.js?v=<?= filemtime(__DIR__ . '/../../assets/js/card-flow.js') ?>"></script>
 </body>
 </html>

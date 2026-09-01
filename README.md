@@ -19,6 +19,8 @@ Nothing upstream ships. Removing them leaves the original site intact.
 | `class/inspect.php` | CS2 inspect link encoder and decoder (`CEconItemPreviewDataBlock`), written by hand, no dependency |
 | `class/inspect_bridge.php` | Glue between the loadout tables and the encoder, kept apart so upstream changes rarely collide |
 | `class/site_settings_store.php` | Keeps what the Site Settings dialog saves outside the repository, instead of rewriting `config.php` |
+| `class/steam_profiles.php` | Cached, batched Steam persona names and avatars for the list |
+| `assets/js/card-flow.js` | Chains the model picker into the finish picker |
 | `actions/inspect.php` | Import handler, and the read-only endpoint the page polls for kill counts |
 | `assets/js/inspect.js` | The import window, the clipboard button and the counter refresh |
 | `Dockerfile` | PHP-FPM + nginx image, with the extensions the site actually uses |
@@ -40,7 +42,7 @@ Nothing upstream ships. Removing them leaves the original site intact.
 | `index.php` | Two values handed to the page: viewer address, counter endpoint |
 | `views/layout/header.php` | `data-team` on `<html>`, driving the accent colour |
 | `views/layout/footer.php` | Loads the new script |
-| `views/components/*.php` | 3D button on each card, import window, reset button, no *Global* link |
+| `views/components/*.php` | 3D button on each card, import window, reset button, no *Global* link, no category button on knives and gloves |
 | `assets/css/style.css` | Accent driven by `--primary` / `--primary-rgb` in both themes |
 | `.gitignore` | Ignores `.env` |
 
@@ -100,6 +102,40 @@ Chinese, which helped nobody outside that locale, so it falls back to English
 now. And the side labels were chosen by testing for English, which would have
 shown *T 阵营* and *CT 阵营* to a French visitor; they test for Chinese instead.
 
+### Steam names and avatars
+
+The loadout list shows each player's Steam persona name after the id, and their
+avatar underneath. A row reads `76561199132070076 — StKhalifa`.
+
+Fetching that naively — one request per card, on every page view — is how a
+server gets throttled or blocked. `class/steam_profiles.php` avoids it three
+ways: everything is cached in `wp_steam_profiles`, so a view where nothing has
+expired makes **no request at all**; `GetPlayerSummaries` takes up to 100 ids per
+call, so a whole page of stale players is refreshed in **one** request; and an
+empty result is cached too, which is what stops a private or deleted account from
+being retried on every view.
+
+A day is the default lifetime, and the floor is five minutes so a typo cannot
+turn every view into a call. Steam is given five seconds, after which the page
+renders without it; a failed call leaves the cache alone, so the last known names
+stay on screen.
+
+Set `STEAM_API_KEY` to enable it — get one from
+[steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey). Without a
+key the site never contacts Steam and the list shows the id alone.
+
+### One button fewer on the knife and glove cards
+
+Those two cards carried four buttons — category, skin, edit, 3D — which ran past
+a narrow card and pushed the row onto two lines. The category button is gone:
+**Skin** opens the model picker, and once a model is chosen the finish picker
+opens on its own.
+
+Choosing a model submits the form and reloads the page, so the intent is parked
+in `sessionStorage` by `assets/js/card-flow.js`: it survives the round trip,
+belongs to that tab alone, and is dropped as soon as it has been used. Picking
+*no knife* chains nowhere, since there would be no finish to choose.
+
 ### Sides only, no global tab
 
 Loadouts are edited per side, T or CT. The *Global* tab, which wrote to both at once, is gone; an old link carrying `team=1` lands on the T side. Music kits and collectible pins used to appear on that tab alone — they are stored per side, so they now show on both.
@@ -143,6 +179,8 @@ marked **†** are also editable from the site, and what is saved there wins.
 | `AUTH_RATE_LIMIT_ATTEMPTS` | `5` | Failures allowed in the window |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `1800` | Failure tracking window |
 | `AUTH_RATE_LIMIT_LOCK_SECONDS` | `300` | Lock duration |
+| `STEAM_API_KEY` | *(empty)* | Steam names and avatars on the list; empty never contacts Steam |
+| `STEAM_PROFILE_TTL` | `86400` | Seconds a name and avatar are trusted |
 | `CONTAINER_NAME` | `cs2-skin-web` | Names the image and the container |
 | `TZ` | `Europe/Paris` | Container timezone |
 
@@ -194,6 +232,8 @@ Absents de l'upstream. Les retirer laisse le site d'origine intact.
 | `class/inspect.php` | Encodeur et décodeur de liens d'inspection CS2 (`CEconItemPreviewDataBlock`), écrit à la main, sans dépendance |
 | `class/inspect_bridge.php` | Liaison entre les tables de loadout et l'encodeur, à part pour limiter les conflits avec l'upstream |
 | `class/site_settings_store.php` | Garde ce que la fenêtre de réglages enregistre hors du dépôt, au lieu de réécrire `config.php` |
+| `class/steam_profiles.php` | Pseudos et avatars Steam pour la liste, mis en cache et demandés par lots |
+| `assets/js/card-flow.js` | Enchaîne le choix du modèle et celui du skin |
 | `actions/inspect.php` | Traitement de l'import, et le point d'entrée en lecture seule que la page interroge |
 | `assets/js/inspect.js` | La fenêtre d'import, le bouton presse-papiers et le rafraîchissement du compteur |
 | `Dockerfile` | Image PHP-FPM + nginx, avec les seules extensions utilisées |
@@ -215,7 +255,7 @@ Absents de l'upstream. Les retirer laisse le site d'origine intact.
 | `index.php` | Deux valeurs transmises à la page : adresse du visionneur, point d'entrée du compteur |
 | `views/layout/header.php` | `data-team` sur `<html>`, qui pilote la couleur d'accent |
 | `views/layout/footer.php` | Charge le nouveau script |
-| `views/components/*.php` | Bouton 3D sur chaque case, fenêtre d'import, bouton de remise à zéro, lien *Global* retiré |
+| `views/components/*.php` | Bouton 3D sur chaque case, fenêtre d'import, bouton de remise à zéro, lien *Global* retiré, bouton catégorie retiré des couteaux et gants |
 | `assets/css/style.css` | Accent piloté par `--primary` / `--primary-rgb` dans les deux thèmes |
 | `.gitignore` | Ignore `.env` |
 
@@ -277,6 +317,41 @@ retombe désormais sur l'anglais. Et les libellés de camp étaient choisis en
 testant l'anglais, ce qui aurait affiché *T 阵营* et *CT 阵营* à un visiteur
 français ; ils testent le chinois à la place.
 
+### Noms et avatars Steam
+
+La liste des inventaires affiche le pseudo Steam après l'identifiant, et l'avatar
+en dessous. Une ligne se lit `76561199132070076 — StKhalifa`.
+
+Aller les chercher naïvement — une requête par carte, à chaque affichage — c'est
+la façon la plus sûre de se faire limiter ou bloquer par Steam.
+`class/steam_profiles.php` l'évite de trois manières : tout est mis en cache dans
+`wp_steam_profiles`, donc un affichage où rien n'a expiré ne déclenche **aucune
+requête** ; `GetPlayerSummaries` accepte jusqu'à 100 identifiants par appel, donc
+une page entière de profils périmés se rafraîchit en **une seule** requête ; et un
+résultat vide est mis en cache aussi, ce qui empêche un compte privé ou supprimé
+d'être redemandé à chaque affichage.
+
+La durée de validité par défaut est d'un jour, avec un plancher de cinq minutes
+pour qu'une faute de frappe ne transforme pas chaque affichage en appel. Steam
+dispose de cinq secondes, au-delà desquelles la page s'affiche sans lui ; un appel
+raté laisse le cache intact, donc les derniers noms connus restent affichés.
+
+Renseignez `STEAM_API_KEY` pour l'activer — la clé se demande sur
+[steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey). Sans clé,
+le site ne contacte jamais Steam et la liste n'affiche que l'identifiant.
+
+### Un bouton de moins sur les cartes couteau et gants
+
+Ces deux cartes portaient quatre boutons — catégorie, skin, modifier, 3D — ce qui
+dépassait sur une carte étroite et faisait passer la rangée sur deux lignes. Le
+bouton catégorie disparaît : **Skin** ouvre le choix du modèle, et une fois le
+modèle choisi la liste des skins s'ouvre toute seule.
+
+Choisir un modèle envoie le formulaire et recharge la page ; l'intention est donc
+mise de côté dans `sessionStorage` par `assets/js/card-flow.js` : elle survit à
+l'aller-retour, n'appartient qu'à cet onglet, et est consommée dès qu'elle a
+servi. Choisir *aucun couteau* ne chaîne rien, faute de skin à proposer.
+
 ### Uniquement T et CT
 
 Les loadouts s'éditent par camp, T ou CT. L'onglet *Global*, qui écrivait aux deux à la fois, est retiré ; un ancien lien portant `team=1` arrive côté T. Les kits musicaux et les pin's n'apparaissaient que sur cet onglet — ils sont stockés par camp, ils s'affichent donc désormais des deux côtés.
@@ -321,6 +396,8 @@ y est enregistré l'emporte.
 | `AUTH_RATE_LIMIT_ATTEMPTS` | `5` | Échecs autorisés dans la fenêtre |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `1800` | Fenêtre de comptage des échecs |
 | `AUTH_RATE_LIMIT_LOCK_SECONDS` | `300` | Durée du blocage |
+| `STEAM_API_KEY` | *(vide)* | Pseudos et avatars Steam sur la liste ; vide ne contacte jamais Steam |
+| `STEAM_PROFILE_TTL` | `86400` | Secondes de validité d'un pseudo et d'un avatar |
 | `CONTAINER_NAME` | `cs2-skin-web` | Nomme l'image et le conteneur |
 | `TZ` | `Europe/Paris` | Fuseau horaire du conteneur |
 

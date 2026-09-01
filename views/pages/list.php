@@ -16,10 +16,14 @@
 
 			<div class="preset-list">
 				<?php foreach ($presets as $preset) : ?>
+					<?php $steamProfile = $steamProfiles[(string)$preset['steamid']] ?? null; ?>
 					<article class="preset-card">
 						<div class="preset-card-body">
 							<strong><?= h(presetLabel($preset)) ?></strong>
-							<span><?= h($preset['steamid']) ?></span>
+							<span><?= h($preset['steamid']) ?><?= $steamProfile && $steamProfile['name'] !== '' ? ' — ' . h($steamProfile['name']) : '' ?></span>
+							<?php if ($steamProfile && $steamProfile['avatar'] !== '') : ?>
+								<img class="steam-avatar" src="<?= h($steamProfile['avatar']) ?>" alt="" width="64" height="64" loading="lazy" referrerpolicy="no-referrer">
+							<?php endif; ?>
 							<?php if (loadoutHasPassword($preset)) : ?>
 								<div class="loadout-password-label" title="<?= h(t('loadout_password_enabled')) ?>">
 									<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>

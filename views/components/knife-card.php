@@ -66,9 +66,6 @@
 					</div>
 					<div class="settings-row">
 						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#knifeTypeModal">
-							<?= h(t('choose_type')) ?>
-						</button>
-						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#knifeSkinModal" <?= $actualKnifeKey === 0 ? 'disabled' : '' ?>>
 							<?= h(t('choose_skin')) ?>
 						</button>
 						<button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#knifeModal" <?= $currentKnifeCanEdit ? '' : 'disabled' ?>>
@@ -100,7 +97,7 @@
 												$knifeTypePlaceholder = weaponPlaceholderImage($knife['weapon_name'] ?? '');
 												$knifeTypeImage = (string)($knife['image_url'] ?? '');
 												?>
-												<button type="submit" name="forma" value="knife-<?= (int)$knifeKey ?>" class="skin-result <?= $actualKnifeKey === (int)$knifeKey ? 'active' : '' ?>">
+												<button type="submit" name="forma" value="knife-<?= (int)$knifeKey ?>" class="skin-result <?= $actualKnifeKey === (int)$knifeKey ? 'active' : '' ?>"<?= (int)$knifeKey === 0 ? '' : ' data-chain-picker="knifeSkinModal"' ?>>
 													<?php if ($knifeTypePlaceholder !== '') : ?>
 														<img src="<?= h($knifeTypePlaceholder) ?>" data-picker-remote-src="<?= h($knifeTypeImage) ?>" alt="">
 													<?php elseif ($knifeTypeImage !== '') : ?>
