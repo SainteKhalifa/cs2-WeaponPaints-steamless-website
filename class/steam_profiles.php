@@ -223,7 +223,7 @@ function fetchSteamSummaries(array $steamids): ?array
 		// medium is the 64px avatar, the size the list actually displays.
 		$avatar = (string)($player['avatarmedium'] ?? $player['avatar'] ?? '');
 		$profiles[$steamid] = [
-			'name' => mb_substr(trim((string)($player['personaname'] ?? '')), 0, 64),
+			'name' => steamTrimName(trim((string)($player['personaname'] ?? ''))),
 			'avatar' => strpos($avatar, 'https://') === 0 ? $avatar : '',
 		];
 	}
@@ -293,4 +293,20 @@ function steamRequestWithStream(string $url): ?string
 	}
 
 	return (string)$body;
+}
+
+/**
+ * Cuts a persona name to what the column holds, on whole characters.
+ *
+ * mbstring is in the project image but not on every PHP host, and cutting bytes
+ * would leave a broken UTF-8 sequence at the end. class/inspect.php guards the
+ * same way.
+ */
+function steamTrimName(string $name): string
+{
+	if (function_exists('mb_substr')) {
+		return mb_substr($name, 0, 64);
+	}
+
+	return preg_match('/^.{0,64}/us', $name, $cut) === 1 ? $cut[0] : '';
 }
