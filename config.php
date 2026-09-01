@@ -70,9 +70,12 @@ define('SITE_NAME_EN', storedSiteSetting('site_name_en', config_text('SITE_NAME_
 define('SITE_NAME_ZH_CN', storedSiteSetting('site_name_zh_cn', config_text('SITE_NAME_ZH_CN', 'CS2 饰品管理器'))); // Simplified Chinese name
 define('ENABLE_SKIN_FUSION', storedSiteSetting('enable_skin_fusion', config_flag('ENABLE_SKIN_FUSION', true) ? '1' : '0') === '1'); // Allow cross-weapon paint combinations
 
-// Steam persona names and avatars on the loadout list. Without a key the list
-// shows the Steam64 id alone and the site never contacts Steam. Get one at
-// https://steamcommunity.com/dev/apikey
+// Steam persona names and avatars on the loadout list. Turn this off to keep the
+// list to Steam64 ids and never contact Steam at all.
+define('SHOW_STEAM_PROFILES', config_flag('SHOW_STEAM_PROFILES', true));
+// Optional. Without a key the public profile page is used, which answers about
+// one player per request, so refreshes are rationed. A key lifts that: the Web
+// API answers about a hundred at a time. https://steamcommunity.com/dev/apikey
 define('STEAM_API_KEY', config_value('STEAM_API_KEY', ''));
 // How long a name and avatar are trusted, in seconds. A day keeps the traffic
 // negligible; the floor is 300 so a typo cannot turn every view into a call.

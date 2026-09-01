@@ -14,8 +14,10 @@
  *   3. A failed or fruitless lookup is remembered too. Without that, a private
  *      or deleted account would be retried on every single page view.
  *
- * The whole feature is off unless STEAM_API_KEY is set: no key, no requests, and
- * the list falls back to the id alone.
+ * No API key is needed. Without one the public profile endpoint is used, which
+ * takes a single id per request, so refreshes are rationed to a handful per page
+ * view and the rest are picked up on later views. Set STEAM_API_KEY to lift that
+ * limit: the Web API takes a hundred ids at a time.
  */
 
 /** Steam's documented ceiling for one GetPlayerSummaries call. */
@@ -23,6 +25,16 @@ const STEAM_PROFILES_PER_REQUEST = 100;
 
 /** Never spend longer than this on Steam; the page must render regardless. */
 const STEAM_PROFILES_TIMEOUT_SECONDS = 5;
+
+/**
+ * Stale profiles refreshed per page view when running without an API key.
+ *
+ * The public endpoint answers about one player per request, so a fresh list of
+ * fifty would otherwise fire fifty requests at once. A few per view spreads the
+ * same work over a handful of visits, and once the cache is warm it costs
+ * nothing at all.
+ */
+const STEAM_PROFILES_KEYLESS_PER_VIEW = 3;
 
 /**
  * How long a cached profile is trusted, in seconds.
@@ -46,7 +58,8 @@ function steamApiKey(): string
 
 function steamProfilesEnabled(): bool
 {
-	return steamApiKey() !== '';
+	// A key is an accelerator, not a requirement.
+	return defined('SHOW_STEAM_PROFILES') ? SHOW_STEAM_PROFILES === true : true;
 }
 
 function ensureSteamProfileTable($db): void
@@ -122,8 +135,15 @@ function steamProfiles($db, array $steamids): array
 	}
 
 	if ($stale) {
-		// One request covers a hundred players, so a full page is a single call.
-		foreach (array_chunk($stale, STEAM_PROFILES_PER_REQUEST) as $chunk) {
+		// With a key one request covers a hundred players. Without one it covers a
+		// single player, so only a few are refreshed now and the rest wait for a
+		// later view rather than firing a burst at Steam.
+		$perRequest = steamApiKey() !== '' ? STEAM_PROFILES_PER_REQUEST : 1;
+		if (steamApiKey() === '') {
+			$stale = array_slice($stale, 0, STEAM_PROFILES_KEYLESS_PER_VIEW);
+		}
+
+		foreach (array_chunk($stale, $perRequest) as $chunk) {
 			$fetched = fetchSteamSummaries($chunk);
 			if ($fetched === null) {
 				// Steam is unreachable or refusing. Leave the cache alone so the
@@ -195,6 +215,9 @@ function fetchSteamSummaries(array $steamids): ?array
 	if (!$steamids) {
 		return null;
 	}
+	if (steamApiKey() === '') {
+		return fetchSteamProfilePublic($steamids[0]);
+	}
 
 	$url = 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?'
 		. http_build_query([
@@ -223,7 +246,7 @@ function fetchSteamSummaries(array $steamids): ?array
 		// medium is the 64px avatar, the size the list actually displays.
 		$avatar = (string)($player['avatarmedium'] ?? $player['avatar'] ?? '');
 		$profiles[$steamid] = [
-			'name' => mb_substr(trim((string)($player['personaname'] ?? '')), 0, 64),
+			'name' => steamTrimName(trim((string)($player['personaname'] ?? ''))),
 			'avatar' => strpos($avatar, 'https://') === 0 ? $avatar : '',
 		];
 	}
@@ -293,4 +316,73 @@ function steamRequestWithStream(string $url): ?string
 	}
 
 	return (string)$body;
+}
+
+/**
+ * One player, from the public profile page, with no API key.
+ *
+ * Steam serves a small XML document per profile. Only two fields are wanted and
+ * both are plain CDATA, so they are read directly rather than pulling in an XML
+ * parser the image would then have to carry.
+ *
+ * @return array<string,array{name:string,avatar:string}>|null Null when the
+ *         request itself failed.
+ */
+function fetchSteamProfilePublic(string $steamid): ?array
+{
+	$url = 'https://steamcommunity.com/profiles/' . rawurlencode($steamid) . '/?xml=1';
+	$body = function_exists('curl_init') ? steamRequestWithCurl($url) : steamRequestWithStream($url);
+	if ($body === null) {
+		return null;
+	}
+
+	return [$steamid => parseSteamProfileXml($body)];
+}
+
+/**
+ * Pulls the name and avatar out of a public profile document.
+ *
+ * Only two fields are wanted and both are plain CDATA, so they are read directly
+ * rather than pulling in an XML parser the image would then have to carry.
+ *
+ * @return array{name:string,avatar:string} Empty strings for a profile Steam
+ *         will not describe, which the caller caches like any other answer.
+ */
+function parseSteamProfileXml(string $body): array
+{
+	// A deleted or unreachable profile answers with an <error> document. That is
+	// a real answer, not a failure.
+	if (stripos($body, '<error>') !== false) {
+		return ['name' => '', 'avatar' => ''];
+	}
+
+	$name = '';
+	if (preg_match('#<steamID>\s*<!\[CDATA\[(.*?)\]\]>\s*</steamID>#s', $body, $match)) {
+		$name = trim(html_entity_decode($match[1], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+	}
+
+	$avatar = '';
+	if (preg_match('#<avatarMedium>\s*<!\[CDATA\[(.*?)\]\]>\s*</avatarMedium>#s', $body, $match)) {
+		$candidate = trim($match[1]);
+		$avatar = strpos($candidate, 'https://') === 0 ? $candidate : '';
+	}
+
+	return [
+		'name' => steamTrimName($name),
+		'avatar' => $avatar,
+	];
+}
+/**
+ * Cuts a persona name to what the column holds, on whole characters.
+ *
+ * mbstring is in the project image but not on every PHP host, and cutting bytes
+ * would leave a broken UTF-8 sequence at the end.
+ */
+function steamTrimName(string $name): string
+{
+	if (function_exists('mb_substr')) {
+		return mb_substr($name, 0, 64);
+	}
+
+	return preg_match('/^.{0,64}/us', $name, $cut) === 1 ? $cut[0] : '';
 }
