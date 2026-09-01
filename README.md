@@ -33,7 +33,7 @@ Nothing upstream ships. Removing them leaves the original site intact.
 |---|---|
 | `class/weapon_data.php` | Team 1 (*Global*) removed; charm offsets no longer clamped to ±1 |
 | `class/application.php`, `class/site_settings.php` | *Global* dropped from both side lists |
-| `class/translations.php` | 20 keys added, in both languages |
+| `class/translations.php` | 24 keys added, in both languages |
 | `class/bootstrap.php`, `actions/bootstrap.php` | Register the two new files |
 | `actions/skin.php` | Kill count settled once, before the branches, so no path can wipe it |
 | `config.php` | Every setting reads the environment first; `LOCK_STATTRAK_COUNT` and the two server ones added |
@@ -192,7 +192,7 @@ Absents de l'upstream. Les retirer laisse le site d'origine intact.
 |---|---|
 | `class/weapon_data.php` | Camp 1 (*Global*) retiré ; offsets de pendentif plus bornés à ±1 |
 | `class/application.php`, `class/site_settings.php` | *Global* retiré des deux listes de camps |
-| `class/translations.php` | 20 clés ajoutées, dans les deux langues |
+| `class/translations.php` | 24 clés ajoutées, dans les deux langues |
 | `class/bootstrap.php`, `actions/bootstrap.php` | Déclarent les deux nouveaux fichiers |
 | `actions/skin.php` | Compteur de frags résolu une seule fois, avant les branches, pour qu'aucun chemin ne l'efface |
 | `config.php` | Chaque réglage lit l'environnement en priorité ; `LOCK_STATTRAK_COUNT` et les deux réglages serveur ajoutés |
