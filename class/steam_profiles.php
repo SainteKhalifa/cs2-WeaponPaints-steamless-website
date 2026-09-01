@@ -220,8 +220,9 @@ function fetchSteamSummaries(array $steamids): ?array
 			continue;
 		}
 
-		// medium is the 64px avatar, the size the list actually displays.
-		$avatar = (string)($player['avatarmedium'] ?? $player['avatar'] ?? '');
+		// full is 184px. The list draws it smaller, but asking for the large one
+		// keeps it sharp on a high-density screen and leaves room to grow.
+		$avatar = (string)($player['avatarfull'] ?? $player['avatarmedium'] ?? $player['avatar'] ?? '');
 		$profiles[$steamid] = [
 			'name' => steamTrimName(trim((string)($player['personaname'] ?? ''))),
 			'avatar' => strpos($avatar, 'https://') === 0 ? $avatar : '',

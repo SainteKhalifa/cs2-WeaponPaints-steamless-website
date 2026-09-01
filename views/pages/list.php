@@ -22,7 +22,7 @@
 							<strong><?= h(presetLabel($preset)) ?></strong>
 							<span><?= h($preset['steamid']) ?><?= $steamProfile && $steamProfile['name'] !== '' ? ' — ' . h($steamProfile['name']) : '' ?></span>
 							<?php if ($steamProfile && $steamProfile['avatar'] !== '') : ?>
-								<img class="steam-avatar" src="<?= h($steamProfile['avatar']) ?>" alt="" width="64" height="64" loading="lazy" referrerpolicy="no-referrer">
+								<img class="steam-avatar" src="<?= h($steamProfile['avatar']) ?>" alt="" width="96" height="96" loading="lazy" referrerpolicy="no-referrer">
 							<?php endif; ?>
 							<?php if (loadoutHasPassword($preset)) : ?>
 								<div class="loadout-password-label" title="<?= h(t('loadout_password_enabled')) ?>">
