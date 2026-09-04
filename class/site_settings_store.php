@@ -7,16 +7,21 @@
  * every save turned into a local modification: the next `git pull` refused to
  * run, and the CS2 server password ended up in clear inside a tracked file.
  *
- * They are stored in a JSON file outside the repository instead. Nothing git
- * knows about ever changes, and the file survives an image rebuild as long as it
- * sits on a volume. `config.php` reads it before defining its constants.
+ * They are stored in a JSON file git ignores instead, next to the CS2 data.
+ * Nothing tracked ever changes, so a save never blocks a pull, and the file sits
+ * in the deployment directory where it can be read, backed up or deleted by
+ * hand. `config.php` reads it before defining its constants.
+ *
+ * The name starts with a dot, which is what keeps nginx from serving it: the
+ * vhost already denies dotfiles under data/, and the server password is in
+ * there.
  */
 
 /**
  * Where the settings are kept.
  *
- * The default lives outside the web root and outside the repository. A
- * deployment that mounts something else points SITE_SETTINGS_FILE at it.
+ * Beside the CS2 data, hidden and ignored by git. A deployment that would rather
+ * keep it elsewhere points SITE_SETTINGS_FILE at that path.
  */
 function siteSettingsStorePath(): string
 {
@@ -25,7 +30,7 @@ function siteSettingsStorePath(): string
         return trim($path);
     }
 
-    return '/var/www/settings/site-settings.json';
+    return __DIR__ . '/../data/.site-settings.json';
 }
 
 /**

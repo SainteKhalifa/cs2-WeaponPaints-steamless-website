@@ -14,9 +14,6 @@ services:
     # into the image at build time.
     volumes:
       - ./:/var/www/html
-      # Settings saved from the site. A named volume rather than a path in the
-      # repository: git never sees them and a rebuild never drops them.
-      - site-settings:/var/www/settings
 
     # config.php reads these, so no credential ends up in a tracked file.
     environment:
@@ -56,9 +53,6 @@ services:
       - "traefik.http.routers.${TRAEFIK_ROUTER}.tls.options=${TRAEFIK_TLS_OPTIONS}"
       - "traefik.http.routers.${TRAEFIK_ROUTER}.tls.certresolver=${TRAEFIK_CERTRESOLVER}"
       - "traefik.http.services.${TRAEFIK_ROUTER}.loadbalancer.server.port=80"
-
-volumes:
-  site-settings:
 
 networks:
   cs2:

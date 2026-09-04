@@ -194,18 +194,22 @@ which does not work here: that file is tracked, so every save became a local
 modification that stopped the next `git pull`, and the CS2 server password ended
 up in clear inside a tracked file.
 
-`class/site_settings_store.php` keeps them in a JSON file outside the repository
-instead — `/var/www/settings/site-settings.json` by default, on its own volume so
-a rebuild does not drop it. Point `SITE_SETTINGS_FILE` elsewhere if needed.
-`config.php` reads it before defining anything, so the order is: what the
-administrator saved, then the environment, then the values in the file.
+`class/site_settings_store.php` keeps them in `data/.site-settings.json`
+instead, which git ignores. The leading dot is what keeps nginx from serving it,
+since the vhost already denies dotfiles under `data/` and the server password is
+in there. Point `SITE_SETTINGS_FILE` elsewhere if needed. `config.php` reads it
+before defining anything, so the order is: what the administrator saved, then the
+environment, then the values in the file.
 
 Nothing git tracks is ever written, and the dialog works as upstream intended.
 To go back to what `.env` says, delete the stored file:
 
 ```bash
-docker compose exec cs2-skin-web rm /var/www/settings/site-settings.json
+rm data/.site-settings.json
 ```
+
+The site creates the file, so `data/` has to be writable by the web server:
+`docker compose exec -u root cs2-skin-web chown www-data /var/www/html/data`.
 
 A plain PHP install without Docker still works by editing `config.php` directly.
 
@@ -414,18 +418,22 @@ suivi par git, donc chaque enregistrement devenait une modification locale qui
 bloquait le `git pull` suivant, et le mot de passe du serveur CS2 se retrouvait en
 clair dans un fichier suivi.
 
-`class/site_settings_store.php` les garde plutôt dans un fichier JSON hors du
-dépôt — `/var/www/settings/site-settings.json` par défaut, sur son propre volume
-pour qu'une reconstruction ne l'efface pas. `SITE_SETTINGS_FILE` permet de le
-déplacer. `config.php` le lit avant toute définition, d'où l'ordre : ce que
-l'administrateur a enregistré, puis l'environnement, puis les valeurs du fichier.
+`class/site_settings_store.php` les garde plutôt dans `data/.site-settings.json`,
+que git ignore. Le point initial est ce qui empêche nginx de le servir : le vhost
+refuse déjà les fichiers cachés sous `data/`, et le mot de passe du serveur est
+dedans. `SITE_SETTINGS_FILE` permet de le déplacer. `config.php` le lit avant
+toute définition, d'où l'ordre : ce que l'administrateur a enregistré, puis
+l'environnement, puis les valeurs du fichier.
 
 Rien de suivi par git n'est jamais écrit, et la fenêtre fonctionne comme upstream
 l'a prévue. Pour revenir à ce que dit le `.env`, supprimer le fichier enregistré :
 
 ```bash
-docker compose exec cs2-skin-web rm /var/www/settings/site-settings.json
+rm data/.site-settings.json
 ```
+
+C'est le site qui crée le fichier, donc `data/` doit être inscriptible par le
+serveur web : `docker compose exec -u root cs2-skin-web chown www-data /var/www/html/data`.
 
 Une installation PHP classique sans Docker fonctionne toujours en éditant
 `config.php` directement.

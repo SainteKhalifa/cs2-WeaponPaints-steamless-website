@@ -5,3 +5,7 @@ data/*.rollback-*
 
 # Deployment settings: domain, certificate resolver, database credentials.
 .env
+
+# What the administrator saves from the Site Settings dialog, the CS2 server
+# password included. Written by the site, never by hand.
+data/.site-settings.*
