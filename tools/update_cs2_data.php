@@ -452,6 +452,11 @@ function prepareJsonFile(string $path, array $data): array
         if (!is_array($verified) || json_last_error() !== JSON_ERROR_NONE) {
             throw new RuntimeException("Temporary JSON validation failed for {$path}: " . json_last_error_msg());
         }
+        // tempnam() creates the file as 0600: once renamed into data/, PHP-FPM
+        // (www-data) could no longer read it and the site would show "Permission denied".
+        if (!chmod($tempPath, 0644)) {
+            throw new RuntimeException("Failed to set permissions on temporary JSON for: {$path}");
+        }
     } catch (Throwable $exception) {
         @unlink($tempPath);
         throw $exception;
